@@ -1,4 +1,4 @@
-import pygame, sys
+import pygame, sys, random
 from pygame.locals import *
 
 # Inicalizar pygame
@@ -39,6 +39,7 @@ class Player(pygame.sprite.Sprite):
         )
         
         # Variables
+        self.hp = 100
         self.gravity_power = 4
         self.speed = 8
         
@@ -53,7 +54,7 @@ class Player(pygame.sprite.Sprite):
             self.rect.x -= self.speed
             if self.jumping == False and self.gravity == False:
                 self.surf.fill( (255, 255, 0) )
-        
+    
         if pressed_keys[K_RIGHT]:
             self.rect.x += self.speed
             if self.jumping == False and self.gravity == False:
@@ -64,22 +65,62 @@ class Player(pygame.sprite.Sprite):
             self.jumping = True
     
     def update(self):
-        self.gravity = True
-
         # Colisiones
         collide = False
+        damage = False
+        instakill = False
+        
+        # Colisiones Objetos dañinos
+        if pygame.sprite.spritecollide(self, instakill_objects, False):
+            collide = True
+            damage = True
+            instakill = True
+        
+        # Colsiones objetos solidos
+        for solid_object in solid_objects:
+            # Acomodar coliders, dependiendo de la dirección de colisión:
+            # arriba, abajo, izquierda, o derecha
+            if self.rect.colliderect(solid_object.rect):
+                collide = True
+                
+                # Arriba y abajo
+                if self.rect.y < solid_object.rect.y:
+                    self.rect.y = solid_object.rect.y - self.rect.height+1
+                    #self.jumping = False
+                elif self.rect.y > solid_object.rect.y:
+                    self.rect.y = solid_object.rect.y + solid_object.rect.height
+
+                # Izquierda y derecha
+                elif self.rect.x < solid_object.rect.x+1:
+                    self.rect.x = solid_object.rect.x - self.rect.width
+                elif self.rect.x > solid_object.rect.x:
+                    self.rect.x = solid_object.rect.x + solid_object.rect.width
+                #print(solid_object.rect.x)
+                #print(solid_object.rect.y)
+        
         if self.rect.y >= disp_height:
-            self.gravity = False
             collide = True
 
         if pygame.sprite.spritecollide(self, solid_objects, False):
-            self.gravity = False
             collide = True
 
+        # Eventos al colisionar
         if collide == True:
-            #self.rect.x += random.randint(-1, 1)
-            #self.rect.y += random.randint(-1, 1)
+            self.gravity = False
             self.surf.fill( (255, 0, 0) )
+
+            if damage == True:
+                #self.rect.x += random.randint(-1, 1)
+                #self.rect.y += random.randint(-1, 1)
+                self.hp -= 10
+
+                if instakill == True:
+                    self.hp = -1
+
+                if self.hp <= 0:
+                    self.kill()
+        else:
+            self.gravity = True
         
         # Gravedad
         if (
@@ -90,9 +131,9 @@ class Player(pygame.sprite.Sprite):
 
             self.rect.y += self.gravity_power
 
-            print( 
-                self.rect.x, self.rect.y
-            )
+            #print( 
+            #    self.rect.x, self.rect.y
+            #)
         else:
             if self.jumping == True:
                 self.surf.fill( (0, 0, 255) )
@@ -104,24 +145,52 @@ class Player(pygame.sprite.Sprite):
             else:
                 self.surf.fill( (0, 255, 0) )
                 self.__jump_max_height = 64
-            print('sin gravedad')
+            #print('sin gravedad')
 
             self.rect.y += 0
 
 
 
 class Floor(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(
+        self,
+        size = (disp_width, disp_width//60),
+        position = (disp_width//2, (disp_height-8)),
+        color=color_white
+    ):
         super().__init__()
         
         # Sprite
-        self.surf = pygame.Surface( (disp_width, 16) )
-        self.surf.fill(color_white)
+        self.surf = pygame.Surface( size )
+        self.surf.fill(color)
         
         # Collider y posición
         self.rect = self.surf.get_rect( 
-            center = (disp_width//2, (disp_height-8))
+            center = position
         )
+        
+    
+    def limit_collision(self):
+        # Limite de colision, si toca este limite, el jugador muere.
+        # Esto es demostrativo, aun no funcional
+        limit = pygame.sprite.Sprite()
+        limit_xy = [
+            round(self.rect.width*0.5, 4), round(self.rect.height*0.5, 4)
+        ]
+        limit.surf = pygame.Surface( (limit_xy[0], limit_xy[1]) )
+        limit.surf.fill( (255,0,0) )
+        limit.rect = limit.surf.get_rect(
+            center=(
+                self.rect.x+(self.rect.width -limit_xy[0]),
+                self.rect.y+(self.rect.height -limit_xy[1])
+            )
+        )
+        all_sprites.add(limit)
+        #print(self.rect.width)
+        #print(self.rect.height)
+        #print(limit_xy)
+        #print(self.rect.x+(self.rect.width -limit_xy[0]))
+        #print(self.rect.y+(self.rect.height -limit_xy[1]))
 
 
 
@@ -129,17 +198,14 @@ class Floor(pygame.sprite.Sprite):
 # Grupos de sprites
 all_sprites = pygame.sprite.Group()
 solid_objects = pygame.sprite.Group()
+instakill_objects = pygame.sprite.Group()
 
 floor_main = Floor()
-player = Player()
-
 all_sprites.add(floor_main)
-all_sprites.add(player)
 solid_objects.add(floor_main)
 
 '''
 for x in range(0, 64):
-    import random
     floor = Floor()
     floor.surf = pygame.Surface( (16, 2) )
     floor.rect = floor.surf.get_rect(
@@ -158,11 +224,12 @@ for x in range(0, 64):
 # Funciones
 def start_map(
         default_map = [
-            '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''
+            '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+            '', '', ''
             '...................p........................................',
             '............................................................',
-            '..............p.............................................',
-            '.......p..............p..................p..................',
+            '..............p......................................p......',
+            '.......p..............p..................p...........p......',
             '...p.................................................p......',
         ]
     ):
@@ -179,17 +246,21 @@ def start_map(
                 x_space += 1
             if space == 'p':
                 x_space += 1
-                plat = Floor()
-                plat.surf = pygame.Surface( (pixel_space, pixel_space) )
-                plat.surf.fill(color_white)
-                plat.rect = plat.surf.get_rect(
-                    center = ( (x_space*pixel_space), (y_column*pixel_space) )
+                plat = Floor(
+                    size=(pixel_space, pixel_space),
+                    position=( (x_space*pixel_space), (y_column*pixel_space) )
                 )
                 all_sprites.add(plat)
                 solid_objects.add(plat)
                 #test += f'columna {y_column}. {x_space*pixel_space}plataforma\n'
     #input(test)
 start_map()
+
+for plat in solid_objects:
+    plat.limit_collision()
+
+player = Player()
+all_sprites.add(player)
 
 
 
@@ -208,7 +279,7 @@ while True:
     display.fill(color_black)
     
     # Objetos / Sprites
-    floor_main.update()
+    #floor_main.update()
     player.update()
     player.move()
 
