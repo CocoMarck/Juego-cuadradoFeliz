@@ -30,7 +30,7 @@ class Player(pygame.sprite.Sprite):
         super().__init__()
         
         # Sprite
-        self.surf = pygame.Surface( (8, 16) )
+        self.surf = pygame.Surface( (disp_width//120, disp_width//60) )
         self.surf.fill( (0, 255, 0) )
         
         # Collider y posición
@@ -39,6 +39,7 @@ class Player(pygame.sprite.Sprite):
         )
         
         # Variables
+        self.not_move = False
         self.hp = 100
         self.gravity_power = 4
         self.speed = 8
@@ -50,18 +51,22 @@ class Player(pygame.sprite.Sprite):
     def move(self):
         pressed_keys = pygame.key.get_pressed()
         
-        if pressed_keys[K_LEFT]:
-            self.rect.x -= self.speed
-            if self.jumping == False and self.gravity == False:
-                self.surf.fill( (255, 255, 0) )
+        if self.not_move == False:
+            if pressed_keys[K_LEFT]:
+                self.rect.x -= self.speed
+                if self.jumping == False and self.gravity == False:
+                    self.surf.fill( (255, 255, 0) )
     
-        if pressed_keys[K_RIGHT]:
-            self.rect.x += self.speed
-            if self.jumping == False and self.gravity == False:
-                self.surf.fill( (255, 255, 0) )
+            if pressed_keys[K_RIGHT]:
+                self.rect.x += self.speed
+                if self.jumping == False and self.gravity == False:
+                    self.surf.fill( (255, 255, 0) )
     
     def jump(self):
-        if not self.gravity == True:
+        if (
+            not self.gravity == True and
+            self.not_move == False 
+        ):
             self.jumping = True
     
     def update(self):
@@ -75,8 +80,13 @@ class Player(pygame.sprite.Sprite):
             collide = True
             damage = True
             instakill = True
+
+        if pygame.sprite.spritecollide(self, damage_objects, False):
+            collide = True
+            damage = True
         
         # Colsiones objetos solidos
+        self.not_move = False
         for solid_object in solid_objects:
             # Acomodar coliders, dependiendo de la dirección de colisión:
             # arriba, abajo, izquierda, o derecha
@@ -85,18 +95,32 @@ class Player(pygame.sprite.Sprite):
                 
                 # Arriba y abajo
                 if self.rect.y < solid_object.rect.y:
+                    #print('arriba')
                     self.rect.y = solid_object.rect.y - self.rect.height+1
                     #self.jumping = False
-                elif self.rect.y > solid_object.rect.y:
+                elif self.rect.y > solid_object.rect.y+(solid_object.rect.height//4):
+                    #print('abajo')
+                    # El "+(solid_object.rect.height//4)", es para evitar dos colisiones al mismo tiempo:
+                    # Puede ser colisionar abajo y del lado izquierdo o derecho.
+                    # Funciona, porque la colision del lado inferior, esta un poco mas abajo de lo normal.
+                    self.jumping = False
                     self.rect.y = solid_object.rect.y + solid_object.rect.height
 
                 # Izquierda y derecha
-                elif self.rect.x < solid_object.rect.x+1:
+                # El "self.not_move", ayuda a que no puedas mover de ninguna manera al jugador
+                # Los for vistos aqui, redirecciónan al lado contrario al jugador dependiendo si colisiono del lado derecho o del lado izquierdo
+                elif self.rect.x < solid_object.rect.x:
+                    #print('izquierda')
+                    self.not_move = True
                     self.rect.x = solid_object.rect.x - self.rect.width
+                    for x in range(0, 10):
+                        self.rect.x -= 1
                 elif self.rect.x > solid_object.rect.x:
+                    #print('derecha')
+                    self.not_move = True
                     self.rect.x = solid_object.rect.x + solid_object.rect.width
-                #print(solid_object.rect.x)
-                #print(solid_object.rect.y)
+                    for x in range(0, 10):
+                        self.rect.x += 1
         
         if self.rect.y >= disp_height:
             collide = True
@@ -112,7 +136,7 @@ class Player(pygame.sprite.Sprite):
             if damage == True:
                 #self.rect.x += random.randint(-1, 1)
                 #self.rect.y += random.randint(-1, 1)
-                self.hp -= 10
+                self.hp -= 1
 
                 if instakill == True:
                     self.hp = -1
@@ -186,6 +210,8 @@ class Floor(pygame.sprite.Sprite):
             )
         )
         all_sprites.add(limit)
+        #instakill_objects.add(limit)
+        #damage_objects.add(limit)
         #print(self.rect.width)
         #print(self.rect.height)
         #print(limit_xy)
@@ -199,10 +225,11 @@ class Floor(pygame.sprite.Sprite):
 all_sprites = pygame.sprite.Group()
 solid_objects = pygame.sprite.Group()
 instakill_objects = pygame.sprite.Group()
+damage_objects = pygame.sprite.Group()
 
-floor_main = Floor()
-all_sprites.add(floor_main)
-solid_objects.add(floor_main)
+#floor_main = Floor()
+#all_sprites.add(floor_main)
+#solid_objects.add(floor_main)
 
 '''
 for x in range(0, 64):
@@ -226,11 +253,13 @@ def start_map(
         default_map = [
             '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
             '', '', ''
-            '...................p........................................',
-            '............................................................',
-            '..............p......................................p......',
-            '.......p..............p..................p...........p......',
-            '...p.................................................p......',
+            '...................p.................................pp.....',
+            '.....................................................pp.....',
+            '...p..........p................................p.....pp.....',
+            '...p....p.............p..................p..................',
+            '...p.................................................pp......',
+            'pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp',
+            'pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp',
         ]
     ):
     y_column = 0
