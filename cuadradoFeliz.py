@@ -19,7 +19,7 @@ pygame.display.set_caption('El cuadrado Feliz')
 
 # Colores genericos
 color_black = (0, 0, 0)
-color_white = (255, 255, 255)
+color_white = (128, 128, 128)
 
 
 
@@ -40,6 +40,7 @@ class Player(pygame.sprite.Sprite):
         
         # Variables
         self.not_move = False
+        self.moving = False
         self.hp = 100
         self.gravity_power = 4
         self.speed = 8
@@ -51,13 +52,16 @@ class Player(pygame.sprite.Sprite):
     def move(self):
         pressed_keys = pygame.key.get_pressed()
         
+        self.moving = False
         if self.not_move == False:
             if pressed_keys[K_LEFT]:
+                self.moving = True
                 self.rect.x -= self.speed
                 if self.jumping == False and self.gravity == False:
                     self.surf.fill( (255, 255, 0) )
     
             if pressed_keys[K_RIGHT]:
+                self.moving = True
                 self.rect.x += self.speed
                 if self.jumping == False and self.gravity == False:
                     self.surf.fill( (255, 255, 0) )
@@ -192,31 +196,47 @@ class Floor(pygame.sprite.Sprite):
         self.rect = self.surf.get_rect( 
             center = position
         )
+        self.add_limit = True
         
     
     def limit_collision(self):
-        # Limite de colision, si toca este limite, el jugador muere.
-        # Esto es demostrativo, aun no funcional
-        limit = pygame.sprite.Sprite()
-        limit_xy = [
-            round(self.rect.width*0.5, 4), round(self.rect.height*0.5, 4)
-        ]
-        limit.surf = pygame.Surface( (limit_xy[0], limit_xy[1]) )
-        limit.surf.fill( (255,0,0) )
-        limit.rect = limit.surf.get_rect(
-            center=(
-                self.rect.x+(self.rect.width -limit_xy[0]),
-                self.rect.y+(self.rect.height -limit_xy[1])
+        if self.add_limit == True:
+            # Limite de colision, si toca este limite, el jugador muere.
+            # Esto es demostrativo, aun no funcional
+            limit = pygame.sprite.Sprite()
+            limit_xy = [
+                round(self.rect.width*0.5, 4), round(self.rect.height*0.5, 4)
+            ]
+            limit.surf = pygame.Surface( (limit_xy[0], limit_xy[1]) )
+            limit.surf.fill( (255,0,0) )
+            limit.rect = limit.surf.get_rect(
+                center=(
+                    self.rect.x+(self.rect.width -limit_xy[0]),
+                    self.rect.y+(self.rect.height -limit_xy[1])
+                )
             )
+            all_sprites.add(limit)
+            #instakill_objects.add(limit)
+            #damage_objects.add(limit)
+            #print(self.rect.width)
+            #print(self.rect.height)
+            #print(limit_xy)
+            #print(self.rect.x+(self.rect.width -limit_xy[0]))
+            #print(self.rect.y+(self.rect.height -limit_xy[1]))
+
+
+class Limit_indicator(pygame.sprite.Sprite):
+    def __init__(self, 
+        size = (2, 16), see = True, position = (0, 0)
+    ):
+        super().__init__()
+        
+        self.surf = pygame.Surface( size )
+        if see == True:
+            self.surf.fill( (255, 0, 0) )
+        self.rect = self.surf.get_rect(
+            center = ( position )
         )
-        all_sprites.add(limit)
-        #instakill_objects.add(limit)
-        #damage_objects.add(limit)
-        #print(self.rect.width)
-        #print(self.rect.height)
-        #print(limit_xy)
-        #print(self.rect.x+(self.rect.width -limit_xy[0]))
-        #print(self.rect.y+(self.rect.height -limit_xy[1]))
 
 
 
@@ -226,24 +246,29 @@ all_sprites = pygame.sprite.Group()
 solid_objects = pygame.sprite.Group()
 instakill_objects = pygame.sprite.Group()
 damage_objects = pygame.sprite.Group()
+limit_objects = pygame.sprite.Group()
 
 #floor_main = Floor()
 #all_sprites.add(floor_main)
 #solid_objects.add(floor_main)
 
+
 '''
-for x in range(0, 64):
+for x in range(0, 20):
     floor = Floor()
-    floor.surf = pygame.Surface( (16, 2) )
+    floor.surf = pygame.Surface( (32, 16) )
+    floor.surf.fill(color_white)
     floor.rect = floor.surf.get_rect(
         center = (
             random.randint(18, disp_width-18),
             random.randint(18, disp_height-18)
         )
     )
+    floor.add_limit = False
     all_sprites.add(floor)
     solid_objects.add(floor)
 '''
+
 
 
 
@@ -253,13 +278,13 @@ def start_map(
         default_map = [
             '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
             '', '', ''
-            '...................p.................................pp.....',
-            '.....................................................pp.....',
-            '...p..........p................................p.....pp.....',
-            '...p....p.............p..................p..................',
-            '...p.................................................pp......',
-            'pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp',
-            'pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp',
+            '|......................p.................................pp..........|',
+            '|........................................................pp..........|',
+            '|......p..........p................................p.....pp..........|',
+            '|......p....p.............p..................p.......................|',
+            '|......p.................................................pp..........|',
+            '|...pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp.....|',
+            '|...pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp.....|',
         ]
     ):
     y_column = 0
@@ -282,6 +307,13 @@ def start_map(
                 all_sprites.add(plat)
                 solid_objects.add(plat)
                 #test += f'columna {y_column}. {x_space*pixel_space}plataforma\n'
+            if space == '|':
+                x_space += 1
+                limit = Limit_indicator(
+                    position=( (x_space*pixel_space), (y_column*pixel_space) )
+                )
+                all_sprites.add(limit)
+                limit_objects.add(limit)
     #input(test)
 start_map()
 
@@ -314,6 +346,45 @@ while True:
 
     for sprite in all_sprites:
         display.blit(sprite.surf, sprite.rect)
+    
+    # Camara
+    # Si la camara detecta que hay un limite de camara del lado derecho/izquierdo y que el jugador no esta en medio de la pantalla, lo indicara, y no permitira mover la camara.
+    # Si el player desea y puede moverse al lado derecho/izquierdo. Todos los objetos que no sean el jugador se moveran al lado contrario de la dirección de el, con su misma velocidad, pero invertida.
+    camera_move = True
+    for limit in limit_objects:
+        for x in range(0, disp_width//60):
+            if (
+                limit.rect.x == x and player.rect.x < disp_width//2
+            ):
+                #print('limite detectado izquierda')
+                camera_move = False
+            elif (
+                limit.rect.x == disp_width-x and player.rect.x > disp_width//2
+            ):
+                #print('limite detectado derecha')
+                camera_move = False
+                
+
+    if player.moving == True and camera_move == True:
+        if player.rect.x > disp_width//2:
+            #print('player quiere mover camara al lado derecho')
+            for sprite in all_sprites:
+                if sprite == player:
+                    # Si el sprite es el player, a este no se le mueve
+                    sprite.rect.x -= player.speed
+                else:
+                    # Mover todos los sprites que no sean el player
+                    sprite.rect.x -= player.speed
+
+        elif player.rect.x < disp_width//2:
+            #print('player quiere mover camara al lado izquierdo')
+            for sprite in all_sprites:
+                if sprite == player:
+                    # Si el sprite es el player, a este no se le mueve
+                    sprite.rect.x += player.speed
+                else:
+                    # Mover todos los sprites que no sean el player
+                    sprite.rect.x += player.speed
     
     # Fin
     clock.tick(fps)
