@@ -38,30 +38,32 @@ class Player(pygame.sprite.Sprite):
             center=position
         )
         
-        # Variables
+        # Movimeinto
         self.not_move = False
-        self.moving = False
-        self.hp = 100
-        self.gravity = True
         self.gravity_power = 4
         self.speed = 8
-        
         self.jumping = False
         self.__jump_max_height = 64
         self.jump_power = 8
+        
+        # Vida
+        self.hp = 100
     
     def move(self):
         pressed_keys = pygame.key.get_pressed()
+        self.pressed_left = pressed_keys[K_LEFT]
+        self.pressed_right = pressed_keys[K_RIGHT]
+        self.pressed_jump =  pygame.K_SPACE
         
         self.moving = False
         if self.not_move == False:
-            if pressed_keys[K_LEFT]:
+            if self.pressed_left:
                 self.moving = True
                 self.rect.x -= self.speed
                 if self.jumping == False and self.gravity == False:
                     self.surf.fill( (255, 255, 0) )
     
-            if pressed_keys[K_RIGHT]:
+            if self.pressed_right:
                 self.moving = True
                 self.rect.x += self.speed
                 if self.jumping == False and self.gravity == False:
@@ -113,19 +115,17 @@ class Player(pygame.sprite.Sprite):
 
                 # Izquierda y derecha
                 # El "self.not_move", ayuda a que no puedas mover de ninguna manera al jugador
-                # Los for vistos aqui, redirecciónan al lado contrario al jugador dependiendo si colisiono del lado derecho o del lado izquierdo
-                elif self.rect.x < solid_object.rect.x:
+                # Los "self.rect.x +-= self.speed" vistos aqui, redirecciónan al lado contrario al jugador dependiendo si colisiono del lado derecho o del lado izquierdo
+                elif self.rect.x < solid_object.rect.x+self.speed/8:
                     #print('izquierda')
                     self.not_move = True
                     self.rect.x = solid_object.rect.x - self.rect.width
-                    for x in range(0, 10):
-                        self.rect.x -= 1
-                elif self.rect.x > solid_object.rect.x:
+                    self.rect.x -= self.speed
+                elif self.rect.x > solid_object.rect.x-self.speed/8:
                     #print('derecha')
                     self.not_move = True
                     self.rect.x = solid_object.rect.x + solid_object.rect.width
-                    for x in range(0, 10):
-                        self.rect.x += 1
+                    self.rect.x += self.speed
         
         if self.rect.y >= disp_height:
             collide = True
@@ -249,10 +249,6 @@ instakill_objects = pygame.sprite.Group()
 damage_objects = pygame.sprite.Group()
 limit_objects = pygame.sprite.Group()
 
-#floor_main = Floor()
-#all_sprites.add(floor_main)
-#solid_objects.add(floor_main)
-
 
 '''
 for x in range(0, 20):
@@ -275,12 +271,24 @@ for x in range(0, 20):
 
 
 # Funciones
-def start_map(
+class Start_Map():
+    def __init__(self,
         x_column = 0,
         y_column = 0,
         map_level = [
-            '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
-            '', '', ''
+            '.................................................................................',
+            '.............pjp.................................................................',
+            '.............ppp.................................................................',
+            '.................................................................................',
+            '........................pp..........ppp..........................................',
+            '...................................................p.............................',
+            '.................................................................................',
+            '.............................................................p...................',
+            '..............................................................p..................',
+            '.................................................................................',
+            '......................................................................p..........',
+            '.................................................................................',
+            '.................................................................................',
             '.......p...............p.................................pp.........p........p...',
             '.........................................................pp......................',
             '...................................................p.....pp......................',
@@ -290,46 +298,51 @@ def start_map(
             '|ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp|',
         ],
     ):
-    '''
-    Funcion que permite crear niveles de una forma visual y sencilla.
-    "." para un espacio de el "ancho sobre 60" del juego
-    "p" para una plataforma con un espacio del "ancho sobre 60" del juego
-    "|" para establecer el limite de la camara, con un espacio del ancho sobre el juego"
-    
-    "x, y" column son para establecer el pixel de inicio basado en la resolucion del juego. Por defecto inician en 0, 0.
-    '''
-    plat_number = 0
-    pixel_space = disp_width//60
-    test = ''
-    for column in map_level:
-        y_column += 1
-        x_space = 0 + x_column
-        for space in column:
-            if space == '.':
-                x_space += 1
-            if space == 'p':
-                x_space += 1
-                plat = Floor(
-                    size=(pixel_space, pixel_space),
-                    position=( (x_space*pixel_space), (y_column*pixel_space) )
-                )
-                all_sprites.add(plat)
-                solid_objects.add(plat)
-                #test += f'columna {y_column}. {x_space*pixel_space}plataforma\n'
-            if space == '|':
-                x_space += 1
-                limit = Limit_indicator(
-                    position=( (x_space*pixel_space), (y_column*pixel_space) )
-                )
-                all_sprites.add(limit)
-                limit_objects.add(limit)
-    #input(test)
-start_map(x_column=0, y_column=0)
+        '''
+        Funcion que permite crear niveles de una forma visual y sencilla.
+        "." para un espacio de el "ancho sobre 60" del juego
+        "p" para una plataforma con un espacio del "ancho sobre 60" del juego
+        "|" para establecer el limite de la camara, con un espacio del ancho sobre el juego"
+        
+        "x, y" column son para establecer el pixel de inicio basado en la resolucion del juego. Por defecto inician en 0, 0.
+        '''
+        self.player_spawn = None
+        plat_number = 0
+        pixel_space = disp_width//60
+        test = ''
+        for column in map_level:
+            y_column += 1
+            x_space = 0 + x_column
+            for space in column:
+                position=( (x_space*pixel_space), (y_column*pixel_space) )
+                if space == '.':
+                    x_space += 1
+                if space == 'p':
+                    x_space += 1
+                    plat = Floor(
+                        size=(pixel_space, pixel_space),
+                        position=position
+                    )
+                    all_sprites.add(plat)
+                    solid_objects.add(plat)
+                    #test += f'columna {y_column}. {x_space*pixel_space}plataforma\n'
+                if space == '|':
+                    x_space += 1
+                    limit = Limit_indicator(
+                        position=position
+                    )
+                    all_sprites.add(limit)
+                    limit_objects.add(limit)
+                if space == 'j':
+                    x_space += 1
+                    self.player_spawn = position
+start_map = Start_Map(0, 0)
 
 for plat in solid_objects:
     plat.limit_collision()
 
-player = Player()
+#player = Player( position=(disp_width//2, disp_height//2) )
+player = Player( position=start_map.player_spawn )
 all_sprites.add(player)
 
 
@@ -342,7 +355,7 @@ while True:
             pygame.quit()
             sys.exit()
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
+            if event.key == player.pressed_jump:
                 player.jump()
     
     # Fondo
