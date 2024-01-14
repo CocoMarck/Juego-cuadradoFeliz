@@ -39,9 +39,10 @@ class Player(pygame.sprite.Sprite):
         )
         
         # Movimeinto
+        # Jump power, establece velocidad y alura de salto.
+        # speed, establece velocidad izquierda/derecha, y rebote en paredes.
         self.gravity_power      =   self.rect.height//4
         self.speed              =   self.rect.height//2
-        self.__jump_max_height  =   self.rect.height*4
         self.jump_power         =   self.rect.height//2
         self.jumping = False
         self.not_move = False
@@ -175,7 +176,7 @@ class Player(pygame.sprite.Sprite):
                     self.jumping = False
             else:
                 self.surf.fill( (0, 255, 0) )
-                self.__jump_max_height = 64
+                self.__jump_max_height = self.jump_power*8
             #print('sin gravedad')
 
             self.rect.y += 0
