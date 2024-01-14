@@ -26,7 +26,7 @@ color_white = (128, 128, 128)
 
 # Objetos / Clases
 class Player(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, position=(disp_width//2,disp_height//2) ):
         super().__init__()
         
         # Sprite
@@ -35,13 +35,14 @@ class Player(pygame.sprite.Sprite):
         
         # Collider y posición
         self.rect = self.surf.get_rect(
-            center=(8,8)
+            center=position
         )
         
         # Variables
         self.not_move = False
         self.moving = False
         self.hp = 100
+        self.gravity = True
         self.gravity_power = 4
         self.speed = 8
         
@@ -227,7 +228,7 @@ class Floor(pygame.sprite.Sprite):
 
 class Limit_indicator(pygame.sprite.Sprite):
     def __init__(self, 
-        size = (2, 16), see = True, position = (0, 0)
+        size = (disp_width//480, disp_width//60), see = True, position = (0, 0)
     ):
         super().__init__()
         
@@ -275,26 +276,34 @@ for x in range(0, 20):
 
 # Funciones
 def start_map(
-        default_map = [
+        x_column = 0,
+        y_column = 0,
+        map_level = [
             '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
             '', '', ''
-            '|......................p.................................pp..........|',
-            '|........................................................pp..........|',
-            '|......p..........p................................p.....pp..........|',
-            '|......p....p.............p..................p.......................|',
-            '|......p.................................................pp..........|',
-            '|...pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp.....|',
-            '|...pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp.....|',
-        ]
+            '.......p...............p.................................pp.........p........p...',
+            '.........................................................pp......................',
+            '...................................................p.....pp......................',
+            '..............p...........p..................p...................................',
+            '.......p.................................................pp.........p............',
+            '.ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp.',
+            '|ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp|',
+        ],
     ):
-    y_column = 0
-    x_space = 0
+    '''
+    Funcion que permite crear niveles de una forma visual y sencilla.
+    "." para un espacio de el "ancho sobre 60" del juego
+    "p" para una plataforma con un espacio del "ancho sobre 60" del juego
+    "|" para establecer el limite de la camara, con un espacio del ancho sobre el juego"
+    
+    "x, y" column son para establecer el pixel de inicio basado en la resolucion del juego. Por defecto inician en 0, 0.
+    '''
     plat_number = 0
     pixel_space = disp_width//60
     test = ''
-    for column in default_map:
+    for column in map_level:
         y_column += 1
-        x_space = 0
+        x_space = 0 + x_column
         for space in column:
             if space == '.':
                 x_space += 1
@@ -315,7 +324,7 @@ def start_map(
                 all_sprites.add(limit)
                 limit_objects.add(limit)
     #input(test)
-start_map()
+start_map(x_column=0, y_column=0)
 
 for plat in solid_objects:
     plat.limit_collision()
@@ -340,51 +349,68 @@ while True:
     display.fill(color_black)
     
     # Objetos / Sprites
-    #floor_main.update()
     player.update()
     player.move()
 
     for sprite in all_sprites:
         display.blit(sprite.surf, sprite.rect)
+
     
-    # Camara
-    # Si la camara detecta que hay un limite de camara del lado derecho/izquierdo y que el jugador no esta en medio de la pantalla, lo indicara, y no permitira mover la camara.
-    # Si el player desea y puede moverse al lado derecho/izquierdo. Todos los objetos que no sean el jugador se moveran al lado contrario de la dirección de el, con su misma velocidad, pero invertida.
-    camera_move = True
+    # Camara lado x
+    # Si la camara detecta que hay un limite de camara del lado derecho/izquierdo y que el jugador no esta en medio de la pantalla, lo detectara, y no permitira mover la camara.
+    camera_move_x = True
     for limit in limit_objects:
         for x in range(0, disp_width//60):
             if (
                 limit.rect.x == x and player.rect.x < disp_width//2
             ):
                 #print('limite detectado izquierda')
-                camera_move = False
+                camera_move_x = False
             elif (
                 limit.rect.x == disp_width-x and player.rect.x > disp_width//2
             ):
                 #print('limite detectado derecha')
-                camera_move = False
+                camera_move_x = False
                 
+    # Si el player desea y puede moverse al lado derecho/izquierdo. Todos los objetos que no sean el jugador se moveran al lado contrario de la dirección de el, con su misma velocidad horizontal, pero invertida.
+    if player.moving == True and camera_move_x == True:
+        for sprite in all_sprites:
+            if player.rect.x > disp_width//2:
+                # mover camara derecha
+                sprite.rect.x -= player.speed
 
-    if player.moving == True and camera_move == True:
-        if player.rect.x > disp_width//2:
-            #print('player quiere mover camara al lado derecho')
-            for sprite in all_sprites:
-                if sprite == player:
-                    # Si el sprite es el player, a este no se le mueve
-                    sprite.rect.x -= player.speed
-                else:
-                    # Mover todos los sprites que no sean el player
-                    sprite.rect.x -= player.speed
+            elif player.rect.x < disp_width//2:
+                # mover camara izquierda
+                sprite.rect.x += player.speed
 
-        elif player.rect.x < disp_width//2:
-            #print('player quiere mover camara al lado izquierdo')
-            for sprite in all_sprites:
-                if sprite == player:
-                    # Si el sprite es el player, a este no se le mueve
-                    sprite.rect.x += player.speed
-                else:
-                    # Mover todos los sprites que no sean el player
-                    sprite.rect.x += player.speed
+
+    # Camara lado y
+    # Si la camara detecta que hay un limite de camara arriba/abajo y que el jugador no esta en medio de la pantalla, lo detectara, y no permitira mover la camara.
+    camera_move_y = True
+    for limit in limit_objects:
+        for y in range(0, disp_height//60):
+            if (
+                limit.rect.y == y and player.rect.y < disp_height//2
+            ):
+                # Limite arriba
+                camera_move_y = False
+            elif (
+                limit.rect.y == disp_height-y and player.rect.y > disp_height//2
+            ):
+                # Limite abajo
+                camera_move_y = False
+                
+    # Si el player desea y puede moverse arriba/abajo. Todos los objetos que no sean el jugador se moveran al lado contrario de la dirección de el, con su misma velocidad vertical, pero invertida.
+    if camera_move_y == True:
+        for sprite in all_sprites:
+            if player.rect.y < disp_height//2:
+                # mover camara arriba
+                sprite.rect.y += player.jump_power
+
+            elif player.rect.y > disp_height//2 and player.gravity == True:
+                # mover camara abajo
+                sprite.rect.y -= player.gravity_power
+
     
     # Fin
     clock.tick(fps)
