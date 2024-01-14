@@ -39,22 +39,24 @@ class Player(pygame.sprite.Sprite):
         )
         
         # Movimeinto
-        self.not_move = False
-        self.gravity_power = 4
-        self.speed = 8
+        self.gravity_power      =   self.rect.height//4
+        self.speed              =   self.rect.height//2
+        self.__jump_max_height  =   self.rect.height*4
+        self.jump_power         =   self.rect.height//2
         self.jumping = False
-        self.__jump_max_height = 64
-        self.jump_power = 8
+        self.not_move = False
         
         # Vida
         self.hp = 100
     
     def move(self):
+        # Teclas de movimiento
         pressed_keys = pygame.key.get_pressed()
         self.pressed_left = pressed_keys[K_LEFT]
         self.pressed_right = pressed_keys[K_RIGHT]
         self.pressed_jump =  pygame.K_SPACE
         
+        # Iniciar o no el movimiento
         self.moving = False
         if self.not_move == False:
             if self.pressed_left:
@@ -276,7 +278,7 @@ class Start_Map():
         x_column = 0,
         y_column = 0,
         map_level = [
-            '.................................................................................',
+            '.............p.p.................................................................',
             '.............pjp.................................................................',
             '.............ppp.................................................................',
             '.................................................................................',
