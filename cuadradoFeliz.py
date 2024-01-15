@@ -105,8 +105,11 @@ class Player(pygame.sprite.Sprite):
         if pygame.sprite.spritecollide(self, solid_objects, False):
             collide = True
             
-        # Collisionar con el final vertical de la pantalla
-        if self.rect.y >= disp_height:
+        # Collisionar con el final vertical/horizontal de la pantalla
+        if (
+            self.rect.y >= disp_height or   self.rect.y <= 0 or
+            self.rect.x >= disp_width or    self.rect.x <= 0
+        ):
             instakill = True
         
         # Boleanos daño y instakill
