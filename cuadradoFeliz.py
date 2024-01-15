@@ -38,6 +38,9 @@ class Player(pygame.sprite.Sprite):
             center=position
         )
         
+        # Spawn
+        self.spawn_xy = [self.rect.x, self.rect.y]
+        
         # Movimeinto
         # Jump power, establece velocidad y alura de salto.
         # speed, establece velocidad izquierda/derecha, y rebote en paredes.
@@ -80,7 +83,7 @@ class Player(pygame.sprite.Sprite):
     def jump(self):
         if (
             not self.gravity == True and
-            self.not_move == False 
+            self.not_move == False
         ):
             self.jumping = True
     
@@ -90,17 +93,30 @@ class Player(pygame.sprite.Sprite):
         damage = False
         instakill = False
         
-        # Colisiones Objetos dañinos
+        # Colisiones Objetos
         if pygame.sprite.spritecollide(self, instakill_objects, False):
             collide = True
             damage = True
             instakill = True
 
         if pygame.sprite.spritecollide(self, damage_objects, False):
+            damage = True
+            
+        if pygame.sprite.spritecollide(self, solid_objects, False):
             collide = True
+            
+        # Collisionar con el final vertical de la pantalla
+        if self.rect.y >= disp_height:
+            instakill = True
+        
+        # Boleanos daño y instakill
+        if instakill == True:
             damage = True
         
-        # Colsiones objetos solidos
+        if damage == True:
+            collide = True
+        
+        # Eventos | Colsiones con solidos
         self.not_move = False
         for solid_object in solid_objects:
             # Acomodar coliders, dependiendo de la dirección de colisión:
@@ -108,38 +124,51 @@ class Player(pygame.sprite.Sprite):
             if self.rect.colliderect(solid_object.rect):
                 collide = True
                 
+                # Para detectar que la altura el solido y la del jugador sean correctas.
+                # Formula x + (y - x) = y
+                # Ejemplo 8 + (16 - 8) = 8
+                if self.rect.height > solid_object.rect.height:
+                    # Advertencia Altura de solido mas pequeña comparada con la del jugador
+                    more_height = True
+                else:
+                    more_height = False
+                
                 # Arriba y abajo
+                # Recuerda que no se puede colisionar dos veces, se eliguira una colision, y en este caso siempre tiene mas pioridad la colision arriba, debido a que esta arriba de la linea de colision de la derecha.
                 if self.rect.y < solid_object.rect.y:
                     #print('arriba')
                     self.rect.y = solid_object.rect.y - self.rect.height+1
                     #self.jumping = False
                 elif self.rect.y > solid_object.rect.y+(solid_object.rect.height//4):
-                    #print('abajo')
                     # El "+(solid_object.rect.height//4)", es para evitar dos colisiones al mismo tiempo:
                     # Puede ser colisionar abajo y del lado izquierdo o derecho.
                     # Funciona, porque la colision del lado inferior, esta un poco mas abajo de lo normal.
+                    #print('abajo')
                     self.jumping = False
                     self.rect.y = solid_object.rect.y + solid_object.rect.height
 
                 # Izquierda y derecha
+                # Collisionar de izquierda/derecha solo cuando el jugador no es mas pequeño en hight que el solido
                 # El "self.not_move", ayuda a que no puedas mover de ninguna manera al jugador
                 # Los "self.rect.x +-= self.speed" vistos aqui, redirecciónan al lado contrario al jugador dependiendo si colisiono del lado derecho o del lado izquierdo
-                elif self.rect.x < solid_object.rect.x+self.speed/8:
-                    #print('izquierda')
-                    self.not_move = True
-                    self.rect.x = solid_object.rect.x - self.rect.width
-                    self.rect.x -= self.speed
-                elif self.rect.x > solid_object.rect.x-self.speed/8:
-                    #print('derecha')
-                    self.not_move = True
-                    self.rect.x = solid_object.rect.x + solid_object.rect.width
-                    self.rect.x += self.speed
-        
-        if self.rect.y >= disp_height:
-            collide = True
-
-        if pygame.sprite.spritecollide(self, solid_objects, False):
-            collide = True
+                # Recuerda que no se puede colisionar dos veces, se eliguira una colision, y en este caso siempre tiene mas pioridad la colision izquirda, debido a que esta arriba de la linea de colision de la derecha.
+                elif more_height == False:
+                    if self.rect.x < solid_object.rect.x+self.speed/8:
+                        #print('izquierda')
+                        self.not_move = True
+                        self.jumping = False
+                        self.rect.x = solid_object.rect.x -self.rect.width -self.speed
+                    elif self.rect.x > solid_object.rect.x-self.speed/8:
+                        #print('derecha')
+                        self.not_move = True
+                        self.jumping = False
+                        self.rect.x = solid_object.rect.x +solid_object.rect.width +self.speed
+                
+                # Cuando la altura "hight" del solido es mas baja que la del el jugador
+                if more_height == True:
+                    # Aqui agragar codigo futuro
+                    #height_difference = self.rect.height - solid_object.rect.height
+                    pass
 
         # Eventos al colisionar
         if collide == True:
@@ -155,7 +184,10 @@ class Player(pygame.sprite.Sprite):
                     self.hp = -1
 
                 if self.hp <= 0:
-                    self.kill()
+                    # El player se murio
+                    # Establecer al player al spawn
+                    self.hp = 0
+
         else:
             self.gravity = True
         
@@ -193,7 +225,8 @@ class Floor(pygame.sprite.Sprite):
         self,
         size = (disp_width, disp_width//60),
         position = (disp_width//2, (disp_height-8)),
-        color=color_white
+        color=color_white,
+        limit = True
     ):
         super().__init__()
         
@@ -205,7 +238,8 @@ class Floor(pygame.sprite.Sprite):
         self.rect = self.surf.get_rect( 
             center = position
         )
-        self.add_limit = True
+        self.add_limit = limit
+        solid_objects.add(self)
         
     
     def limit_collision(self):
@@ -249,6 +283,40 @@ class Limit_indicator(pygame.sprite.Sprite):
 
 
 
+class Spike(pygame.sprite.Sprite):
+    def __init__(self, position=(0,0) ):
+        super().__init__()
+        
+        # Pico
+        self.surf = pygame.Surface( (disp_width//240, disp_width//120) )
+        self.surf.fill( (255, 0, 0) )
+        self.rect = self.surf.get_rect(
+            center=position
+        )
+        self.rect.y -= self.rect.height//2
+        
+        # Cuadrados solidos
+        square_size = self.rect.height
+        floor_x = Floor(
+            size = ( square_size, square_size ),
+            position = position,
+            limit = False
+        )
+        floor_x.rect.x -= square_size//2
+        floor_x.rect.y += square_size//2
+        all_sprites.add(floor_x)
+        
+        floor_y = Floor(
+            size = ( square_size, square_size ),
+            position = position,
+            limit = False
+        )
+        floor_y.rect.x += square_size//2
+        floor_y.rect.y += square_size//2
+        all_sprites.add(floor_y)
+
+
+
 
 # Grupos de sprites
 all_sprites = pygame.sprite.Group()
@@ -261,7 +329,7 @@ limit_objects = pygame.sprite.Group()
 '''
 for x in range(0, 20):
     floor = Floor()
-    floor.surf = pygame.Surface( (32, 16) )
+    floor.surf = pygame.Surface( (32, 4) )
     floor.surf.fill(color_white)
     floor.rect = floor.surf.get_rect(
         center = (
@@ -271,7 +339,7 @@ for x in range(0, 20):
     )
     floor.add_limit = False
     all_sprites.add(floor)
-    solid_objects.add(floor)
+    #solid_objects.add(floor)
 '''
 
 
@@ -286,14 +354,14 @@ class Start_Map():
         map_level = [
             '|....pppp.......................................................................|',
             '.....p...........................................................................',
-            '.....p..p........................................................................',
+            '.....pjpp........................................................................',
             '.....pppp.........p..............................................................',
             '.................................................................................',
             '.......................................ppp.......................................',
             '.......................................p.p.......................................',
             '................p......................p.p.......................................',
             '.......................................ppp.......................................',
-            '........................................j........................................',
+            '.................................................................................',
             '.......................p...............ppp........................................',
             '.................................................................................',
             '.................................................................................',
@@ -304,11 +372,11 @@ class Start_Map():
             '.......................p....................p....................................',
             '......................p......................p...................................',
             '..................pppp........................p..................................',
-            '..................p............................ppppppppp...p......p..............',
+            '..................p..........^^^^^^^^^^^pppppppppppppppp...p......p..............',
             '..................p..............................................................',
             '..................p.....................................................p........',
             '.............pppppp..............................................................',
-            '.............p...................................................................',
+            '.............p...........ppppppppppppppppp.......................................',
             '.................................................................................',
             '.........p..........................................................p............',
             '.................................................................................',
@@ -352,18 +420,23 @@ class Start_Map():
                         position=position
                     )
                     all_sprites.add(plat)
-                    solid_objects.add(plat)
                     #test += f'columna {y_column}. {x_space*pixel_space}plataforma\n'
                 if space == '|':
                     x_space += 1
                     limit = Limit_indicator(
-                        position=position
+                        position=position,
+                        see=True
                     )
                     all_sprites.add(limit)
                     limit_objects.add(limit)
                 if space == 'j':
                     x_space += 1
                     self.player_spawn = position
+                if space == '^':
+                    x_space += 1
+                    spike = Spike( position=position )
+                    all_sprites.add(spike)
+                    instakill_objects.add(spike)
 start_map = Start_Map(0, 0)
 
 for plat in solid_objects:
@@ -377,6 +450,8 @@ all_sprites.add(player)
 
 
 # Bucle del juego
+camera_x = 0
+camera_y = 0
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -415,12 +490,23 @@ while True:
                 
     # Si el player desea y puede moverse al lado derecho/izquierdo. Todos los objetos que no sean el jugador se moveran al lado contrario de la dirección de el, con su misma velocidad horizontal, pero invertida.
     if player.moving == True and camera_move_x == True:
+        positive = None
+        if player.rect.x > disp_width//2:
+            # mover camara derecha
+            camera_x -= player.speed
+            positive = False
+
+        elif player.rect.x < disp_width//2:
+            # mover camara izquierda
+            camera_x += player.speed
+            positive = True
+
         for sprite in all_sprites:
-            if player.rect.x > disp_width//2:
+            if positive == False:
                 # mover camara derecha
                 sprite.rect.x -= player.speed
 
-            elif player.rect.x < disp_width//2:
+            elif positive == True:
                 # mover camara izquierda
                 sprite.rect.x += player.speed
 
@@ -443,14 +529,43 @@ while True:
                 
     # Si el player desea y puede moverse arriba/abajo. Todos los objetos que no sean el jugador se moveran al lado contrario de la dirección de el, con su misma velocidad vertical, pero invertida.
     if camera_move_y == True:
+        positive = None
+        if player.rect.y < disp_height//2:
+            # mover camara arriba
+            camera_y += player.jump_power
+            positive = True
+
+        elif player.rect.y > disp_height//2 and player.gravity == True:
+            # mover camara abajo
+            camera_y -= player.gravity_power
+            positive = False
+    
         for sprite in all_sprites:
-            if player.rect.y < disp_height//2:
+            if positive == True:
                 # mover camara arriba
                 sprite.rect.y += player.jump_power
 
-            elif player.rect.y > disp_height//2 and player.gravity == True:
+            elif positive == False:
                 # mover camara abajo
                 sprite.rect.y -= player.gravity_power
+    
+    # Cuando el player muere
+    if player.hp == 0:
+        # Establecer todos los objetos como al inicio del juego
+        # Con base al valor xy actual de la camara, sus valores xy se invierten y se suman a las coordenadas actuales de los sprites.
+        # Recuerda que esto es posible: "x+ -x = 0"
+        for sprite in all_sprites:
+            sprite.rect.x += (camera_x*-1)
+            sprite.rect.y += (camera_y*-1)
+        
+        # Establecer camara en la posición inicial
+        camera_x = 0
+        camera_y = 0
+        
+        # Establecer player como al inicio del juego
+        player.rect.x = player.spawn_xy[0]
+        player.rect.y = player.spawn_xy[1]
+        player.hp = 100
 
     
     # Fin
