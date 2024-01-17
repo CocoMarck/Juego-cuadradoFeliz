@@ -1,3 +1,8 @@
+from Modulos.Modulo_Text import Text_Read
+from Modulos.pygame.Modulo_pygame import (
+    generic_colors, collision_sides_solid
+)
+
 import pygame, sys, random
 from pygame.locals import *
 
@@ -17,10 +22,6 @@ clock = pygame.time.Clock()
 # Titulo del juego
 pygame.display.set_caption('El cuadrado Feliz')
 
-# Colores genericos
-color_black = (0, 0, 0)
-color_white = (128, 128, 128)
-
 
 
 
@@ -31,7 +32,7 @@ class Player(pygame.sprite.Sprite):
         
         # Sprite
         self.surf = pygame.Surface( (disp_width//120, disp_width//60) )
-        self.surf.fill( (0, 255, 0) )
+        self.surf.fill( generic_colors('green') )
         
         # Collider y posición
         self.rect = self.surf.get_rect(
@@ -72,13 +73,13 @@ class Player(pygame.sprite.Sprite):
                 self.moving = True
                 self.rect.x -= self.speed
                 if self.jumping == False and self.gravity == False:
-                    self.surf.fill( (255, 255, 0) )
+                    self.surf.fill( generic_colors('yellow') )
     
             if self.pressed_right:
                 self.moving = True
                 self.rect.x += self.speed
                 if self.jumping == False and self.gravity == False:
-                    self.surf.fill( (255, 255, 0) )
+                    self.surf.fill( generic_colors('yellow') )
     
     def jump(self):
         if (
@@ -95,8 +96,6 @@ class Player(pygame.sprite.Sprite):
         
         # Colisiones Objetos
         if pygame.sprite.spritecollide(self, instakill_objects, False):
-            collide = True
-            damage = True
             instakill = True
 
         if pygame.sprite.spritecollide(self, damage_objects, False):
@@ -116,90 +115,44 @@ class Player(pygame.sprite.Sprite):
         if instakill == True:
             damage = True
         
-        if damage == True:
-            collide = True
-        
         # Eventos | Colsiones con solidos
         self.not_move = False
         for solid_object in solid_objects:
             # Acomodar coliders, dependiendo de la dirección de colisión:
             # arriba, abajo, izquierda, o derecha
-            if self.rect.colliderect(solid_object.rect):
+            collision = collision_sides_solid(obj_main=self, obj_collide=solid_object)
+            if not collision == None:
+                #print(collision)
                 collide = True
-                
-                # Para detectar que la altura el solido y la del jugador sean correctas.
-                # Formula x + (y - x) = y
-                # Ejemplo 8 + (16 - 8) = 8
-                if self.rect.height > solid_object.rect.height:
-                    # Advertencia Altura de solido mas pequeña comparada con la del jugador
-                    more_height = True
-                else:
-                    more_height = False
-                
-                # Arriba y abajo
-                # Recuerda que no se puede colisionar dos veces, se eliguira una colision, y en este caso siempre tiene mas pioridad la colision arriba, debido a que esta arriba de la linea de colision de la derecha.
-                if self.rect.y < solid_object.rect.y:
-                    #print('arriba')
-                    self.rect.y = solid_object.rect.y - self.rect.height+1
-                    #self.jumping = False
-                elif self.rect.y > solid_object.rect.y+(solid_object.rect.height//4):
-                    # El "+(solid_object.rect.height//4)", es para evitar dos colisiones al mismo tiempo:
-                    # Puede ser colisionar abajo y del lado izquierdo o derecho.
-                    # Funciona, porque la colision del lado inferior, esta un poco mas abajo de lo normal.
-                    #print('abajo')
-                    self.jumping = False
-                    self.rect.y = solid_object.rect.y + solid_object.rect.height
 
-                # Izquierda y derecha
-                # Collisionar de izquierda/derecha solo cuando el jugador no es mas pequeño en hight que el solido
-                # El "self.not_move", ayuda a que no puedas mover de ninguna manera al jugador
-                # Los "self.rect.x +-= self.speed" vistos aqui, redirecciónan al lado contrario al jugador dependiendo si colisiono del lado derecho o del lado izquierdo
-                # Recuerda que no se puede colisionar dos veces, se eliguira una colision, y en este caso siempre tiene mas pioridad la colision izquirda, debido a que esta arriba de la linea de colision de la derecha.
-                elif more_height == False:
-                    if self.rect.x < solid_object.rect.x+self.speed/8:
-                        #print('izquierda')
-                        self.not_move = True
-                        self.jumping = False
-                        self.rect.x = solid_object.rect.x -self.rect.width -self.speed
-                    elif self.rect.x > solid_object.rect.x-self.speed/8:
-                        #print('derecha')
-                        self.not_move = True
-                        self.jumping = False
-                        self.rect.x = solid_object.rect.x +solid_object.rect.width +self.speed
-                
-                # Cuando la altura "hight" del solido es mas baja que la del el jugador
-                if more_height == True:
-                    # Aqui agragar codigo futuro
-                    #height_difference = self.rect.height - solid_object.rect.height
-                    pass
 
         # Eventos al colisionar
         if collide == True:
             self.gravity = False
-            self.surf.fill( (255, 0, 0) )
-
-            if damage == True:
-                #self.rect.x += random.randint(-1, 1)
-                #self.rect.y += random.randint(-1, 1)
-                self.hp -= 1
-
-                if instakill == True:
-                    self.hp = -1
-
-                if self.hp <= 0:
-                    # El player se murio
-                    # Establecer al player al spawn
-                    self.hp = 0
+            self.surf.fill( generic_colors('red') )
 
         else:
             self.gravity = True
+
+        if damage == True:
+            #self.rect.x += random.randint(-1, 1)
+            #self.rect.y += random.randint(-1, 1)
+            self.hp -= 1
+
+            if instakill == True:
+                self.hp = -1
+
+            if self.hp <= 0:
+                # El player se murio
+                # Establecer al player al spawn
+                self.hp = 0
         
         # Gravedad
         if (
             self.gravity == True and
             self.jumping == False
         ):
-            self.surf.fill( (0, 255, 255) )
+            self.surf.fill( generic_colors('sky_blue') )
 
             self.rect.y += self.gravity_power
 
@@ -208,14 +161,14 @@ class Player(pygame.sprite.Sprite):
             #)
         else:
             if self.jumping == True:
-                self.surf.fill( (0, 0, 255) )
+                self.surf.fill( generic_colors('blue') )
                 if not self.__jump_max_height <= 0:
                     self.rect.y -= self.jump_power
                     self.__jump_max_height -= self.jump_power
                 else:
                     self.jumping = False
             else:
-                self.surf.fill( (0, 255, 0) )
+                self.surf.fill( generic_colors('green') )
                 self.__jump_max_height = self.jump_power*8
             #print('sin gravedad')
 
@@ -228,7 +181,7 @@ class Floor(pygame.sprite.Sprite):
         self,
         size = (disp_width, disp_width//60),
         position = (disp_width//2, (disp_height-8)),
-        color=color_white,
+        color=generic_colors('grey'),
         limit = True
     ):
         super().__init__()
@@ -279,7 +232,7 @@ class Limit_indicator(pygame.sprite.Sprite):
         
         self.surf = pygame.Surface( size )
         if see == True:
-            self.surf.fill( (255, 0, 0) )
+            self.surf.fill( generic_colors('red') )
         self.rect = self.surf.get_rect(
             center = ( position )
         )
@@ -292,7 +245,7 @@ class Spike(pygame.sprite.Sprite):
         
         # Pico
         self.surf = pygame.Surface( (disp_width//240, disp_width//120) )
-        self.surf.fill( (255, 0, 0) )
+        self.surf.fill( generic_colors('red') )
         self.rect = self.surf.get_rect(
             center=position
         )
@@ -332,12 +285,12 @@ limit_objects = pygame.sprite.Group()
 '''
 for x in range(0, 20):
     floor = Floor()
-    floor.surf = pygame.Surface( (32, 4) )
-    floor.surf.fill(color_white)
+    floor.surf = pygame.Surface( (disp_width//60, disp_width//480) )
+    floor.surf.fill(generic_colors('grey'))
     floor.rect = floor.surf.get_rect(
         center = (
-            random.randint(18, disp_width-18),
-            random.randint(18, disp_height-18)
+            random.randint(disp_width//60, disp_width-disp_width//60),
+            random.randint(disp_width//60, disp_height-disp_width//60)
         )
     )
     floor.add_limit = False
@@ -354,48 +307,7 @@ class Start_Map():
     def __init__(self,
         x_column = 0,
         y_column = 0,
-        map_level = [
-            '|....pppp.......................................................................|',
-            '.....p...........................................................................',
-            '.....pjpp........................................................................',
-            '.....pppp.........p..............................................................',
-            '.................................................................................',
-            '.......................................ppp.......................................',
-            '.......................................p.p.......................................',
-            '................p......................p.p.......................................',
-            '.......................................ppp.......................................',
-            '.................................................................................',
-            '.......................p...............ppp........................................',
-            '.................................................................................',
-            '.................................................................................',
-            '..............................p.....p............................................',
-            '.............................p...................................................',
-            '............................p.............p......................................',
-            '........................pppp...............p.....................................',
-            '.......................p....................p....................................',
-            '......................p......................p...................................',
-            '..................pppp........................p..................................',
-            '..................p..........^^^^^^^^^^^pppppppppppppppp...p......p..............',
-            '..................p..............................................................',
-            '..................p.....................................................p........',
-            '.............pppppp..............................................................',
-            '.............p...........ppppppppppppppppp.......................................',
-            '.................................................................................',
-            '.........p..........................................................p............',
-            '.................................................................................',
-            '.................................................................................',
-            '.....p...........................................................p...............',
-            '.................................................................................',
-            '...........p.....................................................................',
-            '.................................................................................',
-            '.............................................................p...................',
-            '...................p.............................................................',
-            '.................................................................................',
-            '............................p..............................p.....................',
-            'ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp',
-            'ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp',
-            '|...............................................................................|',
-        ],
+        map_level = Text_Read('data/maps/cf_map_default.txt', 'ModeList'),
     ):
         '''
         Funcion que permite crear niveles de una forma visual y sencilla.
@@ -465,7 +377,7 @@ while True:
                 player.jump()
     
     # Fondo
-    display.fill(color_black)
+    display.fill(generic_colors('black'))
     
     # Objetos / Sprites
     player.update()
