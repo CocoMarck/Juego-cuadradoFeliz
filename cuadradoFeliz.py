@@ -1,3 +1,4 @@
+# Agregar al surf( (0,0), pygame.SRCALPHA) si quiero que no se vean las superficies
 from Modulos.Modulo_Text import Text_Read
 from Modulos.pygame.Modulo_pygame import (
     generic_colors, collision_sides_solid
@@ -283,9 +284,9 @@ limit_objects = pygame.sprite.Group()
 
 
 '''
-for x in range(0, 20):
+for x in range(0, 10):
     floor = Floor()
-    floor.surf = pygame.Surface( (disp_width//60, disp_width//480) )
+    floor.surf = pygame.Surface( (disp_width//15, disp_width//15) )
     floor.surf.fill(generic_colors('grey'))
     floor.rect = floor.surf.get_rect(
         center = (
@@ -323,12 +324,12 @@ class Start_Map():
         test = ''
         for column in map_level:
             y_column += 1
-            x_space = 0 + x_column
+            x_space = x_column
             for space in column:
                 position=( (x_space*pixel_space), (y_column*pixel_space) )
-                if space == '.':
+                if space == '.' or space == '#':
                     x_space += 1
-                if space == 'p':
+                elif space == 'p':
                     x_space += 1
                     plat = Floor(
                         size=(pixel_space, pixel_space),
@@ -336,7 +337,7 @@ class Start_Map():
                     )
                     all_sprites.add(plat)
                     #test += f'columna {y_column}. {x_space*pixel_space}plataforma\n'
-                if space == '|':
+                elif space == '|':
                     x_space += 1
                     limit = Limit_indicator(
                         position=position,
@@ -344,10 +345,10 @@ class Start_Map():
                     )
                     all_sprites.add(limit)
                     limit_objects.add(limit)
-                if space == 'j':
+                elif space == 'j':
                     x_space += 1
                     self.player_spawn = position
-                if space == '^':
+                elif space == '^':
                     x_space += 1
                     spike = Spike( position=position )
                     all_sprites.add(spike)

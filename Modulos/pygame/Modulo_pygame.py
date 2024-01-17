@@ -27,7 +27,26 @@ def collision_sides_solid(obj_main, obj_collide):
         elif obj_main.rect.height < obj_collide.rect.height:
             # Advertencia Altura de obj_collide mas alta comparada con la del obj_main
             #height_difference = obj_collide.rect.height - obj_main.rect.height
-            more_height = obj_collide.rect.height -(obj_main.rect.height)
+            # Obtener cuantas veces cabe la altura del obj_main en el obj_collide. (Solo enteros).
+            # count = "cuantas veces cabe el obj_main en obj_collide""
+            # obj_collide.altura - ( obj_main.altura / ( count/ (count/2) ) )
+            count = 1
+            difference = obj_collide.rect.height
+            reduction = True
+            while reduction:
+                count += 1
+                difference -= obj_main.rect.height
+                if difference <= obj_main.rect.height:
+                    reduction = False
+            '''
+            if count == 2:
+                count = count
+            elif count == 4: 
+                count = count/2
+            elif count == 8:
+                count = count/4
+            '''
+            more_height = obj_collide.rect.height -( obj_main.rect.height / ( count/(count/2) ) )
         else:
             # Excelente, la altura de obj_main es la misma que la de obj_collide
             # El "+(obj_collide.rect.height//4)", es para evitar dos colisiones seguidas:
