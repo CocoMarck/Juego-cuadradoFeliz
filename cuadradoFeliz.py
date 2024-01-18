@@ -1,7 +1,7 @@
 # Agregar al surf( (0,0), pygame.SRCALPHA) si quiero que no se vean las superficies
 from Modulos.Modulo_Text import Text_Read
 from Modulos.pygame.Modulo_pygame import (
-    generic_colors, collision_sides_solid
+    generic_colors, obj_collision_sides_solid, obj_coordinate_multiplier
 )
 
 import pygame, sys, random
@@ -39,9 +39,6 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.surf.get_rect(
             center=position
         )
-        
-        # Spawn
-        self.spawn_xy = [self.rect.x, self.rect.y]
         
         # Movimeinto
         # Jump power, establece velocidad y alura de salto.
@@ -121,7 +118,7 @@ class Player(pygame.sprite.Sprite):
         for solid_object in solid_objects:
             # Acomodar coliders, dependiendo de la dirección de colisión:
             # arriba, abajo, izquierda, o derecha
-            collision = collision_sides_solid(obj_main=self, obj_collide=solid_object)
+            collision = obj_collision_sides_solid(obj_main=self, obj_collide=solid_object)
             if not collision == None:
                 #print(collision)
                 collide = True
@@ -245,11 +242,11 @@ class Limit_indicator(pygame.sprite.Sprite):
 
 
 class Spike(pygame.sprite.Sprite):
-    def __init__(self, position=(0,0) ):
+    def __init__(self, size=disp_width//60, position=(0,0) ):
         super().__init__()
         
         # Pico
-        self.surf = pygame.Surface( (disp_width//240, disp_width//120) )
+        self.surf = pygame.Surface( (size/4, size/2) )
         self.surf.fill( generic_colors('red') )
         self.rect = self.surf.get_rect(
             center=position
@@ -341,27 +338,22 @@ class Start_Map():
                         position=position
                     )
                 
-                elif space == '@':
+                elif space == 'P':
                     x_space += 1
 
-                    multipler = 2
-                    more_pixels = pixel_space*multipler
-
-                    # Para acomodar las plataformas de forma adecuada. Ejemplo:
-                    # pixel_space = 16
-                    # more_pixels = pixel_space*2 = 32
-                    # (more_pixels + pixel_space)/2 = 24
-                    # (more_pixels + pixel_space)/2 -(pixel_space*2) = -8
-                    # more_pixels -(more_pixels + pixel_space)/2 = 8
-                    difference = (more_pixels + pixel_space)/2
-                    difference = [
-                        difference -(pixel_space*2),
-                        more_pixels -(difference)
-                    ]
+                    # Para acomodar los objetos de forma adecuada.
+                    multipler = obj_coordinate_multiplier(
+                        multipler=2,
+                        pixel=pixel_space,
+                        x=x_space,
+                        y=y_column
+                    )
+                    size=multipler[0]
+                    position=multipler[1]
 
                     plat = Floor(
-                        size=(more_pixels, more_pixels),
-                        position=( (x_space*pixel_space)+difference[0], (y_column*pixel_space)+difference[1] )
+                        size=size,
+                        position=position
                     )
 
                 elif space == '|':
@@ -378,6 +370,25 @@ class Start_Map():
                 elif space == '^':
                     x_space += 1
                     spike = Spike( position=position )
+                    
+                elif space == 'A':
+                    x_space += 1
+
+                    # Para acomodar los objetos de forma adecuada.
+                    multipler = obj_coordinate_multiplier(
+                        multipler=2,
+                        pixel=pixel_space,
+                        x=x_space,
+                        y=y_column
+                    )
+                    for x in multipler[0]:
+                        size = x
+                    position=multipler[1]
+
+                    spike = Spike(
+                        size=size,
+                        position=position
+                    )
 
 start_map = Start_Map(0, 0)
 
@@ -390,10 +401,34 @@ all_sprites.add(player)
 
 
 
+def player_prepare_camera():
+    move_camera = True
+    while move_camera:
+        for sprite in all_sprites:
+            if disp_height-disp_width//60 < player.rect.y:
+                sprite.rect.y -= disp_width//60
+                # arriba
+            elif disp_width-disp_width/60 < player.rect.x:
+                sprite.rect.x -= disp_width//60
+                # izquierda
+            else:
+                move_camera = False
+
+        print(
+            f"Display:              {disp_width} X {disp_height} \n"
+            f"Player coordenades:   {player.rect.x} X {player.rect.y}\n"
+        )
+    return [player.rect.x, player.rect.y]
+
+
+
 
 # Bucle del juego
 camera_x = 0
 camera_y = 0
+player_spawn_hp = player.hp
+player_spawn_xy = player_prepare_camera()
+
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -505,9 +540,9 @@ while True:
         camera_y = 0
         
         # Establecer player como al inicio del juego
-        player.rect.x = player.spawn_xy[0]
-        player.rect.y = player.spawn_xy[1]
-        player.hp = 100
+        player.rect.x = player_spawn_xy[0]
+        player.rect.y = player_spawn_xy[1]
+        player.hp = player_spawn_hp
 
     
     # Fin
