@@ -11,11 +11,12 @@ from pygame.locals import *
 
 
 
-def collision_sides_solid(obj_main, obj_collide):
+def obj_collision_sides_solid(obj_main, obj_collide):
     '''
     El objeto main, tiene que tener atributos adicionales llamados
     self.jumping = bool
     self.not_move = bool
+    self.speed = entero/int
     '''
     # Si el obj_main, esta colisionando con el obj_collide, seguira el codigo
     if obj_main.rect.colliderect(obj_collide.rect):
@@ -38,7 +39,9 @@ def collision_sides_solid(obj_main, obj_collide):
             # obj_collide.altura = 32
             # obj_main.altura = 16
             # 16 cabe dos veces en 32, entonces: count = 2
-            # obj_collide.altura - ( obj_main.altura / ( count/(count/2) ) ) = 24
+            # more_height = obj_collide.altura - ( obj_main.altura / ( count/(count/2) ) ) = 24
+            # para evitar bugs:
+            # more_height = more_height -(obj_main.altura/4)
             count = 1
             difference = obj_collide.rect.height
             reduction = True
@@ -48,6 +51,7 @@ def collision_sides_solid(obj_main, obj_collide):
                 if difference <= obj_main.rect.height:
                     reduction = False
             more_height = obj_collide.rect.height -( obj_main.rect.height / ( count/(count/2) ) )
+            more_height = more_height -(obj_main.rect.height/4)
 
         else:
             # Excelente, la altura de obj_main es la misma que la de obj_collide
@@ -105,6 +109,39 @@ def collision_sides_solid(obj_main, obj_collide):
         # Retornar valores
         if not direction == None:
             return direction
+
+
+
+
+def obj_coordinate_multiplier(
+    multipler=2,
+    pixel=16,
+    x=0, y=0
+):
+    '''
+    (Solo funciona con cuadrados)
+    Para acomodar los objetos de forma adecuada. Ejemplo:
+    multipler = 2
+    pixel = 16
+    more_pixels = pixel*multipler = 32
+    (more_pixels + pixel)/2 = 24
+    (more_pixels + pixel)/2 -(pixel*2) = -8
+    more_pixels -(more_pixels + pixel)/2 = 8
+    Tamaño final de objeto = 32
+    x posicion final = -8
+    y posicion final = 8
+    '''
+    if multipler >= 2:
+        more_pixel = pixel*multipler
+    else:
+        more_pixel = pixel*2
+
+    difference = (more_pixel + pixel)/2
+    difference = [
+        difference -(pixel*2),
+        more_pixel -(difference)
+    ]
+    return [ (more_pixel, more_pixel), ( (x*pixel)+difference[0], (y*pixel)+difference[1] ) ]
 
 
 
