@@ -22,14 +22,23 @@ def collision_sides_solid(obj_main, obj_collide):
         # Para detectar que la altura el solido y la del jugador sean correctas.
         if obj_main.rect.height > obj_collide.rect.height:
             # Advertencia Altura de obj_collide mas pequeña comparada con la del obj_main
-            #height_difference = obj_main.rect.height - obj_collide.rect.height
-            more_height = 0
+            if obj_collide.rect.height == obj_main.rect.height/2:
+                # obj_main = 16, obj_collide = 8, 
+                # more_height = obj_main -( obj_main + (obj_collide/2) ) = -4
+                more_height = (
+                    obj_main.rect.height -( obj_main.rect.height + (obj_collide.rect.height/2) )
+                )
+            else:
+                more_height = 0
+
         elif obj_main.rect.height < obj_collide.rect.height:
             # Advertencia Altura de obj_collide mas alta comparada con la del obj_main
-            #height_difference = obj_collide.rect.height - obj_main.rect.height
-            # Obtener cuantas veces cabe la altura del obj_main en el obj_collide. (Solo enteros).
-            # count = "cuantas veces cabe el obj_main en obj_collide""
-            # obj_collide.altura - ( obj_main.altura / ( count/ (count/2) ) )
+            # Para acomodar colision del lado de abajo de forma adecuada.
+            # Ejemplo:
+            # obj_collide.altura = 32
+            # obj_main.altura = 16
+            # 16 cabe dos veces en 32, entonces: count = 2
+            # obj_collide.altura - ( obj_main.altura / ( count/(count/2) ) ) = 24
             count = 1
             difference = obj_collide.rect.height
             reduction = True
@@ -38,21 +47,15 @@ def collision_sides_solid(obj_main, obj_collide):
                 difference -= obj_main.rect.height
                 if difference <= obj_main.rect.height:
                     reduction = False
-            '''
-            if count == 2:
-                count = count
-            elif count == 4: 
-                count = count/2
-            elif count == 8:
-                count = count/4
-            '''
             more_height = obj_collide.rect.height -( obj_main.rect.height / ( count/(count/2) ) )
+
         else:
             # Excelente, la altura de obj_main es la misma que la de obj_collide
             # El "+(obj_collide.rect.height//4)", es para evitar dos colisiones seguidas:
             # Puede ser colisionar del lado izquierdo o derecho y seguido el lado inferior.
             # Funciona, porque la colision del lado inferior, esta un poco mas abajo de lo normal.
             more_height = obj_collide.rect.height//4
+
 
         # Deteccion de colision arriba/abajo
         # Recuerda que no se puede colisionar dos veces, se eliguira una colision, y en este caso siempre tiene mas pioridad la colision arriba, debido a que esta arriba de la linea de colision de a abajo.
@@ -65,7 +68,7 @@ def collision_sides_solid(obj_main, obj_collide):
 
         elif obj_main.rect.y > obj_collide.rect.y + (more_height):
             # El obj_main, se movera "el valor de coorenadas y de obj_collide, mas el valor de la altura del obj_collide", mueva al obj_main hacia abajo ( tendencia a ser valor positivo ).
-            # El obj_main, ya no tendra permitido saltar,
+            # El obj_main, ya no tendra permitido saltar.
             direction = 'collide_down'
             obj_main.jumping = False
             obj_main.rect.y = obj_collide.rect.y + obj_collide.rect.height

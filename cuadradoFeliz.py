@@ -196,6 +196,7 @@ class Floor(pygame.sprite.Sprite):
             center = position
         )
         self.add_limit = limit
+        all_sprites.add(self)
         solid_objects.add(self)
         
     
@@ -238,6 +239,9 @@ class Limit_indicator(pygame.sprite.Sprite):
             center = ( position )
         )
 
+        all_sprites.add(self)
+        limit_objects.add(self)
+
 
 
 class Spike(pygame.sprite.Sprite):
@@ -251,6 +255,8 @@ class Spike(pygame.sprite.Sprite):
             center=position
         )
         self.rect.y -= self.rect.height//2
+        all_sprites.add(self)
+        instakill_objects.add(self)
         
         # Cuadrados solidos
         square_size = self.rect.height
@@ -261,7 +267,6 @@ class Spike(pygame.sprite.Sprite):
         )
         floor_x.rect.x -= square_size//2
         floor_x.rect.y += square_size//2
-        all_sprites.add(floor_x)
         
         floor_y = Floor(
             size = ( square_size, square_size ),
@@ -270,7 +275,6 @@ class Spike(pygame.sprite.Sprite):
         )
         floor_y.rect.x += square_size//2
         floor_y.rect.y += square_size//2
-        all_sprites.add(floor_y)
 
 
 
@@ -284,9 +288,9 @@ limit_objects = pygame.sprite.Group()
 
 
 '''
-for x in range(0, 10):
+for x in range(0, 32):
     floor = Floor()
-    floor.surf = pygame.Surface( (disp_width//15, disp_width//15) )
+    floor.surf = pygame.Surface( (disp_width//240, disp_width//240) )
     floor.surf.fill(generic_colors('grey'))
     floor.rect = floor.surf.get_rect(
         center = (
@@ -329,30 +333,52 @@ class Start_Map():
                 position=( (x_space*pixel_space), (y_column*pixel_space) )
                 if space == '.' or space == '#':
                     x_space += 1
+
                 elif space == 'p':
                     x_space += 1
                     plat = Floor(
                         size=(pixel_space, pixel_space),
                         position=position
                     )
-                    all_sprites.add(plat)
-                    #test += f'columna {y_column}. {x_space*pixel_space}plataforma\n'
+                
+                elif space == '@':
+                    x_space += 1
+
+                    multipler = 2
+                    more_pixels = pixel_space*multipler
+
+                    # Para acomodar las plataformas de forma adecuada. Ejemplo:
+                    # pixel_space = 16
+                    # more_pixels = pixel_space*2 = 32
+                    # (more_pixels + pixel_space)/2 = 24
+                    # (more_pixels + pixel_space)/2 -(pixel_space*2) = -8
+                    # more_pixels -(more_pixels + pixel_space)/2 = 8
+                    difference = (more_pixels + pixel_space)/2
+                    difference = [
+                        difference -(pixel_space*2),
+                        more_pixels -(difference)
+                    ]
+
+                    plat = Floor(
+                        size=(more_pixels, more_pixels),
+                        position=( (x_space*pixel_space)+difference[0], (y_column*pixel_space)+difference[1] )
+                    )
+
                 elif space == '|':
                     x_space += 1
                     limit = Limit_indicator(
                         position=position,
                         see=True
                     )
-                    all_sprites.add(limit)
-                    limit_objects.add(limit)
+
                 elif space == 'j':
                     x_space += 1
                     self.player_spawn = position
+
                 elif space == '^':
                     x_space += 1
                     spike = Spike( position=position )
-                    all_sprites.add(spike)
-                    instakill_objects.add(spike)
+
 start_map = Start_Map(0, 0)
 
 for plat in solid_objects:
