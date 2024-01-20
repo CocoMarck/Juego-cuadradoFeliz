@@ -1,11 +1,22 @@
-# Agregar al surf( (0,0), pygame.SRCALPHA) si quiero que no se vean las superficies
 from Modulos.Modulo_Text import Text_Read
 from Modulos.pygame.Modulo_pygame import (
-    generic_colors, obj_collision_sides_solid, obj_coordinate_multiplier
+    generic_colors, obj_collision_sides_solid, obj_coordinate_multiplier,
+    player_camera_prepare, player_camera_move
 )
 
-import pygame, sys, random
+import pygame, sys, os, random
 from pygame.locals import *
+
+
+# Directorio del juego
+dir_game = os.path.dirname(__file__)
+
+dir_data = os.path.join(dir_game, 'data')
+
+# Sub directorios Data
+dir_sprites = os.path.join(dir_data, 'sprites')
+dir_maps = os.path.join(dir_data, 'maps')
+
 
 # Inicalizar pygame
 pygame.init()
@@ -28,12 +39,23 @@ pygame.display.set_caption('El cuadrado Feliz')
 
 # Objetos / Clases
 class Player(pygame.sprite.Sprite):
-    def __init__(self, position=(disp_width//2,disp_height//2) ):
+    def __init__(self, position=(disp_width//2,disp_height//2), show_collide=True ):
         super().__init__()
         
         # Sprite
-        self.surf = pygame.Surface( (disp_width//120, disp_width//60) )
-        self.surf.fill( generic_colors('green') )
+        #self.sprite = pygame.sprite.Sprite()
+        #self.sprite.surf = pygame.transform.scale(
+        #    pygame.image.load(os.path.join(dir_sprites, 'floor/stone.png')), (disp_width//60, disp_width//60)
+        #)
+        #self.sprite.rect = self.sprite.surf.get_rect(center=position)
+        #all_sprites.add(self.sprite)
+
+        self.surf = pygame.Surface( (disp_width//120, disp_width//60), pygame.SRCALPHA )
+        if show_collide == True:
+            self.transparency = 255
+        else:
+            self.transparency = 0
+        self.surf.fill( generic_colors(color='green', transparency=self.transparency) )
         
         # Collider y posición
         self.rect = self.surf.get_rect(
@@ -71,13 +93,13 @@ class Player(pygame.sprite.Sprite):
                 self.moving = True
                 self.rect.x -= self.speed
                 if self.jumping == False and self.gravity == False:
-                    self.surf.fill( generic_colors('yellow') )
+                    self.surf.fill( generic_colors('yellow', transparency=self.transparency) )
     
             if self.pressed_right:
                 self.moving = True
                 self.rect.x += self.speed
                 if self.jumping == False and self.gravity == False:
-                    self.surf.fill( generic_colors('yellow') )
+                    self.surf.fill( generic_colors('yellow', transparency=self.transparency) )
     
     def jump(self):
         if (
@@ -127,7 +149,7 @@ class Player(pygame.sprite.Sprite):
         # Eventos al colisionar
         if collide == True:
             self.gravity = False
-            self.surf.fill( generic_colors('red') )
+            self.surf.fill( generic_colors('red', transparency=self.transparency) )
 
         else:
             self.gravity = True
@@ -150,7 +172,7 @@ class Player(pygame.sprite.Sprite):
             self.gravity == True and
             self.jumping == False
         ):
-            self.surf.fill( generic_colors('sky_blue') )
+            self.surf.fill( generic_colors('sky_blue', transparency=self.transparency) )
 
             self.rect.y += self.gravity_power
 
@@ -159,18 +181,23 @@ class Player(pygame.sprite.Sprite):
             #)
         else:
             if self.jumping == True:
-                self.surf.fill( generic_colors('blue') )
+                self.surf.fill( generic_colors('blue', transparency=self.transparency) )
                 if not self.__jump_max_height <= 0:
                     self.rect.y -= self.jump_power
                     self.__jump_max_height -= self.jump_power
                 else:
                     self.jumping = False
             else:
-                self.surf.fill( generic_colors('green') )
+                self.surf.fill( generic_colors('green', transparency=self.transparency) )
                 self.__jump_max_height = self.jump_power*8
             #print('sin gravedad')
 
             self.rect.y += 0
+        
+        # Actualizar sprite
+        #if not self.sprite == None:
+        #    self.sprite.rect.x = self.rect.x -(self.rect.width/2)
+        #    self.sprite.rect.y = self.rect.y
 
 
 
@@ -179,14 +206,24 @@ class Floor(pygame.sprite.Sprite):
         self,
         size = (disp_width, disp_width//60),
         position = (disp_width//2, (disp_height-8)),
-        color=generic_colors('grey'),
+        color='grey', show_collide=True, show_sprite=True,
         limit = True
     ):
         super().__init__()
         
         # Sprite
-        self.surf = pygame.Surface( size )
-        self.surf.fill(color)
+        if show_collide == True:
+            self.transparency = 255
+        else:
+            self.transparency = 0
+            
+        if show_sprite == True:
+            self.surf = pygame.transform.scale(
+                pygame.image.load(os.path.join(dir_sprites, 'floor/stone.png')), size
+            )
+        else:
+            self.surf = pygame.Surface( size, pygame.SRCALPHA )
+            self.surf.fill( generic_colors(color=color, transparency=self.transparency) )
         
         # Collider y posición
         self.rect = self.surf.get_rect( 
@@ -205,8 +242,8 @@ class Floor(pygame.sprite.Sprite):
             limit_xy = [
                 round(self.rect.width*0.5, 4), round(self.rect.height*0.5, 4)
             ]
-            limit.surf = pygame.Surface( (limit_xy[0], limit_xy[1]) )
-            limit.surf.fill( (255,0,0) )
+            limit.surf = pygame.Surface( (limit_xy[0], limit_xy[1]), pygame.SRCALPHA )
+            limit.surf.fill( generic_colors(color='red', transparency=self.transparency) )
             limit.rect = limit.surf.get_rect(
                 center=(
                     self.rect.x+(self.rect.width -limit_xy[0]),
@@ -229,9 +266,13 @@ class Limit_indicator(pygame.sprite.Sprite):
     ):
         super().__init__()
         
-        self.surf = pygame.Surface( size )
+        self.surf = pygame.Surface( size, pygame.SRCALPHA )
         if see == True:
-            self.surf.fill( generic_colors('red') )
+            self.transparency = 255
+        else:
+            self.transparency = 0
+        self.surf.fill( generic_colors(color='red', transparency=self.transparency) )
+
         self.rect = self.surf.get_rect(
             center = ( position )
         )
@@ -242,12 +283,25 @@ class Limit_indicator(pygame.sprite.Sprite):
 
 
 class Spike(pygame.sprite.Sprite):
-    def __init__(self, size=disp_width//60, position=(0,0) ):
+    def __init__(self, size=disp_width//60, position=(0,0), show_collide=True ):
         super().__init__()
-        
-        # Pico
-        self.surf = pygame.Surface( (size/4, size/2) )
-        self.surf.fill( generic_colors('red') )
+
+        # Sprite
+        self.surf = pygame.Surface( (size/4, size/2), pygame.SRCALPHA )
+        if show_collide == True:
+            self.transparency = 255
+        else:
+            self.transparency = 0
+            sprite = pygame.sprite.Sprite()
+            sprite.surf = pygame.transform.scale(
+                pygame.image.load(os.path.join(dir_sprites, 'spikes/spike.png')), (size, size)
+            )
+            sprite.rect = sprite.surf.get_rect(center=position)
+            all_sprites.add(sprite)
+
+        self.surf.fill( generic_colors(color='red', transparency=self.transparency) )
+
+        # Collider pico
         self.rect = self.surf.get_rect(
             center=position
         )
@@ -260,6 +314,8 @@ class Spike(pygame.sprite.Sprite):
         floor_x = Floor(
             size = ( square_size, square_size ),
             position = position,
+            show_collide = show_collide,
+            show_sprite = False,
             limit = False
         )
         floor_x.rect.x -= square_size//2
@@ -268,6 +324,8 @@ class Spike(pygame.sprite.Sprite):
         floor_y = Floor(
             size = ( square_size, square_size ),
             position = position,
+            show_collide = show_collide,
+            show_sprite = False,
             limit = False
         )
         floor_y.rect.x += square_size//2
@@ -285,21 +343,17 @@ limit_objects = pygame.sprite.Group()
 
 
 '''
-for x in range(0, 32):
-    floor = Floor()
-    floor.surf = pygame.Surface( (disp_width//240, disp_width//240) )
-    floor.surf.fill(generic_colors('grey'))
-    floor.rect = floor.surf.get_rect(
-        center = (
+for x in range(0, 10):
+    floor = Floor(
+        size=(disp_width//30, disp_width//60),
+        position=(
             random.randint(disp_width//60, disp_width-disp_width//60),
-            random.randint(disp_width//60, disp_height-disp_width//60)
-        )
+            random.randint(disp_width//60, disp_height-disp_width//60)            
+        ),
+        limit=False,
+        show_collide=False
     )
-    floor.add_limit = False
-    all_sprites.add(floor)
-    #solid_objects.add(floor)
 '''
-
 
 
 
@@ -309,7 +363,7 @@ class Start_Map():
     def __init__(self,
         x_column = 0,
         y_column = 0,
-        map_level = Text_Read('data/maps/cf_map_default.txt', 'ModeList'),
+        map_level = Text_Read(os.path.join(dir_maps, 'cf_map_default.txt'), 'ModeList'),
     ):
         '''
         Funcion que permite crear niveles de una forma visual y sencilla.
@@ -335,7 +389,8 @@ class Start_Map():
                     x_space += 1
                     plat = Floor(
                         size=(pixel_space, pixel_space),
-                        position=position
+                        position=position,
+                        show_collide=False
                     )
                 
                 elif space == 'P':
@@ -353,14 +408,15 @@ class Start_Map():
 
                     plat = Floor(
                         size=size,
-                        position=position
+                        position=position,
+                        show_collide=False
                     )
 
                 elif space == '|':
                     x_space += 1
                     limit = Limit_indicator(
                         position=position,
-                        see=True
+                        see=False
                     )
 
                 elif space == 'j':
@@ -369,7 +425,7 @@ class Start_Map():
 
                 elif space == '^':
                     x_space += 1
-                    spike = Spike( position=position )
+                    spike = Spike( position=position, show_collide=False )
                     
                 elif space == 'A':
                     x_space += 1
@@ -387,48 +443,35 @@ class Start_Map():
 
                     spike = Spike(
                         size=size,
-                        position=position
+                        position=position,
+                        show_collide=False
                     )
 
+
+
+
+# Iniciar Funciones y contantes necesarias
 start_map = Start_Map(0, 0)
 
 for plat in solid_objects:
     plat.limit_collision()
 
-#player = Player( position=(disp_width//2, disp_height//2) )
 player = Player( position=start_map.player_spawn )
 all_sprites.add(player)
 
+player_spawn_hp = player.hp
+player_spawn_xy = player_camera_prepare(
+    disp_width=disp_width, disp_height=disp_height, more_pixels=disp_width//30,
+    all_sprites=all_sprites, player=player, show_coordenades=True
+)
 
-
-def player_prepare_camera():
-    move_camera = True
-    while move_camera:
-        for sprite in all_sprites:
-            if disp_height-disp_width//60 < player.rect.y:
-                sprite.rect.y -= disp_width//60
-                # arriba
-            elif disp_width-disp_width/60 < player.rect.x:
-                sprite.rect.x -= disp_width//60
-                # izquierda
-            else:
-                move_camera = False
-
-        print(
-            f"Display:              {disp_width} X {disp_height} \n"
-            f"Player coordenades:   {player.rect.x} X {player.rect.y}\n"
-        )
-    return [player.rect.x, player.rect.y]
+camera_x = 0
+camera_y = 0
 
 
 
 
 # Bucle del juego
-camera_x = 0
-camera_y = 0
-player_spawn_hp = player.hp
-player_spawn_xy = player_prepare_camera()
-
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -448,101 +491,17 @@ while True:
     for sprite in all_sprites:
         display.blit(sprite.surf, sprite.rect)
 
-    
-    # Camara lado x
-    # Si la camara detecta que hay un limite de camara del lado derecho/izquierdo y que el jugador no esta en medio de la pantalla, lo detectara, y no permitira mover la camara.
-    camera_move_x = True
-    for limit in limit_objects:
-        for x in range(0, disp_width//60):
-            if (
-                limit.rect.x == x and player.rect.x < disp_width//2
-            ):
-                #print('limite detectado izquierda')
-                camera_move_x = False
-            elif (
-                limit.rect.x == disp_width-x and player.rect.x > disp_width//2
-            ):
-                #print('limite detectado derecha')
-                camera_move_x = False
-                
-    # Si el player desea y puede moverse al lado derecho/izquierdo. Todos los objetos que no sean el jugador se moveran al lado contrario de la dirección de el, con su misma velocidad horizontal, pero invertida.
-    if player.moving == True and camera_move_x == True:
-        positive = None
-        if player.rect.x > disp_width//2:
-            # mover camara derecha
-            camera_x -= player.speed
-            positive = False
-
-        elif player.rect.x < disp_width//2:
-            # mover camara izquierda
-            camera_x += player.speed
-            positive = True
-
-        for sprite in all_sprites:
-            if positive == False:
-                # mover camara derecha
-                sprite.rect.x -= player.speed
-
-            elif positive == True:
-                # mover camara izquierda
-                sprite.rect.x += player.speed
-
-
-    # Camara lado y
-    # Si la camara detecta que hay un limite de camara arriba/abajo y que el jugador no esta en medio de la pantalla, lo detectara, y no permitira mover la camara.
-    camera_move_y = True
-    for limit in limit_objects:
-        for y in range(0, disp_height//60):
-            if (
-                limit.rect.y == y and player.rect.y < disp_height//2
-            ):
-                # Limite arriba
-                camera_move_y = False
-            elif (
-                limit.rect.y == disp_height-y and player.rect.y > disp_height//2
-            ):
-                # Limite abajo
-                camera_move_y = False
-                
-    # Si el player desea y puede moverse arriba/abajo. Todos los objetos que no sean el jugador se moveran al lado contrario de la dirección de el, con su misma velocidad vertical, pero invertida.
-    if camera_move_y == True:
-        positive = None
-        if player.rect.y < disp_height//2:
-            # mover camara arriba
-            camera_y += player.jump_power
-            positive = True
-
-        elif player.rect.y > disp_height//2 and player.gravity == True:
-            # mover camara abajo
-            camera_y -= player.gravity_power
-            positive = False
-    
-        for sprite in all_sprites:
-            if positive == True:
-                # mover camara arriba
-                sprite.rect.y += player.jump_power
-
-            elif positive == False:
-                # mover camara abajo
-                sprite.rect.y -= player.gravity_power
-    
-    # Cuando el player muere
-    if player.hp == 0:
-        # Establecer todos los objetos como al inicio del juego
-        # Con base al valor xy actual de la camara, sus valores xy se invierten y se suman a las coordenadas actuales de los sprites.
-        # Recuerda que esto es posible: "x+ -x = 0"
-        for sprite in all_sprites:
-            sprite.rect.x += (camera_x*-1)
-            sprite.rect.y += (camera_y*-1)
-        
-        # Establecer camara en la posición inicial
-        camera_x = 0
-        camera_y = 0
-        
-        # Establecer player como al inicio del juego
-        player.rect.x = player_spawn_xy[0]
-        player.rect.y = player_spawn_xy[1]
-        player.hp = player_spawn_hp
+    # Camara
+    camera = player_camera_move(
+        disp_width=disp_width, disp_height=disp_height,
+        camera_x=camera_x, camera_y=camera_y, 
+        all_sprites=all_sprites,
+        limit_objects=limit_objects,
+        player=player,
+        player_spawn_hp=player_spawn_hp, player_spawn_xy=player_spawn_xy
+    )
+    camera_x=camera[0]
+    camera_y=camera[1]
 
     
     # Fin

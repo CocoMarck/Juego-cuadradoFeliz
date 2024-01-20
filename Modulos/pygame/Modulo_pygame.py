@@ -50,8 +50,10 @@ def obj_collision_sides_solid(obj_main, obj_collide):
                 difference -= obj_main.rect.height
                 if difference <= obj_main.rect.height:
                     reduction = False
-            more_height = obj_collide.rect.height -( obj_main.rect.height / ( count/(count/2) ) )
-            more_height = more_height -(obj_main.rect.height/4)
+            more_height = (
+                obj_collide.rect.height -( obj_main.rect.height / ( count/(count/2) ) )
+                -(obj_main.rect.height/4)
+            )
 
         else:
             # Excelente, la altura de obj_main es la misma que la de obj_collide
@@ -146,26 +148,205 @@ def obj_coordinate_multiplier(
 
 
 
-def generic_colors(color='green'):
+def player_camera_prepare(
+    disp_width=None, disp_height=None, more_pixels=0,
+    all_sprites=None, player=None,
+    show_coordenades=True
+):
+    '''
+    Posicionar la camara en donde estan las coordenadas del jugador.
+    Inicia desde coordenadas 0, 0 de la resolución de la pantalla, y se mueve derecha o arriba, segun sea necesario. No se mueve de izquierda abajo, pero no deberia es necesario hacer esto.
+
+    - disp_width y disp_height, son valores enteros que son las dimenciones de la pantalla de juego.
+    
+    - more_pixels, es un entero que tiene la función de posicionar un la camara un poco mas de pixeles a la derecha o izquierda, para que se vea mas facilmente el jugador.
+
+    - all_sprites, player, son objeto tipo: "pygame.sprite.Group()" y "pygame.sprite.Sprite()" resectivamente.
+
+    - Donde all_sprites son todos los sprites vistos en la pantalla, (incluyendo al jugador)
+
+    - El parametro player, es el jugador. Este parametro es opcional
+    
+    - El parametro show_coordenades es un booleano opcional, unicamente para mostrar los cambios que hizo la función a la posición del jugador, en la terminal. Aunque mueva todos los sprites, unicamente mostrara los cambios de coordenadas que hizo al player.
+    '''
+    move_camera = True
+    while move_camera:
+        for sprite in all_sprites:
+            if disp_height-more_pixels < player.rect.y:
+                sprite.rect.y -= disp_width//60
+                # arriba
+            elif disp_width-more_pixels < player.rect.x:
+                sprite.rect.x -= disp_width//60
+                # izquierda
+            else:
+                move_camera = False
+
+        if show_coordenades == True:
+            print(
+                f"Display:              {disp_width} X {disp_height} \n"
+                f"Player coordenades:   {player.rect.x} X {player.rect.y}\n"
+            )
+    return [player.rect.x, player.rect.y]
+
+
+
+
+def player_camera_move(
+    disp_width=0, disp_height=0,
+    camera_x=0, camera_y=0, 
+    all_sprites=None,
+    limit_objects=None,
+    player=None,
+    player_spawn_hp=100, player_spawn_xy=[0, 0]
+): 
+    '''
+    Función para mover la camara, segun donde se mueva el jugador. Ya sea verticalmente o horizontalmente
+    
+    - disp_width y disp_height, son valores enteros que son las dimenciones de la pantalla de juego.
+
+    - camera_x, camera_y, son los valores de posición de la camara, estos varian segun la posición establecida.
+
+    - all_sprites, limit_objects, son objeto tipo: "pygame.sprite.Group()"
+    all_sprites, son todos los sprites disponibles, y limit_objects esta incuildo en el.
+    
+    - limit_objects, son para establecer a la camara un limite de movimiento xy
+    
+    - player, es el objeto player, y tiene que tener los siguietes atributos adicionales:
+    Enteros: hp, speed, jump_power, gravity_power
+    Booleanos: gravity, jumping
+    
+    - player constantes:
+    Entero: player_spawn_hp, es el valor entero de vida inicial del jugador.
+    Lista:  player_spawn_xy, es la posición de inicio "x y"  del jugador.
+    '''
+    # Camara lado x
+    # Si la camara detecta que hay un limite de camara del lado derecho/izquierdo y que el jugador no esta en medio de la pantalla, lo detectara, y no permitira mover la camara.
+    camera_move_x = True
+    for limit in limit_objects:
+        for x in range(0, disp_width//60):
+            if (
+                limit.rect.x == x and player.rect.x < disp_width//2
+            ):
+                #print('limite detectado izquierda')
+                camera_move_x = False
+            elif (
+                limit.rect.x == disp_width-x and player.rect.x > disp_width//2
+            ):
+                #print('limite detectado derecha')
+                camera_move_x = False
+                
+    # Si el player desea y puede moverse al lado derecho/izquierdo. Todos los objetos que no sean el jugador se moveran al lado contrario de la dirección de el, con su misma velocidad horizontal, pero invertida.
+    if player.moving == True and camera_move_x == True:
+        positive = None
+        if player.rect.x > disp_width//2:
+            # mover camara derecha
+            camera_x -= player.speed
+            positive = False
+
+        elif player.rect.x < disp_width//2:
+            # mover camara izquierda
+            camera_x += player.speed
+            positive = True
+
+        for sprite in all_sprites:
+            if positive == False:
+                # mover camara derecha
+                sprite.rect.x -= player.speed
+
+            elif positive == True:
+                # mover camara izquierda
+                sprite.rect.x += player.speed
+
+
+    # Camara lado y
+    # Si la camara detecta que hay un limite de camara arriba/abajo y que el jugador no esta en medio de la pantalla, lo detectara, y no permitira mover la camara.
+    camera_move_y = True
+    for limit in limit_objects:
+        for y in range(0, disp_height//60):
+            if (
+                limit.rect.y == y and player.rect.y < disp_height//2
+            ):
+                # Limite arriba
+                camera_move_y = False
+            elif (
+                limit.rect.y == disp_height-y and player.rect.y > disp_height//2
+            ):
+                # Limite abajo
+                camera_move_y = False
+                
+    # Si el player desea y puede moverse arriba/abajo. Todos los objetos que no sean el jugador se moveran al lado contrario de la dirección de el, con su misma velocidad vertical, pero invertida.
+    if camera_move_y == True:
+        positive = None
+        if player.rect.y < disp_height//2:
+            # mover camara arriba
+            camera_y += player.jump_power
+            positive = True
+
+        elif player.rect.y > disp_height//2 and player.gravity == True:
+            # mover camara abajo
+            camera_y -= player.gravity_power
+            positive = False
+    
+        for sprite in all_sprites:
+            if positive == True:
+                # mover camara arriba
+                sprite.rect.y += player.jump_power
+
+            elif positive == False:
+                # mover camara abajo
+                sprite.rect.y -= player.gravity_power
+    
+    # Cuando el player muere
+    if player.hp == 0:
+        # Establecer todos los objetos como al inicio del juego
+        # Con base al valor xy actual de la camara, sus valores xy se invierten y se suman a las coordenadas actuales de los sprites.
+        # Recuerda que esto es posible: "x+ -x = 0"
+        for sprite in all_sprites:
+            sprite.rect.x += (camera_x*-1)
+            sprite.rect.y += (camera_y*-1)
+        
+        # Establecer camara en la posición inicial
+        camera_x = 0
+        camera_y = 0
+        
+        # Establecer player como al inicio del juego
+        player.rect.x = player_spawn_xy[0]
+        player.rect.y = player_spawn_xy[1]
+        player.hp = player_spawn_hp
+    
+    return [camera_x, camera_y]
+
+
+
+
+def generic_colors(color='green', transparency=255):
+    '''
+    Colores que considero genericos, estan bueno tenerlos en una función y obtenerlos de una forma rapida y consistente.
+    
+    color, Un string, escribe el nombre del color en ingles y minuscilas y te debolvera su valor rgb.
+    colores: red, green, blue, white, black, grey, sky_blue, yellow.
+    
+    transparency, sirve para cambiar su transparencia; de 0 a 255, entre mas alto mas opaco. (Opcional)
+    '''
     # Principales
     if color == 'red':
-        return(255, 0, 0)
+        return(255, 0, 0, transparency)
     if color == 'green':
-        return (0, 255, 0)
+        return (0, 255, 0, transparency)
     elif color == 'blue':
-        return (0, 0, 255)
+        return (0, 0, 255, transparency)
 
     # Escala de grises
     elif color == 'white':
-        return (255, 255, 255)
+        return (255, 255, 255, transparency)
     elif color == 'black':
-        return (0, 0, 0)
+        return (0, 0, 0, transparency)
     elif color == 'grey':
-        return (128, 128, 128)
+        return (128, 128, 128, transparency)
     
     # Otros
     elif color == 'sky_blue':
-        return (0, 255, 255)
+        return (0, 255, 255, transparency)
     
     elif color == 'yellow':
-        return (255, 255, 0)
+        return (255, 255, 0, transparency)
