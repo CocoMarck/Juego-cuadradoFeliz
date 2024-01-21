@@ -1,7 +1,8 @@
 from Modulos.Modulo_Text import Text_Read
 from Modulos.pygame.Modulo_pygame import (
     generic_colors, obj_collision_sides_solid, obj_coordinate_multiplier,
-    player_camera_prepare, player_camera_move
+    player_camera_prepare, player_camera_move,
+    obj_collision_sides_rebound
 )
 
 import pygame, sys, os, random
@@ -39,16 +40,12 @@ pygame.display.set_caption('El cuadrado Feliz')
 
 # Objetos / Clases
 class Player(pygame.sprite.Sprite):
-    def __init__(self, position=(disp_width//2,disp_height//2), show_collide=True ):
+    def __init__(self, position=(disp_width//2,disp_height//2), show_collide=False, show_sprite=True ):
         super().__init__()
         
         # Sprite
-        #self.sprite = pygame.sprite.Sprite()
-        #self.sprite.surf = pygame.transform.scale(
-        #    pygame.image.load(os.path.join(dir_sprites, 'floor/stone.png')), (disp_width//60, disp_width//60)
-        #)
-        #self.sprite.rect = self.sprite.surf.get_rect(center=position)
-        #all_sprites.add(self.sprite)
+        self.show_sprite = show_sprite
+        self.sprite = None
 
         self.surf = pygame.Surface( (disp_width//120, disp_width//60), pygame.SRCALPHA )
         if show_collide == True:
@@ -61,6 +58,7 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.surf.get_rect(
             center=position
         )
+        all_sprites.add(self)
         
         # Movimeinto
         # Jump power, establece velocidad y alura de salto.
@@ -73,6 +71,7 @@ class Player(pygame.sprite.Sprite):
         
         # Vida
         self.hp = 100
+    
     
     def move(self):
         # Teclas de movimiento
@@ -94,12 +93,20 @@ class Player(pygame.sprite.Sprite):
                 self.rect.x -= self.speed
                 if self.jumping == False and self.gravity == False:
                     self.surf.fill( generic_colors('yellow', transparency=self.transparency) )
+                elif self.jumping == True:
+                    self.surf.fill( (128, 0, 255, self.transparency) )
+                else:
+                    self.surf.fill( (0, 128, 255, self.transparency) )
     
             if self.pressed_right:
                 self.moving = True
                 self.rect.x += self.speed
                 if self.jumping == False and self.gravity == False:
                     self.surf.fill( generic_colors('yellow', transparency=self.transparency) )
+                elif self.jumping == True:
+                    self.surf.fill( (128, 0, 255, self.transparency) )
+                else:
+                    self.surf.fill( (0, 128, 255, self.transparency) )
     
     def jump(self):
         if (
@@ -109,6 +116,23 @@ class Player(pygame.sprite.Sprite):
             self.jumping = True
     
     def update(self):
+        # Mostrar o no el sprite
+        if self.sprite == None:
+            if self.show_sprite == True:
+                self.sprite = pygame.sprite.Sprite()
+                self.sprite.surf = pygame.transform.scale(
+                    pygame.image.load(
+                        os.path.join(dir_sprites, 'player/player_not-move.png')), 
+                        (disp_width//60, disp_width//60
+                    )
+                )
+                self.sprite.rect = self.sprite.surf.get_rect()
+                all_sprites.add(self.sprite)
+        else:
+            if self.show_sprite == False:
+                self.sprite.kill()
+                self.sprite = None
+
         # Colisiones
         collide = False
         damage = False
@@ -165,7 +189,9 @@ class Player(pygame.sprite.Sprite):
             if self.hp <= 0:
                 # El player se murio
                 # Establecer al player al spawn
-                self.hp = 0
+                self.not_move = True
+                self.gravity = False
+                self.jumping = False
         
         # Gravedad
         if (
@@ -195,9 +221,10 @@ class Player(pygame.sprite.Sprite):
             self.rect.y += 0
         
         # Actualizar sprite
-        #if not self.sprite == None:
-        #    self.sprite.rect.x = self.rect.x -(self.rect.width/2)
-        #    self.sprite.rect.y = self.rect.y
+        if not self.sprite == None:
+            self.sprite.rect.x = self.rect.x -(self.rect.width/2)
+            self.sprite.rect.y = self.rect.y
+
 
 
 
@@ -334,12 +361,153 @@ class Spike(pygame.sprite.Sprite):
 
 
 
+class Anim_player_dead(pygame.sprite.Sprite):
+    def __init__(self, position=(0,0), fps=fps ):
+        super().__init__()
+
+        # Principal
+        self.size = disp_width//60
+        self.surf = pygame.Surface( (self.size, self.size) )
+        self.rect = self.surf.get_rect( center=position )
+    
+        self.fps = fps*3
+        self.__count = 0
+        self.anim_fin = False
+        all_sprites.add( self )
+        anim_sprites.add( self )
+        
+        # Partes
+        self.part1 = Player_part( 
+            size=self.size//2,
+            position=(self.rect.x+self.size//2, self.rect.y+self.size),
+            color=generic_colors('green') 
+        )
+        
+        self.part2 = Player_part( 
+            size=self.size//2,
+            position=(self.rect.x+self.size, self.rect.y+self.size),
+            color=generic_colors('blue') 
+        )
+        
+        self.part3 = Player_part( 
+            size=self.size//2,
+            position=(self.rect.x+self.size//2, self.rect.y+self.size//2),
+            color=generic_colors('yellow') 
+        )
+
+        self.part4 = Player_part( 
+            size=self.size//2,
+            position=(self.rect.x+self.size, self.rect.y+self.size//2),
+            color=generic_colors('sky_blue') 
+        )
+        
+    def create_part(self, position=(0,0), color=( 0, 255, 0)):
+        part = pygame.sprite.Sprite()
+        part.surf = pygame.Surface( (self.size//2, self.size//2) )
+        part.surf.fill( color  )
+        part.rect = sprite.surf.get_rect( 
+            center=( position ) 
+        )
+        all_sprites.add(part)
+        return part
+    
+    def anim(self):
+        # Partes
+        self.part1.update()
+        self.part2.update()
+        self.part3.update()
+        self.part4.update()
+
+        # Contador
+        self.__count += 1
+        if self.__count*5 <= 128:
+            self.surf.fill( ( 255-(self.__count*5), 0, 0)  )
+
+        if self.__count == self.fps:
+            # Animacion terminada, todos los objetos se eliminaran
+            self.anim_fin = True
+            self.part1.kill()
+            self.part2.kill()
+            self.part3.kill()
+            self.part4.kill()
+            self.kill()
+
+
+
+class Player_part(pygame.sprite.Sprite):
+    def __init__(self, size=disp_width//120, color=generic_colors('green'), position=(0,0) ):
+        super().__init__()
+        
+        # Collider y sprite
+        self.size = size
+        self.surf = pygame.Surface( (self.size, self.size) )
+        self.surf.fill( color  )
+        self.rect = sprite.surf.get_rect( 
+            center=( position ) 
+        )
+        all_sprites.add(self)
+        
+        # Movimiento
+        if random.randint(0, 1) == 1:
+            self.move_positive_x = True
+        else:
+            self.move_positive_x = False
+
+        if random.randint(0, 1) == 1:
+            self.move_positive_y = True
+        else:
+            self.move_positive_y = False
+
+        self.jumping = False
+        self.__jump_number = 0
+        self.speedxy = random.randint(size//4, size//2)
+    
+    def update(self):
+        self.gravity = True
+        
+        # Colisiones
+        for solid_object in solid_objects:
+            collide = obj_collision_sides_rebound(
+                obj_main=self, obj_collide=solid_object
+            )
+            if not collide == None:
+                self.gravity = False
+        
+        # Gravedad / Salto / Movimiento y
+        if self.gravity == True:
+            self.move_positive_y = True
+            
+        if self.jumping == True:
+            self.move_positive_y = False
+        else:
+            self.move_positive_y = True
+        
+        if self.move_positive_y == True:
+            self.rect.y += self.speedxy
+        else:
+            self.__jump_number += self.speedxy
+            self.rect.y -= self.speedxy
+            self.jumping = True
+            if self.__jump_number >= self.speedxy*8:
+                self.__jump_number = 0
+                self.jumping = False
+        
+        # Movimiento x
+        if self.move_positive_x == True:
+            self.rect.x += self.speedxy
+        else:
+            self.rect.x -= self.speedxy
+
+
+
+
 # Grupos de sprites
 all_sprites = pygame.sprite.Group()
 solid_objects = pygame.sprite.Group()
 instakill_objects = pygame.sprite.Group()
 damage_objects = pygame.sprite.Group()
 limit_objects = pygame.sprite.Group()
+anim_sprites = pygame.sprite.Group()
 
 
 '''
@@ -363,8 +531,10 @@ class Start_Map():
     def __init__(self,
         x_column = 0,
         y_column = 0,
-        map_level = Text_Read(os.path.join(dir_maps, 'cf_map_default.txt'), 'ModeList'),
+        map_level = Text_Read(os.path.join(dir_maps, 'cf_map.txt'), 'ModeList'),
     ):
+        #cf_map_default.txt
+        #cf_map.txt
         '''
         Funcion que permite crear niveles de una forma visual y sencilla.
         "." para un espacio de el "ancho sobre 60" del juego
@@ -457,13 +627,14 @@ for plat in solid_objects:
     plat.limit_collision()
 
 player = Player( position=start_map.player_spawn )
-all_sprites.add(player)
 
 player_spawn_hp = player.hp
 player_spawn_xy = player_camera_prepare(
     disp_width=disp_width, disp_height=disp_height, more_pixels=disp_width//30,
     all_sprites=all_sprites, player=player, show_coordenades=True
 )
+player_show_sprite = player.show_sprite
+player_anim_dead = None
 
 camera_x = 0
 camera_y = 0
@@ -482,14 +653,22 @@ while True:
                 player.jump()
     
     # Fondo
-    display.fill(generic_colors('black'))
+    display.fill( (155, 168, 187) )
     
     # Objetos / Sprites
     player.update()
     player.move()
 
     for sprite in all_sprites:
-        display.blit(sprite.surf, sprite.rect)
+        if not sprite == player:
+            display.blit(sprite.surf, sprite.rect)
+        
+    for sprite in all_sprites:
+        if sprite == player:
+            display.blit(sprite.surf, sprite.rect)
+    
+    for sprite in anim_sprites:
+        sprite.anim()
 
     # Camara
     camera = player_camera_move(
@@ -498,10 +677,39 @@ while True:
         all_sprites=all_sprites,
         limit_objects=limit_objects,
         player=player,
-        player_spawn_hp=player_spawn_hp, player_spawn_xy=player_spawn_xy
     )
     camera_x=camera[0]
     camera_y=camera[1]
+    dead = camera[2]
+    if dead == True:
+        if player_anim_dead == None:
+            player_anim_dead = Anim_player_dead(
+                position=(
+                    (player.rect.x +(player.rect.width/2)),
+                    player.rect.y+(player.rect.height//2)
+                )
+            )
+            player.show_sprite = False
+        else:
+            if player_anim_dead.anim_fin == True:
+                player_anim_dead = None
+                # Establecer todos los objetos como al inicio del juego
+                # Con base al valor xy actual de la camara, sus valores xy se invierten y se suman a las coordenadas actuales de los sprites.
+                # Recuerda que esto es posible: "x+ -x = 0"
+                for sprite in all_sprites:
+                    sprite.rect.x += (camera_x*-1)
+                    sprite.rect.y += (camera_y*-1)
+            
+                # Establecer camara en la posición inicial
+                camera_x = 0
+                camera_y = 0
+            
+                # Establecer player como al inicio del juego
+                player.rect.x = player_spawn_xy[0]
+                player.rect.y = player_spawn_xy[1]
+                player.hp = player_spawn_hp
+                player.show_sprite = player_show_sprite
+        
 
     
     # Fin

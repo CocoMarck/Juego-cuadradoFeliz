@@ -21,46 +21,7 @@ def obj_collision_sides_solid(obj_main, obj_collide):
     # Si el obj_main, esta colisionando con el obj_collide, seguira el codigo
     if obj_main.rect.colliderect(obj_collide.rect):
         # Para detectar que la altura el solido y la del jugador sean correctas.
-        if obj_main.rect.height > obj_collide.rect.height:
-            # Advertencia Altura de obj_collide mas pequeña comparada con la del obj_main
-            if obj_collide.rect.height == obj_main.rect.height/2:
-                # obj_main = 16, obj_collide = 8, 
-                # more_height = obj_main -( obj_main + (obj_collide/2) ) = -4
-                more_height = (
-                    obj_main.rect.height -( obj_main.rect.height + (obj_collide.rect.height/2) )
-                )
-            else:
-                more_height = 0
-
-        elif obj_main.rect.height < obj_collide.rect.height:
-            # Advertencia Altura de obj_collide mas alta comparada con la del obj_main
-            # Para acomodar colision del lado de abajo de forma adecuada.
-            # Ejemplo:
-            # obj_collide.altura = 32
-            # obj_main.altura = 16
-            # 16 cabe dos veces en 32, entonces: count = 2
-            # more_height = obj_collide.altura - ( obj_main.altura / ( count/(count/2) ) ) = 24
-            # para evitar bugs:
-            # more_height = more_height -(obj_main.altura/4)
-            count = 1
-            difference = obj_collide.rect.height
-            reduction = True
-            while reduction:
-                count += 1
-                difference -= obj_main.rect.height
-                if difference <= obj_main.rect.height:
-                    reduction = False
-            more_height = (
-                obj_collide.rect.height -( obj_main.rect.height / ( count/(count/2) ) )
-                -(obj_main.rect.height/4)
-            )
-
-        else:
-            # Excelente, la altura de obj_main es la misma que la de obj_collide
-            # El "+(obj_collide.rect.height//4)", es para evitar dos colisiones seguidas:
-            # Puede ser colisionar del lado izquierdo o derecho y seguido el lado inferior.
-            # Funciona, porque la colision del lado inferior, esta un poco mas abajo de lo normal.
-            more_height = obj_collide.rect.height//4
+        more_height = obj_more_height(obj_main=obj_main, obj_collide=obj_collide)
 
 
         # Deteccion de colision arriba/abajo
@@ -111,6 +72,112 @@ def obj_collision_sides_solid(obj_main, obj_collide):
         # Retornar valores
         if not direction == None:
             return direction
+
+
+
+
+def obj_collision_sides_rebound(obj_main, obj_collide):
+    '''
+    El objeto main, tiene que tener atributos adicionales llamados
+    self.jumping = bool
+    self.move_positive_x = bool
+    '''
+    # Si el obj_main, esta colisionando con el obj_collide, seguira el codigo
+    if obj_main.rect.colliderect(obj_collide.rect):
+        # Para detectar que la altura el solido y la del jugador sean correctas.
+        more_height = obj_more_height(obj_main=obj_main, obj_collide=obj_collide)
+
+        # Deteccion de colision arriba/abajo
+        # Recuerda que no se puede colisionar dos veces, se eliguira una colision, y en este caso siempre tiene mas pioridad la colision arriba, debido a que esta arriba de la linea de colision de a abajo.
+        direction = None
+        if obj_main.rect.y < obj_collide.rect.y:
+            # El obj_main, se movera "el valor de coordenadas y del obj_collide, menos el valor de la altura del obj_collide, mas un pixel", mueve al obj_main hacia arriba ( tendencia a ser valor negativo ).
+            # Unicamente en esta posición, el jugador podra moverse y saltar.
+            direction = 'collide_up'
+            #obj_main.rect.y = obj_collide.rect.y - obj_main.rect.height
+            obj_main.jumping = True
+
+        elif obj_main.rect.y > obj_collide.rect.y + (more_height):
+            # El obj_main, se movera "el valor de coorenadas y de obj_collide, mas el valor de la altura del obj_collide", mueva al obj_main hacia abajo ( tendencia a ser valor positivo ).
+            # El obj_main, ya no tendra permitido saltar.
+            direction = 'collide_down'
+            obj_main.rect.y = obj_collide.rect.y + obj_collide.rect.height
+            obj_main.jumping = False
+            
+            # Si el obj_collide tiene menos altura que el obj_main, el obj_main no podra moverse de izq/der
+            # Se forzara aleatoriamente el movimiento hacia la izquierda o derecha.
+            if more_height == 0:
+                pass
+
+        # Deteccion de colision izquierda/derecha
+        # Collisionar de izquierda/derecha solo cuando el obj_main no es mas pequeño en hight que del obj_collide
+        # Si more_height esta en 0, el jugador no colisionara en lados izquierda/derecha.
+        elif not more_height == 0:
+            # El "obj_main.not_move", ayuda a que no se pueda mover de ninguna manera al obj_main
+            # Los "obj_main.rect.x +- = self.speed" vistos aqui, redirecciónan al lado contrario al obj_main dependiendo si colisiono del lado derecho o del lado izquierdo
+            # Recuerda que no se puede colisionar dos veces, se eliguira una colision, y en este caso siempre tiene mas pioridad la colision izquirda, debido a que esta arriba de la linea de colision de la derecha.
+            if obj_main.rect.x < obj_collide.rect.x + (obj_main.speedxy/8):
+                direction = 'collide_left'
+                obj_main.rect.x = obj_collide.rect.x -obj_main.rect.width*2
+                obj_main.move_positive_x = False
+
+            elif obj_main.rect.x > obj_collide.rect.x - (obj_main.speedxy/8):
+                direction = 'collide_right'
+                obj_main.rect.x = obj_collide.rect.x +obj_collide.rect.width*2
+                obj_main.move_positive_x = True
+        
+        # Retornar valores
+        if not direction == None:
+            return direction
+
+
+
+
+def obj_more_height(obj_main, obj_collide):
+    # Si el obj_main, esta colisionando con el obj_collide, seguira el codigo
+    # Para detectar que la altura el solido y la del jugador sean correctas.
+    if obj_main.rect.height > obj_collide.rect.height:
+        # Advertencia Altura de obj_collide mas pequeña comparada con la del obj_main
+        if obj_collide.rect.height == obj_main.rect.height/2:
+            # obj_main = 16, obj_collide = 8, 
+            # more_height = obj_main -( obj_main + (obj_collide/2) ) = -4
+            more_height = (
+                obj_main.rect.height -( obj_main.rect.height + (obj_collide.rect.height/2) )
+            )
+        else:
+            more_height = 0
+
+    elif obj_main.rect.height < obj_collide.rect.height:
+        # Advertencia Altura de obj_collide mas alta comparada con la del obj_main
+        # Para acomodar colision del lado de abajo de forma adecuada.
+        # Ejemplo:
+        # obj_collide.altura = 32
+        # obj_main.altura = 16
+        # 16 cabe dos veces en 32, entonces: count = 2
+        # more_height = obj_collide.altura - ( obj_main.altura / ( count/(count/2) ) ) = 24
+        # para evitar bugs:
+        # more_height = more_height -(obj_main.altura/4)
+        count = 1
+        difference = obj_collide.rect.height
+        reduction = True
+        while reduction:
+            count += 1
+            difference -= obj_main.rect.height
+            if difference <= obj_main.rect.height:
+                reduction = False
+        more_height = (
+            obj_collide.rect.height -( obj_main.rect.height / ( count/(count/2) ) )
+            -(obj_main.rect.height/4)
+        )
+
+    else:
+        # Excelente, la altura de obj_main es la misma que la de obj_collide
+        # El "+(obj_collide.rect.height//4)", es para evitar dos colisiones seguidas:
+        # Puede ser colisionar del lado izquierdo o derecho y seguido el lado inferior.
+        # Funciona, porque la colision del lado inferior, esta un poco mas abajo de lo normal.
+        more_height = obj_collide.rect.height//4
+    
+    return more_height
 
 
 
@@ -197,7 +264,6 @@ def player_camera_move(
     all_sprites=None,
     limit_objects=None,
     player=None,
-    player_spawn_hp=100, player_spawn_xy=[0, 0]
 ): 
     '''
     Función para mover la camara, segun donde se mueva el jugador. Ya sea verticalmente o horizontalmente
@@ -219,6 +285,7 @@ def player_camera_move(
     Entero: player_spawn_hp, es el valor entero de vida inicial del jugador.
     Lista:  player_spawn_xy, es la posición de inicio "x y"  del jugador.
     '''
+    dead = False
     # Camara lado x
     # Si la camara detecta que hay un limite de camara del lado derecho/izquierdo y que el jugador no esta en medio de la pantalla, lo detectara, y no permitira mover la camara.
     camera_move_x = True
@@ -297,24 +364,10 @@ def player_camera_move(
                 sprite.rect.y -= player.gravity_power
     
     # Cuando el player muere
-    if player.hp == 0:
-        # Establecer todos los objetos como al inicio del juego
-        # Con base al valor xy actual de la camara, sus valores xy se invierten y se suman a las coordenadas actuales de los sprites.
-        # Recuerda que esto es posible: "x+ -x = 0"
-        for sprite in all_sprites:
-            sprite.rect.x += (camera_x*-1)
-            sprite.rect.y += (camera_y*-1)
-        
-        # Establecer camara en la posición inicial
-        camera_x = 0
-        camera_y = 0
-        
-        # Establecer player como al inicio del juego
-        player.rect.x = player_spawn_xy[0]
-        player.rect.y = player_spawn_xy[1]
-        player.hp = player_spawn_hp
+    if player.hp <= 0:
+        dead = True
     
-    return [camera_x, camera_y]
+    return [camera_x, camera_y, dead]
 
 
 
