@@ -1,4 +1,6 @@
-from Modulos.Modulo_Text import Text_Read
+from Modulos.Modulo_Text import (
+    Text_Read, Ignore_Comment, Only_Comment
+)
 from Modulos.pygame.Modulo_pygame import (
     generic_colors, obj_collision_sides_solid, obj_coordinate_multiplier,
     player_camera_prepare, player_camera_move,
@@ -287,27 +289,6 @@ class Floor(pygame.sprite.Sprite):
             #print(self.rect.y+(self.rect.height -limit_xy[1]))
 
 
-class Limit_indicator(pygame.sprite.Sprite):
-    def __init__(self, 
-        size = (disp_width//480, disp_width//60), see = True, position = (0, 0)
-    ):
-        super().__init__()
-        
-        self.surf = pygame.Surface( size, pygame.SRCALPHA )
-        if see == True:
-            self.transparency = 255
-        else:
-            self.transparency = 0
-        self.surf.fill( generic_colors(color='red', transparency=self.transparency) )
-
-        self.rect = self.surf.get_rect(
-            center = ( position )
-        )
-
-        all_sprites.add(self)
-        limit_objects.add(self)
-
-
 
 class Spike(pygame.sprite.Sprite):
     def __init__(self, size=disp_width//60, position=(0,0), show_collide=True ):
@@ -442,8 +423,8 @@ class Player_part(pygame.sprite.Sprite):
         self.size = size
         self.surf = pygame.Surface( (self.size, self.size) )
         self.surf.fill( color  )
-        self.rect = sprite.surf.get_rect( 
-            center=( position ) 
+        self.rect = self.surf.get_rect( 
+            center=position
         )
         all_sprites.add(self)
         
@@ -454,11 +435,10 @@ class Player_part(pygame.sprite.Sprite):
             self.move_positive_x = False
 
         if random.randint(0, 1) == 1:
-            self.move_positive_y = True
+            self.jumping = False
         else:
-            self.move_positive_y = False
-
-        self.jumping = False
+            self.jumping = True
+        self.move_positive_y = False
         self.__jump_number = 0
         self.speedxy = random.randint(size//4, size//2)
     
@@ -499,6 +479,50 @@ class Player_part(pygame.sprite.Sprite):
             self.rect.x -= self.speedxy
 
 
+            
+class Limit_indicator(pygame.sprite.Sprite):
+    def __init__(self, 
+        size = (disp_width//60, disp_width//60), see = True, position = (0, 0)
+    ):
+        super().__init__()
+        
+        self.surf = pygame.Surface( size, pygame.SRCALPHA )
+        if see == True:
+            self.transparency = 255
+        else:
+            self.transparency = 0
+        self.surf.fill( generic_colors(color='red', transparency=self.transparency) )
+
+        self.rect = self.surf.get_rect(
+            center = ( position )
+        )
+
+        all_sprites.add(self)
+        limit_objects.add(self)
+
+
+
+class Level_change(pygame.sprite.Sprite):
+    def __init__(self, level=None, position=(0,0) ):
+        super().__init__()
+
+        if level == None:
+            self.name = '_default'
+        else:
+            self.name = f'_{level}'
+        self.level = None
+        
+        # Collider y sprite
+        self.surf = pygame.Surface( (disp_width//60, disp_width//60) )
+        self.rect = self.surf.get_rect( center=position )
+        all_sprites.add(self)
+        level_objects.add(self)
+    
+    def update(self):
+        if self.rect.colliderect(player.rect):
+            self.level = os.path.join( dir_maps, f'cf_map{self.name}.txt' )
+
+
 
 
 # Grupos de sprites
@@ -507,6 +531,7 @@ solid_objects = pygame.sprite.Group()
 instakill_objects = pygame.sprite.Group()
 damage_objects = pygame.sprite.Group()
 limit_objects = pygame.sprite.Group()
+level_objects = pygame.sprite.Group()
 anim_sprites = pygame.sprite.Group()
 
 
@@ -531,10 +556,12 @@ class Start_Map():
     def __init__(self,
         x_column = 0,
         y_column = 0,
-        map_level = Text_Read(os.path.join(dir_maps, 'cf_map.txt'), 'ModeList'),
+        map_level = Text_Read(os.path.join(dir_maps, 'cf_map_level-test.txt'), 'ModeText')
     ):
         #cf_map_default.txt
         #cf_map.txt
+        #cf_map_level-test.txt
+        #cf_map_level-test1.txt
         '''
         Funcion que permite crear niveles de una forma visual y sencilla.
         "." para un espacio de el "ancho sobre 60" del juego
@@ -546,8 +573,25 @@ class Start_Map():
         self.player_spawn = None
         plat_number = 0
         pixel_space = disp_width//60
+        
+        # Establecer la información del mapa
+        change_level = None
+        map_info = Only_Comment(
+            text=map_level,
+            comment='$$'
+        )
+        info = None
+        if not map_info == None:
+            info = []
+            for line in map_info.split('\n'):
+                info.append(line)
+            change_level = info[0]
+
+        # Establecer objetos en su posición inidaca
+        map_level = Ignore_Comment(text=map_level, comment='//')
+        map_level = Ignore_Comment(text=map_level, comment='$$')
         test = ''
-        for column in map_level:
+        for column in map_level.split('\n'):
             y_column += 1
             x_space = x_column
             for space in column:
@@ -617,6 +661,14 @@ class Start_Map():
                         show_collide=False
                     )
 
+                elif space == '0':
+                    x_space += 1
+
+                    level = Level_change(
+                        level=change_level,
+                        position=position
+                    )
+
 
 
 
@@ -655,7 +707,38 @@ while True:
     # Fondo
     display.fill( (155, 168, 187) )
     
-    # Objetos / Sprites
+    # Objetos para cambiar de nivel
+    for sprite in level_objects:
+        sprite.update()
+        if not sprite.level == None:
+            level = sprite.level
+
+            for other_sprite in all_sprites:
+                other_sprite.kill()
+
+            start_map = Start_Map(
+                 0, 0,
+                 map_level = Text_Read(level, 'ModeText')
+            )
+
+            for plat in solid_objects:
+                plat.limit_collision()
+
+            player = Player( position=start_map.player_spawn )
+            player.hp = player_spawn_hp
+
+            #player_spawn_hp = player_spawn_hp
+            player_spawn_xy = player_camera_prepare(
+                disp_width=disp_width, disp_height=disp_height, more_pixels=disp_width//30,
+                all_sprites=all_sprites, player=player, show_coordenades=True
+            )
+            #player_show_sprite = player_show_sprite
+            player_anim_dead = None
+
+            camera_x = 0
+            camera_y = 0
+    
+    # Objetos / Sprites Normales  
     player.update()
     player.move()
 

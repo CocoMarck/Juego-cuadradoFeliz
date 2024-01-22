@@ -109,3 +109,34 @@ def Text_Separe(
         pass
     
     return text_dict
+
+
+
+
+def Only_Comment(
+    text=None,
+    comment='#'
+):
+    '''Obtener solo los comentarios de un texto'''
+    if (
+        '\n' in text and
+        comment in text
+    ):
+        # Cuando hay saltos de linea y comentarios
+        
+        text_ready = ''
+        for line in text.split('\n'):
+            line = Only_Comment(text=line, comment=comment)
+            if not line == None:
+                text_ready += f'{line}\n'
+            
+        return text_ready[:-1]
+        
+    elif comment in text:
+        # Cuando hay comentarios pero no saltos de linea
+        text = text.split(comment)
+        return text[1]
+        
+    else:
+        # No hay nada de comenarios
+        return None

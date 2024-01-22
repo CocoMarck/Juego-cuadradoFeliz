@@ -38,12 +38,13 @@ def obj_collision_sides_solid(obj_main, obj_collide):
             # El obj_main, ya no tendra permitido saltar.
             direction = 'collide_down'
             obj_main.jumping = False
+            obj_main.not_move = True
             obj_main.rect.y = obj_collide.rect.y + obj_collide.rect.height
             
             # Si el obj_collide tiene menos altura que el obj_main, el obj_main no podra moverse de izq/der
             # Se forzara aleatoriamente el movimiento hacia la izquierda o derecha.
             if more_height == 0:
-                obj_main.not_move = True
+                #obj_main.not_move = True
                 x_positive = random.randint(0, 1)
                 if x_positive == 0:
                     obj_main.rect.x -= obj_main.speed
