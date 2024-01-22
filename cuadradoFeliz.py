@@ -358,39 +358,30 @@ class Anim_player_dead(pygame.sprite.Sprite):
         anim_sprites.add( self )
         
         # Partes
+        size_parts = self.size//2
         self.part1 = Player_part( 
-            size=self.size//2,
-            position=(self.rect.x+self.size//2, self.rect.y+self.size),
+            size=size_parts,
+            position=(self.rect.x+size_parts//2, self.rect.y + (size_parts+size_parts//2) ),
             color=generic_colors('green') 
         )
         
         self.part2 = Player_part( 
-            size=self.size//2,
-            position=(self.rect.x+self.size, self.rect.y+self.size),
+            size=size_parts,
+            position=(self.rect.x+(size_parts+size_parts//2), self.rect.y + (size_parts+size_parts//2) ),
             color=generic_colors('blue') 
         )
         
         self.part3 = Player_part( 
-            size=self.size//2,
-            position=(self.rect.x+self.size//2, self.rect.y+self.size//2),
+            size=size_parts,
+            position=(self.rect.x+size_parts//2, self.rect.y+size_parts//2),
             color=generic_colors('yellow') 
         )
 
         self.part4 = Player_part( 
-            size=self.size//2,
-            position=(self.rect.x+self.size, self.rect.y+self.size//2),
+            size=size_parts,
+            position=(self.rect.x+(size_parts+size_parts//2), self.rect.y+size_parts//2),
             color=generic_colors('sky_blue') 
         )
-        
-    def create_part(self, position=(0,0), color=( 0, 255, 0)):
-        part = pygame.sprite.Sprite()
-        part.surf = pygame.Surface( (self.size//2, self.size//2) )
-        part.surf.fill( color  )
-        part.rect = sprite.surf.get_rect( 
-            center=( position ) 
-        )
-        all_sprites.add(part)
-        return part
     
     def anim(self):
         # Partes
