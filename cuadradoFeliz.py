@@ -4,7 +4,7 @@ from Modulos.Modulo_Text import (
 from Modulos.pygame.Modulo_pygame import (
     generic_colors, obj_collision_sides_solid, obj_coordinate_multiplier,
     player_camera_prepare, player_camera_move,
-    obj_collision_sides_rebound
+    obj_collision_sides_rebound, obj_not_see
 )
 
 import pygame, sys, os, random
@@ -342,6 +342,45 @@ class Spike(pygame.sprite.Sprite):
 
 
 
+class Climate_rain(pygame.sprite.Sprite):
+    def __init__(self, size=disp_width//60, position=(disp_width//2, disp_height//2) ):
+        super().__init__()
+        
+        self.surf = pygame.Surface( (size//4, size//4) )
+        self.surf.fill( generic_colors('blue') )
+        self.rect = self.surf.get_rect( center=position )
+        self.spawn_xy = [ self.rect.x, self.rect.y ]
+        self.speed_y = size//2
+        self.speed_x = self.speed_y//2
+        
+        all_sprites.add(self)
+        climate_objects.add(self)
+        
+    def update(self):
+        # Mover al jugador si el collider esta en false
+        self.collide = False
+        if self.collide == False:
+            self.rect.y += self.speed_y
+            self.rect.x -= self.speed_x
+        
+        # Si traspasar la pantalla o toca al jugador
+        transfer_disp = obj_not_see(disp_width=disp_width, disp_height=disp_height, obj=self)
+        if (
+            transfer_disp == 'width_positive' or
+            transfer_disp == 'width_negative' or
+            transfer_disp == 'height_positive'or
+            self.rect.colliderect(player.rect)
+        ):
+            self.collide = True
+
+        # Si toca objetos solidos
+        for solid_object in solid_objects:
+            if self.rect.colliderect(solid_object.rect):
+                self.collide = True
+
+
+
+
 class Anim_player_dead(pygame.sprite.Sprite):
     def __init__(self, position=(0,0), fps=fps ):
         super().__init__()
@@ -403,6 +442,7 @@ class Anim_player_dead(pygame.sprite.Sprite):
             self.part3.kill()
             self.part4.kill()
             self.kill()
+
 
 
 
@@ -494,13 +534,22 @@ class Limit_indicator(pygame.sprite.Sprite):
 
 
 class Level_change(pygame.sprite.Sprite):
-    def __init__(self, level=None, position=(0,0) ):
+    def __init__(self, level=None, dir_level=None, position=(0,0) ):
         super().__init__()
 
-        if level == None:
-            self.name = '_default'
+        if dir_level == None:
+            self.dir_level = ''
         else:
-            self.name = f'_{level}'
+            self.dir_level = dir_level
+
+        if level == None:
+            self.name = 'cf_map_default.txt'
+        else:
+            self.name = f'cf_map_{level}.txt'
+            if dir_level == '':
+                pass
+            else:
+                self.dir_level = dir_level
         self.level = None
         
         # Collider y sprite
@@ -511,7 +560,7 @@ class Level_change(pygame.sprite.Sprite):
     
     def update(self):
         if self.rect.colliderect(player.rect):
-            self.level = os.path.join( dir_maps, f'cf_map{self.name}.txt' )
+            self.level = os.path.join( dir_maps, self.dir_level, self.name )
 
 
 
@@ -524,6 +573,7 @@ damage_objects = pygame.sprite.Group()
 limit_objects = pygame.sprite.Group()
 level_objects = pygame.sprite.Group()
 anim_sprites = pygame.sprite.Group()
+climate_objects = pygame.sprite.Group()
 
 
 '''
@@ -547,7 +597,7 @@ class Start_Map():
     def __init__(self,
         x_column = 0,
         y_column = 0,
-        map_level = Text_Read(os.path.join(dir_maps, 'cf_map_level-test.txt'), 'ModeText')
+        map_level = Text_Read(os.path.join(dir_maps, 'part1', 'cf_map_part1-level1.txt'), 'ModeText')
     ):
         #cf_map_default.txt
         #cf_map.txt
@@ -566,17 +616,22 @@ class Start_Map():
         pixel_space = disp_width//60
         
         # Establecer la información del mapa
-        change_level = None
+        next_level = None
+        climate = None
         map_info = Only_Comment(
             text=map_level,
             comment='$$'
         )
+        number_info = 0
         info = None
         if not map_info == None:
             info = []
             for line in map_info.split('\n'):
                 info.append(line)
-            change_level = info[0]
+                number_info += 1
+            next_level = info[0].split(':')
+        if number_info == 2:
+            climate = info[1]
 
         # Establecer objetos en su posición inidaca
         map_level = Ignore_Comment(text=map_level, comment='//')
@@ -651,13 +706,40 @@ class Start_Map():
                         position=position,
                         show_collide=False
                     )
+                elif space == '~':
+                    x_space += 1
+
+                    Climate_rain(
+                        position=position
+                    )
 
                 elif space == '0':
                     x_space += 1
 
                     level = Level_change(
-                        level=change_level,
+                        dir_level=next_level[0],
+                        level=next_level[1],
                         position=position
+                    )
+        
+        # Sección de genración de clima:
+        if climate == 'rain':
+            rain_space = 0
+            for space in map_level.split('\n')[0]:
+                if (
+                    space == '.' or
+                    space == '|' or
+                    space == '~'
+                ):
+                    rain_space += 1
+            rain_pixels = rain_space*pixel_space
+            if rain_space > 0:
+                for x in range(0, rain_space):
+                    Climate_rain( 
+                        position=( 
+                            random.randint(-(pixel_space), rain_pixels), 
+                            -(random.randint( (pixel_space*4), (pixel_space*8) ))
+                        ) 
                     )
 
 
@@ -732,6 +814,11 @@ while True:
     # Objetos / Sprites Normales  
     player.update()
     player.move()
+    
+    for climate in climate_objects:
+        climate.update()
+        if climate.collide == True:
+            climate.rect.center = (camera_x + climate.spawn_xy[0], camera_y + climate.spawn_xy[1])
 
     for sprite in all_sprites:
         if not sprite == player:

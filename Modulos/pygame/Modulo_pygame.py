@@ -373,6 +373,22 @@ def player_camera_move(
 
 
 
+def obj_not_see(disp_width=None, disp_height=None, obj=None):
+    direction = None
+    if obj.rect.x > disp_width:
+        direction = 'width_positive'
+    elif obj.rect.x < 0:
+        direction = 'width_negative'
+    
+    elif obj.rect.y > disp_height:
+        direction = 'height_positive'
+    elif obj.rect.y < 0:
+        direction = 'height_negative'
+    return direction
+
+
+
+
 def generic_colors(color='green', transparency=255):
     '''
     Colores que considero genericos, estan bueno tenerlos en una función y obtenerlos de una forma rapida y consistente.
