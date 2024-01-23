@@ -349,9 +349,9 @@ class Climate_rain(pygame.sprite.Sprite):
         self.surf = pygame.Surface( (size//4, size//4) )
         self.surf.fill( generic_colors('blue') )
         self.rect = self.surf.get_rect( center=position )
-        self.spawn_xy = [ self.rect.x, self.rect.y ]
         self.speed_y = size//2
         self.speed_x = self.speed_y//2
+        self.move = False
         
         all_sprites.add(self)
         climate_objects.add(self)
@@ -359,15 +359,15 @@ class Climate_rain(pygame.sprite.Sprite):
     def update(self):
         # Mover al jugador si el collider esta en false
         self.collide = False
-        if self.collide == False:
+        if self.collide == False and self.move == True:
             self.rect.y += self.speed_y
             self.rect.x -= self.speed_x
         
         # Si traspasar la pantalla o toca al jugador
         transfer_disp = obj_not_see(disp_width=disp_width, disp_height=disp_height, obj=self)
         if (
-            transfer_disp == 'width_positive' or
-            transfer_disp == 'width_negative' or
+            #transfer_disp == 'width_positive' or
+            #transfer_disp == 'width_negative' or
             transfer_disp == 'height_positive'or
             self.rect.colliderect(player.rect)
         ):
@@ -638,7 +638,11 @@ class Start_Map():
         map_level = Ignore_Comment(text=map_level, comment='$$')
         test = ''
         for column in map_level.split('\n'):
-            y_column += 1
+            if column == '':
+                pass
+            else:
+                y_column += 1
+    
             x_space = x_column
             for space in column:
                 position=( (x_space*pixel_space), (y_column*pixel_space) )
@@ -724,21 +728,28 @@ class Start_Map():
         
         # Sección de genración de clima:
         if climate == 'rain':
-            rain_space = 0
+            rain_space_x = 0
             for space in map_level.split('\n')[0]:
                 if (
                     space == '.' or
                     space == '|' or
                     space == '~'
                 ):
-                    rain_space += 1
-            rain_pixels = rain_space*pixel_space
-            if rain_space > 0:
-                for x in range(0, rain_space):
+                    rain_space_x += 1
+            rain_pixels_x = rain_space_x*pixel_space
+            rain_pixels_y = y_column*pixel_space
+            # Esto funciona bien, los bugs que sucedan, deberian ser por otras funciones
+            # pixel_space = 16
+            # pixel_space*16 = 256
+            # pixel_space*4 = 64
+            difference_x = pixel_space*16
+            difference_y = rain_pixels_y//(pixel_space*4)
+            if rain_space_x > 0:
+                for x in range(0, rain_space_x):
                     Climate_rain( 
                         position=( 
-                            random.randint(-(pixel_space), rain_pixels), 
-                            -(random.randint( (pixel_space*4), (pixel_space*8) ))
+                            random.randint( difference_x, rain_pixels_x+(difference_x) ),
+                            random.randint( (difference_y)-(difference_x//2),  difference_y )
                         ) 
                     )
 
@@ -763,6 +774,12 @@ player_anim_dead = None
 
 camera_x = 0
 camera_y = 0
+
+climate_number = 0
+dict_climate = {}
+for climate in climate_objects:
+    climate_number += 1
+    dict_climate.update( {climate_number : [climate.rect.x, climate.rect.y]} )
 
 
 
@@ -810,26 +827,40 @@ while True:
 
             camera_x = 0
             camera_y = 0
+
+            climate_number = 0
+            dict_climate = {}
+            for climate in climate_objects:
+                climate_number += 1
+                dict_climate.update( {climate_number : [climate.rect.x, climate.rect.y]} )
     
-    # Objetos / Sprites Normales  
+    # Player Funciones
     player.update()
     player.move()
-    
-    for climate in climate_objects:
-        climate.update()
-        if climate.collide == True:
-            climate.rect.center = (camera_x + climate.spawn_xy[0], camera_y + climate.spawn_xy[1])
 
+    # Objetos / Todos los sprites
     for sprite in all_sprites:
         if not sprite == player:
             display.blit(sprite.surf, sprite.rect)
         
+    # Objetos / Jugador
     for sprite in all_sprites:
         if sprite == player:
             display.blit(sprite.surf, sprite.rect)
     
+    # Objetos / Animaciones
     for sprite in anim_sprites:
         sprite.anim()
+        
+    # Objetos / Clima Colision
+    number = 0
+    for climate in climate_objects:
+        number += 1
+        climate.update()
+        climate.move = True
+        if climate.collide == True:
+           #print(climate.collide)
+           climate.rect.center = (camera_x + dict_climate.get(number)[0], camera_y + dict_climate.get(number)[1])
 
     # Camara
     camera = player_camera_move(
