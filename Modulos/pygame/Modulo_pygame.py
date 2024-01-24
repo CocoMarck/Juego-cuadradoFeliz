@@ -420,3 +420,106 @@ def generic_colors(color='green', transparency=255):
     
     elif color == 'yellow':
         return (255, 255, 0, transparency)
+
+
+
+
+class Anim_sprite(pygame.sprite.Sprite):
+    def __init__(self, sprite_sheet, position=(0,0) ):
+        super().__init__()
+        '''
+        Para utilizar la animación de los sprites.
+        '''
+        
+        # Cargar la hoja de sprites
+        # Sprite sheet tiene que ser un pygame.image.load()
+        rect_sheet = sprite_sheet.get_rect()
+        
+        # Dimenciones de cada cuadro de animación
+        self.frame_square = rect_sheet.height
+        self.frame_number = rect_sheet.width//rect_sheet.height
+        
+        # Lista para almacenar los cuardos de animación
+        self.frames = []
+        
+        # Recortar la hoja de sprites en cuadros individuales
+        for i in range(self.frame_number):
+            frame = sprite_sheet.subsurface( 
+                (i*self.frame_square, 0, self.frame_square, self.frame_square) 
+            )
+            self.frames.append(frame)
+        
+        # Índice para rastrear el cuadro de animación actual
+        self.current_frame = 0
+        
+        # Configurar la imagen inicial
+        self.surf = self.frames[self.current_frame]
+        
+        # Mostrar
+        surf = pygame.Surface( (self.frame_square, self.frame_square) )
+        self.rect = surf.get_rect( topleft=position )
+    
+    def anim(self):
+        # Actualizar la animación
+        self.current_frame = (self.current_frame +1) % len(self.frames)
+        self.surf = self.frames[self.current_frame]
+        
+
+
+
+def Anim_sprite_set(sprite_sheet=None, current_frame=0):
+    '''
+    Establecer un frame de un srpite tipo animación
+    '''
+    # Cargar la hoja de sprites
+    # Sprite sheet tiene que ser un pygame.image.load()
+    rect_sheet = sprite_sheet.get_rect()
+    
+    # Dimenciones de cada cuadro de animación
+    frame_square = rect_sheet.height
+    frame_number = rect_sheet.width//rect_sheet.height
+    
+    # Lista para almacenar los cuardos de animación
+    frames = []
+    
+    # Recortar la hoja de sprites en cuadros individuales
+    for i in range(frame_number):
+        frame = sprite_sheet.subsurface( 
+            (i*frame_square, 0, frame_square, frame_square) 
+        )
+        frames.append(frame)
+    
+    # Índice para rastrear el cuadro de animación actual "current_frame"
+    # Configurar la imagen inicial
+    if not frames == []:
+        return( frames[current_frame] )
+
+
+
+
+def Split_sprite(sprite_sheet, parts=4):
+    """
+    Divide un sprite en partes iguales.
+    """
+    parts = parts//2
+    # Sprite sheet tiene que ser un pygame.image.load()
+    rect_sheet = sprite_sheet.get_rect()
+
+    # Dimensiones de cada cuadro de animación
+    frame_width = rect_sheet.width // parts
+    frame_height = rect_sheet.height // parts
+
+    # Lista para almacenar los cuadros divididos
+    frames = []
+
+    # Recortar la hoja de sprites en cuadros individuales
+    number = -1
+    for _ in range(parts):
+        number += 1
+        for x in range(parts):
+            frame = sprite_sheet.subsurface( 
+                (x*frame_width, (frame_height*number), frame_width, frame_height) 
+            )
+            frames.append(frame)
+
+    return frames
