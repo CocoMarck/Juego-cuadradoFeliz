@@ -24,10 +24,36 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, position=(disp_width//2,disp_height//2), show_collide=False, show_sprite=True ):
         super().__init__()
         
-        # Sprite
+        # Mostrar o no sprite
         self.show_sprite = show_sprite
         self.sprite = None
+        image_notmove = pygame.image.load(
+            os.path.join(dir_sprites, 'player/player_not-move.png')
+        )
+        image_notmove = pygame.transform.scale(
+            image_notmove, 
+            ( ((disp_width//30)*3), disp_width//30 )
+        )
+        self.sprite_notmove = Anim_sprite_set(
+            sprite_sheet=image_notmove
+        )
 
+        image_move = pygame.image.load( 
+            os.path.join(dir_sprites, 'player/player_move.png')
+        )
+        image_move = pygame.transform.scale(
+            image_move, 
+            ( ((disp_width//30)*8), disp_width//30 )
+        )
+        self.sprite_move = Anim_sprite_set(
+            sprite_sheet=image_move
+        )
+        image_move = pygame.transform.flip(image_move, True, False)
+        self.sprite_move_invert = Anim_sprite_set(
+            sprite_sheet=image_move
+        )
+
+        # Mostrar o no collider
         self.surf = pygame.Surface( (disp_width//120, disp_width//60), pygame.SRCALPHA )
         if show_collide == True:
             self.transparency = 255
@@ -112,16 +138,7 @@ class Player(pygame.sprite.Sprite):
         if self.sprite == None:
             if self.show_sprite == True:
                 self.sprite = pygame.sprite.Sprite()
-                image = Anim_sprite_set(
-                    sprite_sheet=pygame.image.load(
-                        os.path.join(dir_sprites, 'player/player_not-move.png')
-                    ),
-                    current_frame=0
-                )
-                self.sprite.surf = pygame.transform.scale(
-                    image, 
-                    ( (disp_width//30), disp_width//30 )
-                )
+                self.sprite.surf = self.sprite_notmove[0]
                 self.sprite.rect = self.sprite.surf.get_rect()
                 all_sprites.add(self.sprite)
         else:
@@ -214,16 +231,7 @@ class Player(pygame.sprite.Sprite):
             if self.show_sprite == True and (not self.sprite == None):
                 self.sprite.kill()
                 self.sprite = pygame.sprite.Sprite()
-                image = Anim_sprite_set(
-                    sprite_sheet=pygame.image.load(
-                        os.path.join(dir_sprites, 'player/player_not-move.png')
-                    ),
-                    current_frame=2
-                )
-                self.sprite.surf = pygame.transform.scale(
-                    image, 
-                    ( (disp_width//30), disp_width//30 )
-                )
+                self.sprite.surf = self.sprite_notmove[2]
                 self.sprite.rect = self.sprite.surf.get_rect()
                 all_sprites.add(self.sprite)
 
@@ -244,16 +252,7 @@ class Player(pygame.sprite.Sprite):
                 if self.show_sprite == True and (not self.sprite == None):
                     self.sprite.kill()
                     self.sprite = pygame.sprite.Sprite()
-                    image = Anim_sprite_set(
-                        sprite_sheet=pygame.image.load(
-                            os.path.join(dir_sprites, 'player/player_not-move.png')
-                        ),
-                        current_frame=1
-                    )
-                    self.sprite.surf = pygame.transform.scale(
-                        image, 
-                        ( (disp_width//30), disp_width//30 )
-                    )
+                    self.sprite.surf = self.sprite_notmove[1]
                     self.sprite.rect = self.sprite.surf.get_rect()
                     all_sprites.add(self.sprite)
 
@@ -265,16 +264,7 @@ class Player(pygame.sprite.Sprite):
                 if self.show_sprite == True and (not self.sprite == None):
                     self.sprite.kill()
                     self.sprite = pygame.sprite.Sprite()
-                    image = Anim_sprite_set(
-                        sprite_sheet=pygame.image.load(
-                            os.path.join(dir_sprites, 'player/player_not-move.png')
-                        ),
-                        current_frame=0
-                    )
-                    self.sprite.surf = pygame.transform.scale(
-                        image, 
-                        ( (disp_width//30), disp_width//30 )
-                    )
+                    self.sprite.surf = self.sprite_notmove[0]
                     self.sprite.rect = self.sprite.surf.get_rect()
                     all_sprites.add(self.sprite)
             #print('sin gravedad')
@@ -283,87 +273,39 @@ class Player(pygame.sprite.Sprite):
             
         # Scción sprite y movimiento x
         if not self.x_move_type == None:
-            image=pygame.image.load(
-                os.path.join(dir_sprites, 'player/player_move.png')
-            )
             if self.show_sprite == True and (not self.sprite == None):
                 self.sprite.kill()
                 if self.x_move_type == 'right-anim':
                     self.sprite = pygame.sprite.Sprite()
-                    image = Anim_sprite_set(
-                        sprite_sheet=image,
-                        current_frame=0
-                    )
-                    self.sprite.surf = pygame.transform.scale(
-                        image, 
-                        ( (disp_width//30), disp_width//30 )
-                    )
+                    self.sprite.surf = self.sprite_move[0]
                     self.sprite.rect = self.sprite.surf.get_rect()
                     all_sprites.add(self.sprite)
 
                 elif self.x_move_type == 'right-jump':
                     self.sprite = pygame.sprite.Sprite()
-                    image = Anim_sprite_set(
-                        sprite_sheet=image,
-                        current_frame=1
-                    )
-                    self.sprite.surf = pygame.transform.scale(
-                        image, 
-                        ( (disp_width//30), disp_width//30 )
-                    )
+                    self.sprite.surf = self.sprite_move[1]
                     self.sprite.rect = self.sprite.surf.get_rect()
                     all_sprites.add(self.sprite)
                 elif self.x_move_type == 'right-fall':
                     self.sprite = pygame.sprite.Sprite()
-                    image = Anim_sprite_set(
-                        sprite_sheet=image,
-                        current_frame=6
-                    )
-                    self.sprite.surf = pygame.transform.scale(
-                        image, 
-                        ( (disp_width//30), disp_width//30 )
-                    )
+                    self.sprite.surf = self.sprite_move[6]
                     self.sprite.rect = self.sprite.surf.get_rect()
                     all_sprites.add(self.sprite)
                     
                 elif self.x_move_type == 'left-anim':
                     self.sprite = pygame.sprite.Sprite()
-                    image = pygame.transform.flip(image, True, False)
-                    image = Anim_sprite_set(
-                        sprite_sheet=image,
-                        current_frame=7
-                    )
-                    self.sprite.surf = pygame.transform.scale(
-                        image, 
-                        ( (disp_width//30), disp_width//30 )
-                    )
+                    self.sprite.surf = self.sprite_move_invert[7]
                     self.sprite.rect = self.sprite.surf.get_rect()
                     all_sprites.add(self.sprite)
 
                 elif self.x_move_type == 'left-jump':
                     self.sprite = pygame.sprite.Sprite()
-                    image = pygame.transform.flip(image, True, False)
-                    image = Anim_sprite_set(
-                        sprite_sheet=image,
-                        current_frame=6
-                    )
-                    self.sprite.surf = pygame.transform.scale(
-                        image, 
-                        ( (disp_width//30), disp_width//30 )
-                    )
+                    self.sprite.surf = self.sprite_move_invert[6]
                     self.sprite.rect = self.sprite.surf.get_rect()
                     all_sprites.add(self.sprite)
                 elif self.x_move_type == 'left-fall':
                     self.sprite = pygame.sprite.Sprite()
-                    image = pygame.transform.flip(image, True, False)
-                    image = Anim_sprite_set(
-                        sprite_sheet=image,
-                        current_frame=1
-                    )
-                    self.sprite.surf = pygame.transform.scale(
-                        image, 
-                        ( (disp_width//30), disp_width//30 )
-                    )
+                    self.sprite.surf = self.sprite_move_invert[1]
                     self.sprite.rect = self.sprite.surf.get_rect()
                     all_sprites.add(self.sprite)
         
@@ -461,8 +403,8 @@ class Spike(pygame.sprite.Sprite):
         )
         self.rect.y -= self.rect.height//2
         all_sprites.add(self)
-        instakill_objects.add(self)
-        #damage_objects.add(self)
+        #instakill_objects.add(self)
+        damage_objects.add(self)
         
         # Cuadrados solidos
         square_size = self.rect.height
@@ -489,37 +431,48 @@ class Spike(pygame.sprite.Sprite):
 
 
 class Star_pointed(pygame.sprite.Sprite):
-    def __init__(self, size=disp_width//60, position=(0,0) ):
+    def __init__(self, size=disp_width//60, position=(0,0), show_collide=False, show_sprite=True ):
         super().__init__()
         
+        # Mostrar o no collider
+        if show_collide == True:
+            self.transparency = 255
+        else:
+            self.transparency = 0
+        
         # Collider principal
-        self.surf = pygame.Surface( ( size/2, size/2 ) )
-        self.surf.fill( generic_colors('green') )
+        self.surf = pygame.Surface( ( size/2, size/2 ), pygame.SRCALPHA )
+        self.surf.fill( generic_colors('green', self.transparency) )
         self.rect = self.surf.get_rect( center=position )
         
         all_sprites.add(self)
         anim_sprites.add(self)
+        
+        # Mostrar o no sprite
+        self.show_sprite = show_sprite
+        self.__size = size
+        self.sprite = None
         
         # Cuadrados dañinos
         size_square = self.rect.width/2
         
         self.square_x1 = self.square_damage(
             size=size_square, position=(self.rect.x, self.rect.y +(size_square//2) ),
-            color=generic_colors('black')
+            color=generic_colors('black', self.transparency)
         )
         self.square_x2 = self.square_damage(
             size=size_square, position=(
                 self.rect.x-size_square, self.rect.y +(size_square//2) 
             ),
-            color=generic_colors('red')
+            color=generic_colors('red', self.transparency)
         )
         self.square_x3 = self.square_damage(
             size=size_square, position=(self.rect.x+size_square, self.rect.y +(size_square//2) ),
-            color=generic_colors('grey')
+            color=generic_colors('grey', self.transparency)
         )
         self.square_x4 = self.square_damage(
             size=size_square, position=(self.rect.x+(size_square*2), self.rect.y +(size_square//2) ),
-            color=generic_colors('blue')
+            color=generic_colors('blue', self.transparency)
         )
         
         # Animacion Variables
@@ -529,7 +482,7 @@ class Star_pointed(pygame.sprite.Sprite):
 
     def square_damage(self, size=4, position=(0,0), color=generic_colors('green') ):
         square = pygame.sprite.Sprite()
-        square.surf = pygame.Surface( (size, size) )
+        square.surf = pygame.Surface( (size, size), pygame.SRCALPHA )
         square.surf.fill( color )
         square.rect = square.surf.get_rect( topleft=position)
         all_sprites.add(square)
@@ -538,6 +491,24 @@ class Star_pointed(pygame.sprite.Sprite):
         return square
     
     def anim(self):
+        if self.sprite == None:
+            if self.show_sprite == True:
+                image = pygame.image.load(
+                     os.path.join(dir_sprites, 'spikes/star-pointed.png') 
+                )
+                image = pygame.transform.scale(image, (self.__size*7, self.__size) )
+                self.sprite = Anim_sprite(
+                    sprite_sheet=image
+                )
+                self.sprite.rect.topleft = (
+                    self.rect.x-(self.__size//4),
+                    self.rect.y-(self.__size//4)
+                )
+                all_sprites.add(self.sprite)
+        else:
+            self.sprite.anim()
+
+
         if self.count < self.fps:
             self.count += 1
             self.square_x2.rect.y -= 1
@@ -608,18 +579,26 @@ class Climate_rain(pygame.sprite.Sprite):
     def update(self):            
         # Mover al jugador si el collider esta en false
         self.collide = False
-        if self.collide == False and self.move == True:
+        if (
+            self.collide == False and 
+            self.move == True and
+            self.not_move == False
+        ):
             self.rect.y += self.speed_y
             self.rect.x -= self.speed_x
+        
+        # Esta variable permite establecer si se quiere parar la lluvia o no
+        self.not_move = False
 
-        # Si traspasar la pantalla
+        # Si traspasa la pantalla
         transfer_disp = obj_not_see(disp_width=disp_width, disp_height=disp_height, obj=self)
-        if (
-            #transfer_disp == 'width_positive' or
-            #transfer_disp == 'width_negative' or
-           transfer_disp == 'height_positive'
-        ):
+        if transfer_disp == 'height_positive':
             self.collide = True
+        elif (
+            transfer_disp == 'width_positive' or
+            transfer_disp == 'width_negative'
+        ):
+            self.not_move = True
 
         # Si toca objetos solidos
         for solid_object in solid_objects:

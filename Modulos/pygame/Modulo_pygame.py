@@ -467,7 +467,7 @@ class Anim_sprite(pygame.sprite.Sprite):
 
 
 
-def Anim_sprite_set(sprite_sheet=None, current_frame=0):
+def Anim_sprite_set(sprite_sheet=None, current_frame=None):
     '''
     Establecer un frame de un srpite tipo animación
     '''
@@ -492,7 +492,10 @@ def Anim_sprite_set(sprite_sheet=None, current_frame=0):
     # Índice para rastrear el cuadro de animación actual "current_frame"
     # Configurar la imagen inicial
     if not frames == []:
-        return( frames[current_frame] )
+        if current_frame == None:
+            return frames
+        else:
+            return( frames[current_frame] )
 
 
 

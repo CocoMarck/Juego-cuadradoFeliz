@@ -200,7 +200,7 @@ class Start_Map():
                     x_space += 1
 
                     Climate_rain(
-                        position=position,
+                        position=position
                     )
 
                 elif space == '0':
@@ -236,7 +236,7 @@ class Start_Map():
                         position=( 
                             random.randint( difference_x, rain_pixels_x+(difference_x) ),
                             random.randint( (difference_y)-(difference_x//2),  difference_y )
-                        ),
+                        )
                     )
 
 
