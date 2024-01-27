@@ -28,6 +28,7 @@ from Modulos.pygame.CF_object import(
     Player_part,
     Limit_indicator,
     Level_change,
+    Stair,
     
     all_sprites,
     solid_objects,
@@ -37,7 +38,8 @@ from Modulos.pygame.CF_object import(
     level_objects,
     anim_sprites,
     climate_objects,
-    player_objects
+    player_objects,
+    player_sprites
 )
 
 import pygame, sys, os, random
@@ -196,6 +198,22 @@ class Start_Map():
                     x_space += 1
                     Star_pointed(position=position)
 
+                elif space == '+':
+                    x_space += 1
+                    Stair(
+                        size=pixel_space,
+                        position=position,
+                        invert=False
+                    )
+                    
+                elif space == '-':
+                    x_space += 1
+                    Stair(
+                        size=pixel_space,
+                        position=position,
+                        invert=True
+                    )
+
                 elif space == '~':
                     x_space += 1
 
@@ -330,6 +348,9 @@ while True:
             display.blit(sprite.surf, sprite.rect)
         
     # Objetos / Jugador
+    for sprite in player_sprites:
+        display.blit(sprite.surf, sprite.rect)
+
     for sprite in all_sprites:
         if sprite == player:
             display.blit(sprite.surf, sprite.rect)
