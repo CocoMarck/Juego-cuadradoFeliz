@@ -373,16 +373,25 @@ def player_camera_move(
 
 
 
-def obj_not_see(disp_width=None, disp_height=None, obj=None):
+def obj_not_see(disp_width=None, disp_height=None, obj=None, difference=0):
+    '''
+    Para detectar si esta en la pantalla el sprite, si esta fuera de la pantalla, devolvera un string indicador de la posición en la que no se ve. Y si esta adentro de la pantalla, devolvera un None.
+    disp_width  =int, Ancho de pantalla
+    disp_height =int, Altura de pantalla
+    obj         =pygame.sprite.Sprite(), Objeto tipo sprite, con atributo rect
+
+    difference  =int, Añade/Dismunille, la altura y anchura de pantalla establecida. 
+    difference, es un parametro opcional. Los demas son necesarios
+    '''
     direction = None
-    if obj.rect.x > disp_width:
+    if obj.rect.x > disp_width +difference:
         direction = 'width_positive'
-    elif obj.rect.x < 0:
+    elif obj.rect.x < 0 -(difference):
         direction = 'width_negative'
     
-    elif obj.rect.y > disp_height:
+    elif obj.rect.y > disp_height +difference:
         direction = 'height_positive'
-    elif obj.rect.y < 0:
+    elif obj.rect.y < 0 -(difference):
         direction = 'height_negative'
     return direction
 

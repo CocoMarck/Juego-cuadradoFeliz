@@ -301,7 +301,7 @@ while True:
     # Fondo
     display.fill( (155, 168, 187) )
     
-    # Objetos para cambiar de nivel
+    # Objetos / Funciones / Para cambiar de nivel
     for sprite in level_objects:
         sprite.update()
         if not sprite.level == None:
@@ -338,36 +338,36 @@ while True:
                 climate_number += 1
                 dict_climate.update( {climate_number : [climate.rect.x, climate.rect.y]} )
     
-    # Player Funciones
+    # Objetos / Funciones / Player
     player.update()
     player.move()
-
-    # Objetos / Todos los sprites
-    for sprite in all_sprites:
-        if not sprite == player:
-            display.blit(sprite.surf, sprite.rect)
-        
-    # Objetos / Jugador
-    for sprite in player_sprites:
-        display.blit(sprite.surf, sprite.rect)
-
-    for sprite in all_sprites:
-        if sprite == player:
-            display.blit(sprite.surf, sprite.rect)
     
-    # Objetos / Animaciones
+    # Objetos / Funciones / Animaciones
     for sprite in anim_sprites:
         sprite.anim()
         
-    # Objetos / Clima Colision
+    # Objetos / Funciones / Clima Colision
     number = 0
     for climate in climate_objects:
         number += 1
         climate.update()
-        climate.move = True
         if climate.collide == True:
-           #print(climate.collide)
-           climate.rect.center = (camera_x + dict_climate.get(number)[0], camera_y + dict_climate.get(number)[1])
+            climate.rect.center = (
+                camera_x + dict_climate.get(number)[0], camera_y + dict_climate.get(number)[1]
+            )
+
+    # Objetos / Mostrar / Todos los sprites, solo si se ven en la pantalla
+    for sprite in all_sprites:
+        if obj_not_see(
+            disp_width=disp_width, disp_height=disp_height, obj=sprite, difference=disp_width//60
+        ) == None:
+            display.blit(sprite.surf, sprite.rect)
+        
+    # Objetos / Mostrar / Jugador, el se vera encima de los demas sprites (Las lineas de arriba)
+    for sprite in player_sprites:
+        display.blit(sprite.surf, sprite.rect)
+
+    display.blit(player.surf, player.rect)
 
     # Camara
     camera = player_camera_move(

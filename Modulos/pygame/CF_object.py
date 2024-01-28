@@ -616,7 +616,7 @@ class Climate_rain(pygame.sprite.Sprite):
         self.rect = self.surf.get_rect( center=position )
         self.speed_y = size//2
         self.speed_x = self.speed_y//2
-        self.move = False
+        self.move = True
         
         all_sprites.add(self)
         climate_objects.add(self)
