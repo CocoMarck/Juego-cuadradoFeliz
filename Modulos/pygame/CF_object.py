@@ -52,9 +52,8 @@ class Player(pygame.sprite.Sprite):
         self.sprite_move_invert = Anim_sprite_set(
             sprite_sheet=image_move
         )
-        self.sprite_fps = 7
         self.count_fps = 0
-        self.count_fps_invert = self.sprite_fps
+        self.count_fps_invert = len(self.sprite_move_invert)
 
         # Mostrar o no collider
         self.surf = pygame.Surface( (disp_width//120, disp_width//60), pygame.SRCALPHA )
@@ -268,11 +267,8 @@ class Player(pygame.sprite.Sprite):
         if not self.x_move_type == None:
             if self.show_sprite == True and (not self.sprite == None):
                 if self.x_move_type == 'right-anim':
+                    self.count_fps =(self.count_fps +1) % len(self.sprite_move)
                     self.sprite.surf = self.sprite_move[self.count_fps]
-                    if self.count_fps == self.sprite_fps:
-                        self.count_fps = 0
-                    else:
-                        self.count_fps += 1
 
                 elif self.x_move_type == 'right-jump':
                     self.sprite.surf = self.sprite_move[1]
@@ -280,19 +276,13 @@ class Player(pygame.sprite.Sprite):
                     self.sprite.surf = self.sprite_move[6]
                     
                 elif self.x_move_type == 'left-anim':
+                    self.count_fps_invert = (self.count_fps_invert -1) % len(self.sprite_move_invert)
                     self.sprite.surf = self.sprite_move_invert[self.count_fps_invert]
-                    if self.count_fps_invert == 0:
-                        self.count_fps_invert = self.sprite_fps
-                    else:
-                        self.count_fps_invert -= 1
 
                 elif self.x_move_type == 'left-jump':
                     self.sprite.surf = self.sprite_move_invert[6]
                 elif self.x_move_type == 'left-fall':
                     self.sprite.surf = self.sprite_move_invert[1]
-        else:
-            self.count_fps_invert = self.sprite_fps
-            self.count_fps = 0
         
 
         # Actualizar sprite
