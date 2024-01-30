@@ -73,12 +73,13 @@ class Player(pygame.sprite.Sprite):
         # Movimeinto
         # Jump power, establece velocidad y alura de salto.
         # speed, establece velocidad izquierda/derecha, y rebote en paredes.
-        self.gravity_power      =   self.rect.height//4
-        self.speed              =   self.rect.height//2
-        self.jump_power         =   self.rect.height//2
-        self.jumping = False
-        self.not_move = False
-        self.x_move_type = None
+        self.gravity            = True
+        self.gravity_power      = self.rect.height//4
+        self.speed              = self.rect.height//2
+        self.jump_power         = self.rect.height//2
+        self.jumping            = False
+        self.not_move           = False
+        self.x_move_type        = None
         
         # Vida
         self.hp = 100
@@ -106,26 +107,20 @@ class Player(pygame.sprite.Sprite):
                 self.moving = True
                 self.rect.x -= self.speed
                 if self.jumping == False and self.gravity == False:
-                    self.surf.fill( generic_colors('yellow', transparency=self.transparency) )
                     self.x_move_type = 'left-anim'
                 elif self.jumping == True:
-                    self.surf.fill( (128, 0, 255, self.transparency) )
                     self.x_move_type = 'left-jump'
                 else:
-                    self.surf.fill( (0, 128, 255, self.transparency) )
                     self.x_move_type = 'left-fall'
     
             if self.pressed_right:
                 self.moving = True
                 self.rect.x += self.speed
                 if self.jumping == False and self.gravity == False:
-                    self.surf.fill( generic_colors('yellow', transparency=self.transparency) )
                     self.x_move_type = 'right-anim'
                 elif self.jumping == True:
-                    self.surf.fill( (128, 0, 255, self.transparency) )
                     self.x_move_type = 'right-jump'
                 else:
-                    self.surf.fill( (0, 128, 255, self.transparency) )
                     self.x_move_type = 'right-fall'
     
     def jump(self):
@@ -185,7 +180,7 @@ class Player(pygame.sprite.Sprite):
                 #print(collision)
                 collide = True
         
-        # Colision con cambio de nivel
+        # Eventos | Colision con cambio de nivel
         for level in level_objects:
             if self.rect.colliderect(level.rect):
                 level.change_level = True
@@ -222,7 +217,7 @@ class Player(pygame.sprite.Sprite):
                 if instakill == True:
                     self.hp = -1
         
-        # Gravedad
+        # Gravedad y salto
         if (
             self.gravity == True and
             self.jumping == False
@@ -235,9 +230,6 @@ class Player(pygame.sprite.Sprite):
             if self.show_sprite == True and (not self.sprite == None):
                 self.sprite.surf = self.sprite_notmove[2]
 
-            #print( 
-            #    self.rect.x, self.rect.y
-            #)
         else:
             if self.jumping == True:
                 self.surf.fill( generic_colors('blue', transparency=self.transparency) )
@@ -259,12 +251,26 @@ class Player(pygame.sprite.Sprite):
                 # Sección sprite y
                 if self.show_sprite == True and (not self.sprite == None):
                     self.sprite.surf = self.sprite_notmove[0]
-            #print('sin gravedad')
 
+            # Sin gravedad
             self.rect.y += 0
-            
-        # Scción sprite y movimiento x
+    
+        # Sección de movimiento x
         if not self.x_move_type == None:
+            if (
+                self.x_move_type == 'right-anim' or self.x_move_type == 'left-anim'
+            ):
+                self.surf.fill( generic_colors('yellow', transparency=self.transparency) )
+            elif (
+                self.x_move_type == 'right-jump' or self.x_move_type == 'left-jump'
+            ):
+                self.surf.fill( (127, 0, 255, self.transparency) )
+            elif (
+                self.x_move_type == 'right-fall' or self.x_move_type == 'left-fall'
+            ):
+                self.surf.fill( (0, 127, 255, self.transparency) )
+    
+            # Scción sprite movimiento x
             if self.show_sprite == True and (not self.sprite == None):
                 if self.x_move_type == 'right-anim':
                     self.count_fps =(self.count_fps +1) % len(self.sprite_move)
@@ -285,7 +291,7 @@ class Player(pygame.sprite.Sprite):
                     self.sprite.surf = self.sprite_move_invert[1]
         
 
-        # Actualizar sprite
+        # Actualizar posición de sprite
         if not self.sprite == None:
             self.sprite.rect.x = self.rect.x -(self.rect.width+(self.rect.width//2))
             self.sprite.rect.y = self.rect.y -self.rect.height
@@ -453,6 +459,8 @@ class Star_pointed(pygame.sprite.Sprite):
         # Animacion Variables
         self.fps = size_square
         self.count = 0
+        self.mid_size = size_square//2
+        self.mid_size_3 = (self.mid_size)*3
 
 
     def square_damage(self, size=4, position=(0,0), color=generic_colors('green') ):
@@ -485,45 +493,45 @@ class Star_pointed(pygame.sprite.Sprite):
 
 
         if self.count < self.fps:
-            self.count += 1
-            self.square_x2.rect.y -= 1
+            self.count += self.mid_size
+            self.square_x2.rect.y -= self.mid_size
             
-            self.square_x4.rect.y += 1
+            self.square_x4.rect.y += self.mid_size
 
         elif self.count >= self.fps:
             if self.count < self.fps+(self.fps//2):
-                self.count += 1
-                self.square_x1.rect.y -= 1
-                self.square_x2.rect.y -= 1
-                self.square_x3.rect.y += 1
-                self.square_x4.rect.y += 1
+                self.count += self.mid_size
+                self.square_x1.rect.y -= self.mid_size
+                self.square_x2.rect.y -= self.mid_size
+                self.square_x3.rect.y += self.mid_size
+                self.square_x4.rect.y += self.mid_size
             if self.count >= self.fps+(self.fps//2):
                 if self.count < self.fps*2:
-                    self.count += 1
-                    self.square_x1.rect.x += 1
-                    self.square_x2.rect.x += 3
-                    self.square_x3.rect.x -= 1
-                    self.square_x4.rect.x -= 3
+                    self.count += self.mid_size
+                    self.square_x1.rect.x += self.mid_size
+                    self.square_x2.rect.x += self.mid_size_3
+                    self.square_x3.rect.x -= self.mid_size
+                    self.square_x4.rect.x -= self.mid_size_3
                 elif self.count >= self.fps*2:
                     if self.count < self.fps*3:
-                        self.count += 1
-                        self.square_x2.rect.x += 1
+                        self.count += self.mid_size
+                        self.square_x2.rect.x += self.mid_size
                         
-                        self.square_x4.rect.x -= 1
+                        self.square_x4.rect.x -= self.mid_size
                     elif self.count >= self.fps*3:
                         if self.count < self.fps*3+(self.fps//2):
-                            self.count += 1
-                            self.square_x1.rect.x += 1
-                            self.square_x2.rect.x += 1
-                            self.square_x3.rect.x -= 1
-                            self.square_x4.rect.x -= 1
+                            self.count += self.mid_size
+                            self.square_x1.rect.x += self.mid_size
+                            self.square_x2.rect.x += self.mid_size
+                            self.square_x3.rect.x -= self.mid_size
+                            self.square_x4.rect.x -= self.mid_size
                         elif self.count >= self.fps*3+(self.fps//2):
                             if self.count < self.fps*4:
-                                self.count += 1
-                                self.square_x1.rect.y += 1
-                                self.square_x2.rect.y += 3
-                                self.square_x3.rect.y -= 1
-                                self.square_x4.rect.y -= 3
+                                self.count += self.mid_size
+                                self.square_x1.rect.y += self.mid_size
+                                self.square_x2.rect.y += self.mid_size_3
+                                self.square_x3.rect.y -= self.mid_size
+                                self.square_x4.rect.y -= self.mid_size_3
                             elif self.count >= self.fps*4:
                                 self.count = 0
                                 self.square_x1.rect.x -= self.fps
@@ -598,42 +606,76 @@ class Stair(pygame.sprite.Sprite):
 
 
 class Climate_rain(pygame.sprite.Sprite):
-    def __init__(self, size=disp_width//60, position=(disp_width//2, disp_height//2) ):
+    def __init__(
+        self, size=disp_width//60, position=(disp_width//2, disp_height//2),
+        show_collide=False, show_sprite=True
+    ):
         super().__init__()
         
-        self.surf = pygame.Surface( (size//4, size//4) )
-        self.surf.fill( generic_colors('blue') )
+        # Mostrar Collider o no
+        if show_collide == True:
+            self.transparency = 255
+        else:
+            self.transparency = 0
+        
+        # Sección de collider
+        self.surf = pygame.Surface( (size//4, size//4), pygame.SRCALPHA )
+        self.surf.fill( generic_colors('yellow', self.transparency) )
         self.rect = self.surf.get_rect( center=position )
         self.speed_y = size//2
         self.speed_x = self.speed_y//2
         self.move = True
+        self.not_move = False
         
         all_sprites.add(self)
         climate_objects.add(self)
+        
+        # Sección de sprite
+        sprite_sheet=pygame.transform.scale(
+            pygame.image.load( os.path.join(dir_sprites, 'climate/rain.png' ) ),
+            (size*2, size)
+        )
+        self.image = Anim_sprite_set(
+            sprite_sheet=sprite_sheet
+        )
+        self.fps = fps//4
+        self.fps_count = 0
+        self.sprite_collide = None
+        self.sprite = None
+        self.size = size
+        self.size_difference = (size//4)*3
+        if show_sprite == True:
+            self.sprite = pygame.sprite.Sprite()
+            self.sprite.surf = self.image[0]
+            self.sprite.rect = self.surf.get_rect()
+            all_sprites.add( self.sprite )
+            forward_sprites.add( self.sprite )
         
     def update(self):            
         # Mover al jugador si el collider esta en false
         self.collide = False
         if (
             self.collide == False and 
-            self.move == True #and
-            #self.not_move == False
+            self.move == True and
+            self.not_move == False
         ):
             self.rect.y += self.speed_y
             self.rect.x -= self.speed_x
         
         # Esta variable permite establecer si se quiere parar el movimiento de la lluvia o no.
-        #self.not_move = False
+        self.not_move = False
 
         # Eventos | Si traspasa la pantalla
-        transfer_disp = obj_not_see(disp_width=disp_width, disp_height=disp_height, obj=self)
+        transfer_disp = obj_not_see(
+            disp_width=disp_width, disp_height=disp_height, obj=self, difference=(self.size*32)
+        )
         if transfer_disp == 'height_positive':
             self.collide = True
-        #elif (
-        #    transfer_disp == 'width_positive' or
-        #    transfer_disp == 'width_negative'
-        #):
-        #    self.not_move = True
+        elif (
+            transfer_disp == 'width_positive' or
+            transfer_disp == 'width_negative'
+        ):
+            self.not_move = True
 
         # Eventos | Si toca objetos solidos
         for solid_object in solid_objects:
@@ -644,6 +686,31 @@ class Climate_rain(pygame.sprite.Sprite):
         for player in player_objects:
             if self.rect.colliderect(player.rect):
                 self.collide = True
+        
+        # Sección para mover sprite correctamente
+        if not self.sprite == None:
+            self.sprite.rect.topleft = (
+                self.rect.x, self.rect.y-(self.size_difference)
+            )
+        
+        # Sección para dibujar un sprite al colisionar con piso
+        if self.collide == True:
+            if self.sprite_collide == None and (not self.sprite == None):
+                self.sprite_collide = pygame.sprite.Sprite()
+                self.sprite_collide.surf = self.image[1]
+                self.sprite_collide.rect = self.sprite_collide.surf.get_rect()
+                self.sprite_collide.rect.topleft = (
+                    self.rect.x, self.rect.y-(self.size_difference)
+                )
+                all_sprites.add( self.sprite_collide )
+                forward_sprites.add( self.sprite_collide )
+        else:
+            if not self.sprite_collide == None:
+                self.fps_count += 1
+                if self.fps_count == self.fps:
+                    self.sprite_collide.kill()
+                    self.sprite_collide = None
+                    self.fps_count = 0
 
 
 
@@ -867,6 +934,8 @@ class Level_change(pygame.sprite.Sprite):
 
 # Grupos de sprites
 all_sprites = pygame.sprite.Group()
+#back_sprites = pygame.sprite.Group()
+forward_sprites = pygame.sprite.Group()
 
 player_sprites = pygame.sprite.Group()
 player_objects = pygame.sprite.Group()

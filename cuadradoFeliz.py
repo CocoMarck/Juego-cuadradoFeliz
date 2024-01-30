@@ -31,6 +31,8 @@ from Modulos.pygame.CF_object import(
     Stair,
     
     all_sprites,
+    forward_sprites,
+
     solid_objects,
     instakill_objects,
     damage_objects,
@@ -339,8 +341,8 @@ while True:
                 dict_climate.update( {climate_number : [climate.rect.x, climate.rect.y]} )
     
     # Objetos / Funciones / Player
-    player.update()
     player.move()
+    player.update()
     
     # Objetos / Funciones / Animaciones
     for sprite in anim_sprites:
@@ -361,13 +363,25 @@ while True:
         if obj_not_see(
             disp_width=disp_width, disp_height=disp_height, obj=sprite, difference=disp_width//60
         ) == None:
-            display.blit(sprite.surf, sprite.rect)
+            if (
+                (not sprite in forward_sprites) and
+                (not sprite in player_sprites)
+            ):
+                display.blit(sprite.surf, sprite.rect)
         
     # Objetos / Mostrar / Jugador, el se vera encima de los demas sprites (Las lineas de arriba)
     for sprite in player_sprites:
         display.blit(sprite.surf, sprite.rect)
 
     display.blit(player.surf, player.rect)
+    
+    # Objetos / Mostrar / Adelante, maxima pioridad
+    for sprite in forward_sprites:
+        if obj_not_see(
+            disp_width=disp_width, disp_height=disp_height, obj=sprite, difference=disp_width//60
+        ) == None:
+            display.blit(sprite.surf, sprite.rect)
+
 
     # Camara
     camera = player_camera_move(
