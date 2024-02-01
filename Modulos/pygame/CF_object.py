@@ -7,16 +7,57 @@ from Modulos.pygame.Modulo_pygame import (
 from .CF_info import (
     disp_width,
     disp_height,
+    
+    fps,
+    game_title,
+    volume,
+
     dir_game,
     dir_data,
     dir_sprites,
     dir_maps,
-    fps,
-    game_title
+    dir_audio
 )
 
 import pygame, sys, os, random
 from pygame.locals import *
+
+
+
+
+# Audio | Pasos | Golpes | Salto | Muertes
+sounds_step = [
+    pygame.mixer.Sound( os.path.join(dir_audio, 'effects/steps/step-1.ogg') ),
+    pygame.mixer.Sound( os.path.join(dir_audio, 'effects/steps/step-2.ogg') ),
+    pygame.mixer.Sound( os.path.join(dir_audio, 'effects/steps/step-3.ogg') )
+]
+for step in sounds_step:
+    step.set_volume(volume)
+
+
+sounds_hit = [
+    pygame.mixer.Sound( os.path.join(dir_audio, 'effects/hits/hit-1.ogg') ),
+    pygame.mixer.Sound( os.path.join(dir_audio, 'effects/hits/hit-2.ogg') ),
+    pygame.mixer.Sound( os.path.join(dir_audio, 'effects/hits/hit-3.ogg') )
+]
+for hit in sounds_hit:
+    hit.set_volume(volume)
+
+
+sound_jump = pygame.mixer.Sound(
+    os.path.join(dir_audio, 'effects/jump.ogg')
+)
+sound_jump.set_volume(volume)
+
+sounds_dead = [
+    pygame.mixer.Sound( os.path.join(dir_audio, 'effects/dead/dead-1.ogg' ) ),
+    pygame.mixer.Sound( os.path.join(dir_audio, 'effects/dead/dead-2.ogg' ) ),
+    pygame.mixer.Sound( os.path.join(dir_audio, 'effects/dead/dead-3.ogg' ) )
+]
+for dead in sounds_dead:
+    dead.set_volume(volume)
+
+
 
 
 # Objetos / Clases
@@ -75,14 +116,23 @@ class Player(pygame.sprite.Sprite):
         # speed, establece velocidad izquierda/derecha, y rebote en paredes.
         self.gravity            = True
         self.gravity_power      = self.rect.height//4
-        self.speed              = self.rect.height//2
+
         self.jump_power         = self.rect.height//2
         self.jumping            = False
+        self.jump_max_height    = self.jump_power*8
+        self.__jump_count       = 0
+
+        self.speed              = self.rect.height//2
         self.not_move           = False
         self.x_move_type        = None
         
         # Vida
         self.hp = 100
+        
+        # Sonido
+        self.sound_step = 'wait'
+        self.sound_fps = fps//3
+        self.sound_fps_count = 0
     
     
     def move(self):
@@ -190,9 +240,15 @@ class Player(pygame.sprite.Sprite):
         if collide == True:
             self.gravity = False
             self.surf.fill( generic_colors('red', transparency=self.transparency) )
+            
+            if self.sound_step == 'wait':
+                self.sound_step = 'yes'
+            elif self.sound_step == 'yes':
+                self.sound_step = 'no'
 
         else:
             self.gravity = True
+            self.sound_step = 'wait'
 
         # Eventos al morir y al recibir Daño
         # Colider de daño
@@ -222,6 +278,7 @@ class Player(pygame.sprite.Sprite):
             self.gravity == True and
             self.jumping == False
         ):
+            # Gravedad
             self.surf.fill( generic_colors('sky_blue', transparency=self.transparency) )
 
             self.rect.y += self.gravity_power
@@ -231,12 +288,13 @@ class Player(pygame.sprite.Sprite):
                 self.sprite.surf = self.sprite_notmove[2]
 
         else:
+            # Salto
             if self.jumping == True:
                 self.surf.fill( generic_colors('blue', transparency=self.transparency) )
 
-                if not self.__jump_max_height <= 0:
+                if not self.__jump_count >= (self.jump_max_height):
                     self.rect.y -= self.jump_power
-                    self.__jump_max_height -= self.jump_power
+                    self.__jump_count += self.jump_power
                 else:
                     self.jumping = False
                     
@@ -245,8 +303,8 @@ class Player(pygame.sprite.Sprite):
                     self.sprite.surf = self.sprite_notmove[1]
 
             else:
+                self.__jump_count = 0
                 self.surf.fill( generic_colors('green', transparency=self.transparency) )
-                self.__jump_max_height = self.jump_power*8
                 
                 # Sección sprite y
                 if self.show_sprite == True and (not self.sprite == None):
@@ -256,45 +314,71 @@ class Player(pygame.sprite.Sprite):
             self.rect.y += 0
     
         # Sección de movimiento x
-        if not self.x_move_type == None:
-            if (
-                self.x_move_type == 'right-anim' or self.x_move_type == 'left-anim'
-            ):
-                self.surf.fill( generic_colors('yellow', transparency=self.transparency) )
-            elif (
-                self.x_move_type == 'right-jump' or self.x_move_type == 'left-jump'
-            ):
-                self.surf.fill( (127, 0, 255, self.transparency) )
-            elif (
-                self.x_move_type == 'right-fall' or self.x_move_type == 'left-fall'
-            ):
-                self.surf.fill( (0, 127, 255, self.transparency) )
-    
-            # Scción sprite movimiento x
-            if self.show_sprite == True and (not self.sprite == None):
-                if self.x_move_type == 'right-anim':
-                    self.count_fps =(self.count_fps +1) % len(self.sprite_move)
-                    self.sprite.surf = self.sprite_move[self.count_fps]
+        if (
+            self.x_move_type == 'right-anim' or self.x_move_type == 'left-anim'
+        ):
+            self.surf.fill( generic_colors('yellow', transparency=self.transparency) )
+            self.sound_fps_count += 1
+            if self.sound_fps_count == self.sound_fps:
+                ( random.choice(sounds_step) ).play()
+                self.sound_fps_count = 0
+        elif (
+            self.x_move_type == 'right-jump' or self.x_move_type == 'left-jump'
+        ):
+            self.surf.fill( (127, 0, 255, self.transparency) )
+        elif (
+            self.x_move_type == 'right-fall' or self.x_move_type == 'left-fall'
+        ):
+            self.surf.fill( (0, 127, 255, self.transparency) )
+        else:
+            #if self.x_move_type == None:
+            self.sound_fps_count = 0
 
-                elif self.x_move_type == 'right-jump':
-                    self.sprite.surf = self.sprite_move[1]
-                elif self.x_move_type == 'right-fall':
-                    self.sprite.surf = self.sprite_move[6]
-                    
-                elif self.x_move_type == 'left-anim':
-                    self.count_fps_invert = (self.count_fps_invert -1) % len(self.sprite_move_invert)
-                    self.sprite.surf = self.sprite_move_invert[self.count_fps_invert]
+        # Scción sprite movimiento x
+        if self.show_sprite == True and (not self.sprite == None):
+            if self.x_move_type == 'right-anim':
+                self.count_fps =(self.count_fps +1) % len(self.sprite_move)
+                self.sprite.surf = self.sprite_move[self.count_fps]
 
-                elif self.x_move_type == 'left-jump':
-                    self.sprite.surf = self.sprite_move_invert[6]
-                elif self.x_move_type == 'left-fall':
-                    self.sprite.surf = self.sprite_move_invert[1]
+            elif self.x_move_type == 'right-jump':
+                self.sprite.surf = self.sprite_move[1]
+            elif self.x_move_type == 'right-fall':
+                self.sprite.surf = self.sprite_move[6]
+                
+            elif self.x_move_type == 'left-anim':
+                self.count_fps_invert = (self.count_fps_invert -1) % len(self.sprite_move_invert)
+                self.sprite.surf = self.sprite_move_invert[self.count_fps_invert]
+
+            elif self.x_move_type == 'left-jump':
+                self.sprite.surf = self.sprite_move_invert[6]
+            elif self.x_move_type == 'left-fall':
+                self.sprite.surf = self.sprite_move_invert[1]
         
 
         # Actualizar posición de sprite
         if not self.sprite == None:
             self.sprite.rect.x = self.rect.x -(self.rect.width+(self.rect.width//2))
             self.sprite.rect.y = self.rect.y -self.rect.height
+            
+        # Audio | Reproducción
+        if self.sound_step == 'yes':
+            # Cuando tocas el suelo de objetos solidos
+            ( random.choice(sounds_step) ).play()
+
+        if self.not_move == True and self.hp >= 1:
+            if damage == False:
+                # Cuando te pegas con algun objeto solido.
+                if not self.sound_step == 'yes':
+                    ( random.choice(sounds_step) ).play()
+            else:
+                # Cuando te pegas con algun objeto dañino
+                ( random.choice(sounds_hit) ).play()
+
+        if (
+            self.__jump_count == self.jump_power and self.jumping == True
+        ):
+            # Salto
+            sound_jump.play()
 
 
 
@@ -622,7 +706,13 @@ class Climate_rain(pygame.sprite.Sprite):
         self.surf = pygame.Surface( (size//4, size//4), pygame.SRCALPHA )
         self.surf.fill( generic_colors('yellow', self.transparency) )
         self.rect = self.surf.get_rect( center=position )
-        self.speed_y = size//2
+        self.speed_y = random.choice(
+            [  
+                size//2, 
+                ( (size//2) -(size//16) ),
+                ( (size//2) -(size//8) )
+            ]
+        )
         self.speed_x = self.speed_y//2
         self.move = True
         self.not_move = False
@@ -849,6 +939,7 @@ class Player_part(pygame.sprite.Sprite):
             )
             if not collide == None:
                 self.gravity = False
+                ( random.choice(sounds_hit) ).play()
         
         # Gravedad / Salto / Movimiento y
         if self.gravity == True:

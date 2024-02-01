@@ -535,3 +535,22 @@ def Split_sprite(sprite_sheet, parts=4):
             frames.append(frame)
 
     return frames
+
+
+
+def obj_detect_collision(obj_main, obj_collide):
+    collision_direction = None
+    if obj_main.rect.y == obj_collide.rect.y-(obj_main.rect.height):
+        # Colision arriba
+        collision_direction = 'collide_up'
+    elif obj_main.rect.y == obj_collide.rect.y+(obj_collide.rect.height):
+        # Colision abajo
+        collision_direction = 'collide_down'
+    elif obj_main.rect.x == obj_collide.rect.x-(obj_main.rect.width):
+        # Colision izquierda
+        collision_direction = 'collide_left'
+    elif obj_main.rect.x == obj_collide.rect.x+(obj_collide.rect.width):
+        # Collide derecha
+        collision_direction = 'collide_right'
+    
+    return collision_direction

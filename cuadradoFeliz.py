@@ -10,12 +10,17 @@ from Modulos.pygame.Modulo_pygame import (
 from Modulos.pygame.CF_info import (
     disp_width,
     disp_height,
+    
+    fps,
+    game_title,
+    volume,
+
     dir_game,
     dir_data,
     dir_sprites,
     dir_maps,
-    fps,
-    game_title,
+    dir_audio,
+    
     current_level
 )
 from Modulos.pygame.CF_object import(
@@ -41,15 +46,16 @@ from Modulos.pygame.CF_object import(
     anim_sprites,
     climate_objects,
     player_objects,
-    player_sprites
+    player_sprites,
+    
+    sounds_hit,
+    sounds_step,
+    sounds_dead,
+    sound_jump
 )
 
 import pygame, sys, os, random
 from pygame.locals import *
-
-
-# Inicalizar pygame
-pygame.init()
 
 # Resolución de pantalla de juego
 disp_resolution = ( disp_width, disp_height )
@@ -60,6 +66,12 @@ clock = pygame.time.Clock()
 
 # Titulo del juego
 pygame.display.set_caption(game_title)
+
+# Audio | Musica de fondo
+music = os.path.join(dir_audio, 'music/silence.ogg')
+pygame.mixer.music.set_volume( volume )
+pygame.mixer.music.load( music )
+pygame.mixer.music.play(-1)
 
 
 '''
@@ -288,6 +300,31 @@ for climate in climate_objects:
     dict_climate.update( {climate_number : [climate.rect.x, climate.rect.y]} )
 
 
+# Funcion | Dia y noche
+count_fps_day = 0
+
+color_day_red = 155
+color_day_green = 168
+color_day_blue = 187
+color_day = [color_day_red, color_day_green, color_day_blue]
+is_night = False
+
+changes_day = []
+for value in color_day:
+    if value > 1:
+        changes_day.append( value//2 )
+    else:
+        changes_day.append( 0 )
+
+# fps = 30
+# Si son 30 cambios maximos, entonces cada segundo secedera un cambio. (fps/1)
+# Si son 60 cambios maximos, entonces cada medio segundo secedera un cambio. (fps/2)
+# Si son 90 cambios maximos, entonces cada 1/3 segundo secedera un cambio. (fps/3)
+# Esto con el fin de que cada dia/noche, duren medio minuto, de esa manera cada dia completo dura 1 minuto
+color_change = ( 
+    fps//( ( max(changes_day) )/fps ) 
+)
+    
 
 
 # Bucle del juego
@@ -300,8 +337,62 @@ while True:
             if event.key == player.pressed_jump:
                 player.jump()
     
-    # Fondo
-    display.fill( (155, 168, 187) )
+    # Fondo | Ciclo dia y noche
+    display.fill(
+        ( color_day[0],color_day[1],color_day[2] )
+    )
+
+    if count_fps_day == color_change:
+        count_fps_day = 0
+        if is_night == False:
+            values = [False, False, False]
+            if not color_day[0] == changes_day[0]:
+                color_day[0] -= 1
+            else:
+                values[0] = True
+
+            if not color_day[1] == changes_day[1]:
+                color_day[1] -= 1
+            else:
+                values[1] = True
+            
+            if not color_day[2] == changes_day[2]:
+                color_day[2] -= 1
+            else:
+                values[2] = True
+            
+            if (
+                values[0] == True and
+                values[1] == True and
+                values[2] == True
+            ):
+                is_night = True
+
+        elif is_night == True:
+            values = [False, False, False]
+            if not color_day[0] == color_day_red:
+                color_day[0] += 1
+            else:
+                values[0] = True
+
+            if not color_day[1] == color_day_green:
+                color_day[1] += 1
+            else:
+                values[1] = True
+
+            if not color_day[2] == color_day_blue:
+                color_day[2] += 1
+            else:
+                values[2] = True
+                
+            if (
+                values[0] == True and
+                values[1] == True and
+                values[2] == True
+            ):
+                is_night = False
+                
+    count_fps_day += 1
     
     # Objetos / Funciones / Para cambiar de nivel
     for sprite in level_objects:
@@ -403,6 +494,7 @@ while True:
                 )
             )
             player.show_sprite = False
+            ( random.choice(sounds_dead) ).play()
         else:
             if player_anim_dead.anim_fin == True:
                 player_anim_dead = None
