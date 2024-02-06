@@ -125,13 +125,14 @@ class Player(pygame.sprite.Sprite):
         self.speed              = self.rect.height//2
         self.not_move           = False
         self.x_move_type        = None
+        self.pressed_jump       =  pygame.K_SPACE
         
         # Vida
         self.hp = 100
         
         # Sonido
         self.sound_step = 'wait'
-        self.sound_fps = fps//3
+        self.sound_fps = fps//3.75
         self.sound_fps_count = 0
     
     
@@ -143,7 +144,6 @@ class Player(pygame.sprite.Sprite):
         pressed_keys = pygame.key.get_pressed()
         self.pressed_left = pressed_keys[K_LEFT]
         self.pressed_right = pressed_keys[K_RIGHT]
-        self.pressed_jump =  pygame.K_SPACE
         
         # Iniciar o no el movimiento
         # Si el not_move esta en false, entonces puede seguir.
@@ -574,57 +574,48 @@ class Star_pointed(pygame.sprite.Sprite):
                 all_sprites.add(self.sprite)
         else:
             self.sprite.anim()
-
-
+        
         if self.count < self.fps:
             self.count += self.mid_size
-            self.square_x2.rect.y -= self.mid_size
+            self.square_x1.rect.y -= self.mid_size//2
+            self.square_x2.rect.y -= self.mid_size*(1.5)
             
-            self.square_x4.rect.y += self.mid_size
+            self.square_x3.rect.y += self.mid_size//2
+            self.square_x4.rect.y += self.mid_size*(1.5)
 
         elif self.count >= self.fps:
-            if self.count < self.fps+(self.fps//2):
+            if self.count < self.fps*1.5:
                 self.count += self.mid_size
-                self.square_x1.rect.y -= self.mid_size
-                self.square_x2.rect.y -= self.mid_size
-                self.square_x3.rect.y += self.mid_size
-                self.square_x4.rect.y += self.mid_size
-            if self.count >= self.fps+(self.fps//2):
-                if self.count < self.fps*2:
+                self.square_x1.rect.x += self.mid_size
+                self.square_x2.rect.x += self.mid_size_3
+                self.square_x3.rect.x -= self.mid_size
+                self.square_x4.rect.x -= self.mid_size_3
+            elif self.count >= self.fps*1.5:
+                if self.count < self.fps*2.5:
                     self.count += self.mid_size
-                    self.square_x1.rect.x += self.mid_size
-                    self.square_x2.rect.x += self.mid_size_3
-                    self.square_x3.rect.x -= self.mid_size
-                    self.square_x4.rect.x -= self.mid_size_3
-                elif self.count >= self.fps*2:
+                    self.square_x1.rect.x += self.mid_size//2
+                    self.square_x2.rect.x += self.mid_size*1.5
+                    
+                    self.square_x3.rect.x -= self.mid_size//2
+                    self.square_x4.rect.x -= self.mid_size*1.5
+
+                elif self.count >= self.fps*2.5:
                     if self.count < self.fps*3:
                         self.count += self.mid_size
-                        self.square_x2.rect.x += self.mid_size
-                        
-                        self.square_x4.rect.x -= self.mid_size
+                        self.square_x1.rect.y += self.mid_size
+                        self.square_x2.rect.y += self.mid_size_3
+                        self.square_x3.rect.y -= self.mid_size
+                        self.square_x4.rect.y -= self.mid_size_3
+
                     elif self.count >= self.fps*3:
-                        if self.count < self.fps*3+(self.fps//2):
-                            self.count += self.mid_size
-                            self.square_x1.rect.x += self.mid_size
-                            self.square_x2.rect.x += self.mid_size
-                            self.square_x3.rect.x -= self.mid_size
-                            self.square_x4.rect.x -= self.mid_size
-                        elif self.count >= self.fps*3+(self.fps//2):
-                            if self.count < self.fps*4:
-                                self.count += self.mid_size
-                                self.square_x1.rect.y += self.mid_size
-                                self.square_x2.rect.y += self.mid_size_3
-                                self.square_x3.rect.y -= self.mid_size
-                                self.square_x4.rect.y -= self.mid_size_3
-                            elif self.count >= self.fps*4:
-                                self.count = 0
-                                self.square_x1.rect.x -= self.fps
+                        self.count = 0
+                        self.square_x1.rect.x -= self.fps
 
-                                self.square_x2.rect.x -= (self.fps*3)
+                        self.square_x2.rect.x -= (self.fps*3)
 
-                                self.square_x3.rect.x += self.fps
+                        self.square_x3.rect.x += self.fps
 
-                                self.square_x4.rect.x += (self.fps*3)
+                        self.square_x4.rect.x += (self.fps*3)
 
 
 

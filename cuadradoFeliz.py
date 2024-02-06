@@ -68,10 +68,7 @@ clock = pygame.time.Clock()
 pygame.display.set_caption(game_title)
 
 # Audio | Musica de fondo
-music = os.path.join(dir_audio, 'music/silence.ogg')
-pygame.mixer.music.set_volume( volume )
-pygame.mixer.music.load( music )
-pygame.mixer.music.play(-1)
+#...
 
 
 '''
@@ -114,7 +111,7 @@ class Start_Map():
         
         # Establecer la información del mapa
         next_level = None
-        climate = None
+        self.climate = None
         map_info = Only_Comment(
             text=map_level,
             comment='$$'
@@ -128,7 +125,7 @@ class Start_Map():
                 number_info += 1
             next_level = info[0].split(':')
         if number_info == 2:
-            climate = info[1]
+            self.climate = info[1]
 
         # Establecer objetos en su posición inidaca
         map_level = Ignore_Comment(text=map_level, comment='//')
@@ -245,7 +242,7 @@ class Start_Map():
                     )
         
         # Sección de genración de clima:
-        if climate == 'rain':
+        if self.climate == 'rain':
             rain_space_x = 0
             for space in map_level.split('\n')[0]:
                 if (
@@ -272,9 +269,86 @@ class Start_Map():
                     )
 
 
+# Loop dia y noche
+class Loop_allday():
+    def __init__ (self, climate=None, minutes=1, fps=fps):
+        self.count_fps_day = 0
+
+        if climate == None:
+            self.color_day_red = 108
+            self.color_day_green = 150
+            self.color_day_blue = 255
+        elif climate == 'rain':
+            self.color_day_red = 155
+            self.color_day_green = 168
+            self.color_day_blue = 187
+        self.color_day = [self.color_day_red, self.color_day_green, self.color_day_blue]
+        self.is_night = False
+
+        # Cambio de dia a noche, y de noche a dia, entre mas bajo, mas cambios. Y mas oscura la noche
+        # Como minimo, reductor tiene que ser dos, o si no falla el programa
+        # Minutos de duración
+        #minutes = minutes
+
+        reducer = 4
+        self.changes_day = []
+        for value in self.color_day:
+            if value > (reducer-1):
+                self.changes_day.append( value//reducer )
+            else:
+                self.changes_day.append( 0 )
+
+        reducer = (reducer-1)
+
+        # fps = 30
+        # Si son 30 cambios maximos, entonces cada segundo secedera un cambio. (fps/1)
+        # Si son 60 cambios maximos, entonces cada medio segundo secedera un cambio. (fps/2)
+        # Si son 90 cambios maximos, entonces cada 1/3 segundo secedera un cambio. (fps/3)
+        # Esto con el fin de que cada dia/noche, duren aproximadamente medio minuto, de esa manera cada dia completo dura 1 minuto
+        self.color_change = (
+            ( fps//( ( max(self.changes_day) )/fps ) )//(reducer)
+        )*minutes
+        if self.color_change < 1:
+            self.color_change = 1
+
+
+
+# Funcion Musica
+# Crear un evento personalizado para el final de la pista
+end_of_track_event = pygame.USEREVENT + 1
+pygame.mixer.music.set_endevent(end_of_track_event)
+
+def play_music():
+    list_music = [
+        #os.path.join(dir_audio, 'music/silence.ogg'),
+        [os.path.join(dir_audio, 'music/default-music.ogg'), 4],
+        [os.path.join(dir_audio, 'music/music-test1.ogg'), 2],
+        [os.path.join(dir_audio, 'music/music-test2.ogg'), 3]
+    ]
+
+    go = random.choice( [True, 2, 3, 4] )
+    #go = True
+    if go == True:
+        music_ready = random.choice(list_music)
+        music = music_ready[0]
+        limit_music = music_ready[1]
+    else:
+        music = os.path.join(dir_audio, 'music/silence.ogg')
+        limit_music = 10
+    pygame.mixer.music.load( music )
+    pygame.mixer.music.set_volume( volume )
+    pygame.mixer.music.play()
+    
+    return limit_music
+
+count_playmusic = 0
+limit_playmusic = play_music()
+
+
 
 
 # Iniciar Funciones y contantes necesarias
+# Funcion del mapa
 start_map = Start_Map(0, 0)
 
 for plat in solid_objects:
@@ -301,29 +375,17 @@ for climate in climate_objects:
 
 
 # Funcion | Dia y noche
-count_fps_day = 0
-
-color_day_red = 155
-color_day_green = 168
-color_day_blue = 187
-color_day = [color_day_red, color_day_green, color_day_blue]
-is_night = False
-
-changes_day = []
-for value in color_day:
-    if value > 1:
-        changes_day.append( value//2 )
-    else:
-        changes_day.append( 0 )
-
-# fps = 30
-# Si son 30 cambios maximos, entonces cada segundo secedera un cambio. (fps/1)
-# Si son 60 cambios maximos, entonces cada medio segundo secedera un cambio. (fps/2)
-# Si son 90 cambios maximos, entonces cada 1/3 segundo secedera un cambio. (fps/3)
-# Esto con el fin de que cada dia/noche, duren medio minuto, de esa manera cada dia completo dura 1 minuto
-color_change = ( 
-    fps//( ( max(changes_day) )/fps ) 
+loop_allday = Loop_allday(
+    climate=start_map.climate
 )
+count_fps_day = loop_allday.count_fps_day
+color_day = loop_allday.color_day
+color_day_red = loop_allday.color_day_red
+color_day_green = loop_allday.color_day_green
+color_day_blue = loop_allday.color_day_blue
+color_change = loop_allday.color_change
+changes_day = loop_allday.changes_day
+is_night = loop_allday.is_night
     
 
 
@@ -336,6 +398,17 @@ while True:
         if event.type == pygame.KEYDOWN:
             if event.key == player.pressed_jump:
                 player.jump()
+        if event.type == end_of_track_event:
+            # Cuando se acaba la musica
+            count_playmusic += 1
+            print(count_playmusic)
+            if count_playmusic == limit_playmusic:
+                count_playmusic = 0
+                limit_playmusic = play_music()
+                print(limit_playmusic)
+            else:
+                pygame.mixer.music.play()
+
     
     # Fondo | Ciclo dia y noche
     display.fill(
@@ -430,6 +503,24 @@ while True:
             for climate in climate_objects:
                 climate_number += 1
                 dict_climate.update( {climate_number : [climate.rect.x, climate.rect.y]} )
+                
+            # Funcion de dia y noche
+            loop_allday = Loop_allday(
+                climate=start_map.climate
+            )
+            if not (
+                color_day_red == loop_allday.color_day_red or
+                color_day_green == loop_allday.color_day_green or
+                color_day_blue == loop_allday.color_day_blue
+            ):
+                count_fps_day = loop_allday.count_fps_day
+                color_day = loop_allday.color_day
+                color_day_red = loop_allday.color_day_red
+                color_day_green = loop_allday.color_day_green
+                color_day_blue = loop_allday.color_day_blue
+                color_change = loop_allday.color_change
+                changes_day = loop_allday.changes_day
+                is_night = loop_allday.is_night
     
     # Objetos / Funciones / Player
     player.move()

@@ -20,7 +20,7 @@ fps = 30
 game_title = 'El cuadrado Feliz'
 
 # Volumen
-volume = 0.1
+volume = 0.02
 
 
 
@@ -41,4 +41,4 @@ dir_audio = os.path.join(dir_data, 'audio')
 
 
 # Nivel actual
-current_level = os.path.join(dir_maps, 'part1', 'cf_map_part1-level1.txt')
+current_level = os.path.join(dir_maps, 'part1', 'cf_map_part1-level4.txt')
