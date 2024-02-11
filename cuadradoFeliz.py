@@ -54,6 +54,7 @@ from Modulos.pygame.CF_object import(
     sound_jump
 )
 
+import time
 import pygame, sys, os, random
 from pygame.locals import *
 
@@ -69,6 +70,13 @@ pygame.display.set_caption(game_title)
 
 # Audio | Musica de fondo
 #...
+
+# Fuentes de texto
+size_font_big = disp_width//15
+size_font_normal = disp_width//60
+font_str = 'monospace'
+font_normal = pygame.font.SysFont(font_str, size_font_normal)
+font_big = pygame.font.SysFont(font_str, size_font_big)
 
 
 '''
@@ -147,8 +155,7 @@ class Start_Map():
                     x_space += 1
                     plat = Floor(
                         size=(pixel_space, pixel_space),
-                        position=position,
-                        show_collide=False
+                        position=position
                     )
                 
                 elif space == 'P':
@@ -166,15 +173,14 @@ class Start_Map():
 
                     plat = Floor(
                         size=size,
-                        position=position,
-                        show_collide=False
+                        position=position
                     )
 
                 elif space == '|':
                     x_space += 1
                     limit = Limit_indicator(
                         position=position,
-                        see=False
+                        show_collide=False
                     )
 
                 elif space == 'j':
@@ -183,7 +189,7 @@ class Start_Map():
 
                 elif space == '^':
                     x_space += 1
-                    spike = Spike( position=position, show_collide=False )
+                    spike = Spike( position=position )
                     
                 elif space == 'A':
                     x_space += 1
@@ -201,13 +207,20 @@ class Start_Map():
 
                     spike = Spike(
                         size=size,
-                        position=position,
-                        show_collide=False
+                        position=position
                     )
+                    
+                elif space == '\\':
+                    x_space += 1
+                    spike = Spike( position=position, moving=True )
                 
                 elif space == 'Y':
                     x_space += 1
                     Star_pointed(position=position)
+                    
+                elif space == '*':
+                    x_space += 1
+                    Star_pointed(position=position, moving=True)
 
                 elif space == '+':
                     x_space += 1
@@ -240,6 +253,16 @@ class Start_Map():
                         level=next_level[1],
                         position=position
                     )
+                    
+                elif space == 'F':
+                    x_space += 1
+
+                    Level_change(
+                        dir_level=next_level[0],
+                        level=next_level[1],
+                        position=position,
+                        gamecomplete=True
+                    )
         
         # Sección de genración de clima:
         if self.climate == 'rain':
@@ -271,7 +294,7 @@ class Start_Map():
 
 # Loop dia y noche
 class Loop_allday():
-    def __init__ (self, climate=None, minutes=1, fps=fps):
+    def __init__ (self, climate=None, minutes=5, fps=fps):
         self.count_fps_day = 0
 
         if climate == None:
@@ -318,17 +341,21 @@ class Loop_allday():
 end_of_track_event = pygame.USEREVENT + 1
 pygame.mixer.music.set_endevent(end_of_track_event)
 
-def play_music():
+def play_music(music=True):
+    # Para reproducir musica en el juegito
     list_music = [
         #os.path.join(dir_audio, 'music/silence.ogg'),
         [os.path.join(dir_audio, 'music/default-music.ogg'), 4],
-        [os.path.join(dir_audio, 'music/music-test1.ogg'), 2],
-        [os.path.join(dir_audio, 'music/music-test2.ogg'), 3]
+        [os.path.join(dir_audio, 'music/music-test1.ogg'), 1],
+        [os.path.join(dir_audio, 'music/music-test2.ogg'), 2],
+        [os.path.join(dir_audio, 'music/music-test3.ogg'), 1],
+        [os.path.join(dir_audio, 'music/music-party.ogg'), 4],
+        [os.path.join(dir_audio, 'music/music-cover.ogg'), 1]
     ]
 
-    go = random.choice( [True, 2, 3, 4] )
+    go = random.choice( [True, 2, 3] )
     #go = True
-    if go == True:
+    if go == True and music == True:
         music_ready = random.choice(list_music)
         music = music_ready[0]
         limit_music = music_ready[1]
@@ -386,6 +413,12 @@ color_day_blue = loop_allday.color_day_blue
 color_change = loop_allday.color_change
 changes_day = loop_allday.changes_day
 is_night = loop_allday.is_night
+
+
+# Funcion juego completado
+gamecomplete = False
+fps_gamecomplete = fps*4
+fps_gamecomplete_count = 0
     
 
 
@@ -400,12 +433,11 @@ while True:
                 player.jump()
         if event.type == end_of_track_event:
             # Cuando se acaba la musica
+            #print(count_playmusic)
             count_playmusic += 1
-            print(count_playmusic)
             if count_playmusic == limit_playmusic:
                 count_playmusic = 0
                 limit_playmusic = play_music()
-                print(limit_playmusic)
             else:
                 pygame.mixer.music.play()
 
@@ -470,6 +502,10 @@ while True:
     # Objetos / Funciones / Para cambiar de nivel
     for sprite in level_objects:
         sprite.update()
+        if sprite.gamecomplete == True:
+            sprite.level = None
+            gamecomplete = True
+
         if not sprite.level == None:
             level = sprite.level
 
@@ -605,6 +641,41 @@ while True:
                 player.rect.y = player_spawn_xy[1]
                 player.hp = player_spawn_hp
                 player.show_sprite = player_show_sprite
+    
+    
+    # Sección del texto del juego (Interfaz/HUD)
+    
+    # Mostrar Vida de jugador
+    text_hp = font_normal.render(
+        str(player.hp), True, (0, 255, 0)
+    )
+    display.blit(
+        text_hp, (
+            (disp_width)-(size_font_normal*3),
+            size_font_normal
+        )
+    )
+
+    # Función juego completado
+    if gamecomplete == True:
+        # Mostrar un mensaje de juego terminado, y cerrar el juego
+        player.gravity_power = 0
+        player.gravity = False
+        player.not_move = True
+        text_gamecomplete = font_big.render(
+            'Fin del juego', True, (0, 255, 0)
+        )
+        display.blit(
+            text_gamecomplete, (
+                (disp_height//2)-(size_font_big//2),
+                (disp_height//2)-(size_font_big//2)
+            )
+        )
+        if fps_gamecomplete_count < fps_gamecomplete:
+            fps_gamecomplete_count += 1
+        elif fps_gamecomplete_count == fps_gamecomplete:
+            pygame.quit()
+            sys.exit()
         
 
     
