@@ -1,4 +1,14 @@
-import sys, os, pygame
+from .CF_data import (
+    get_disp,
+    get_fps,
+    get_volume,
+    get_level,
+
+    dir_game,
+    dir_data
+)
+import os, pygame
+#import sys
 
 # Inicalizar pygame
 pygame.init()
@@ -10,29 +20,23 @@ pygame.init()
 # 960x540
 # 1440x810
 # 1920x1080
-disp_width = 960
-disp_height = 540
+disp = get_disp()
+disp_width = disp[0]
+disp_height = disp[1]
 
 # Fotogramas del juego
-fps = 30
+fps = get_fps()
 
 # Titulo del juego
 game_title = 'El cuadrado Feliz'
 
 # Volumen
-volume = 0.02
+volume = get_volume()
 
 
 
 
-# Directorio del juego
-dir_game = os.path.dirname(__file__)
-dir_game = os.path.dirname( os.path.abspath(dir_game) )
-dir_game = os.path.dirname( os.path.abspath(dir_game) )
-dir_game = os.path.join(dir_game, '.')
-
-dir_data = os.path.join(dir_game, 'data')
-
+# Directorio del juego "dir_data". Y...
 # Sub directorios Data
 dir_sprites = os.path.join(dir_data, 'sprites')
 dir_maps = os.path.join(dir_data, 'maps')
@@ -41,4 +45,4 @@ dir_audio = os.path.join(dir_data, 'audio')
 
 
 # Nivel actual
-current_level = os.path.join(dir_maps, 'part1', 'cf_map_part1-level4.txt')
+current_level = get_level()

@@ -58,6 +58,15 @@ for dead in sounds_dead:
     dead.set_volume(volume)
 
 
+sounds_score = [
+    pygame.mixer.Sound( os.path.join(dir_audio, 'effects/items/score-1.ogg' ) ),
+    pygame.mixer.Sound( os.path.join(dir_audio, 'effects/items/score-2.ogg' ) ),
+    pygame.mixer.Sound( os.path.join(dir_audio, 'effects/items/score-3.ogg' ) )
+]
+for score in sounds_score:
+    score.set_volume(volume)
+
+
 
 
 # Objetos / Clases
@@ -109,6 +118,7 @@ class Player(pygame.sprite.Sprite):
             center=position
         )
         all_sprites.add(self)
+        layer_all_sprites.add(self, layer=3)
         player_objects.add(self)
         
         # Movimeinto
@@ -180,7 +190,7 @@ class Player(pygame.sprite.Sprite):
         ):
             self.jumping = True
     
-    def update(self):
+    def update(self):    
         # Mostrar o no el sprite
         if self.sprite == None:
             if self.show_sprite == True:
@@ -188,11 +198,16 @@ class Player(pygame.sprite.Sprite):
                 self.sprite.surf = self.sprite_notmove[0]
                 self.sprite.rect = self.sprite.surf.get_rect()
                 all_sprites.add(self.sprite)
-                player_sprites.add(self.sprite)
+                layer_all_sprites.add(self.sprite, layer=2)
         else:
             if self.show_sprite == False:
                 self.sprite.kill()
                 self.sprite = None
+        
+        # Verificar si el jugador este muerto o no
+        dead = False
+        if self.hp <= 0:
+            dead = True
 
         # Colisiones
         collide = False
@@ -234,6 +249,20 @@ class Player(pygame.sprite.Sprite):
         for level in level_objects:
             if self.rect.colliderect(level.rect):
                 level.change_level = True
+                self.hp = 100
+                # hp al 100, para si o si que el player este vivo
+
+
+        # Eventos | Colision Monedas
+        for score in score_objects:
+            if self.rect.colliderect(score.rect):
+                score.point = True
+                ( random.choice(sounds_score) ).play()
+                if (
+                    self.hp < 100 and
+                    (dead == False)
+                ):
+                    self.hp += 10
 
 
         # Eventos al colisionar
@@ -252,7 +281,7 @@ class Player(pygame.sprite.Sprite):
 
         # Eventos al morir y al recibir Daño
         # Colider de daño
-        if self.hp <= 0:
+        if dead == True:
             # El player se murio
             # Establecer al player al spawn
             self.not_move = True
@@ -413,6 +442,7 @@ class Floor(pygame.sprite.Sprite):
         )
         self.add_limit = limit
         all_sprites.add(self)
+        layer_all_sprites.add(self, layer=1)
         solid_objects.add(self)
         
     
@@ -433,6 +463,7 @@ class Floor(pygame.sprite.Sprite):
                 )
             )
             all_sprites.add(limit)
+            layer_all_sprites.add(limit, layer=1)
             #instakill_objects.add(limit)
             #damage_objects.add(limit)
             #print(self.rect.width)
@@ -459,6 +490,7 @@ class Spike(pygame.sprite.Sprite):
             )
             self.sprite.rect = self.sprite.surf.get_rect(center=position)
             all_sprites.add(self.sprite)
+            layer_all_sprites.add(self.sprite, layer=1)
         else:
             self.sprite = None
         
@@ -477,6 +509,7 @@ class Spike(pygame.sprite.Sprite):
         )
         self.rect.y -= self.rect.height//2
         all_sprites.add(self)
+        layer_all_sprites.add(self, layer=1)
         if moving == True:
             instakill_objects.add(self)
             anim_sprites.add(self)
@@ -569,6 +602,7 @@ class Star_pointed(pygame.sprite.Sprite):
         self.rect = self.surf.get_rect( center=position )
         
         all_sprites.add(self)
+        layer_all_sprites.add(self, layer=1)
         anim_sprites.add(self)
         
         # Mostrar o no sprite
@@ -632,6 +666,7 @@ class Star_pointed(pygame.sprite.Sprite):
                     self.rect.y-(self.__size//4)
                 )
                 all_sprites.add(self.sprite)
+                layer_all_sprites.add(self.sprite, layer=1)
         else:
             self.sprite.anim()
         
@@ -742,6 +777,7 @@ class Stair(pygame.sprite.Sprite):
         self.surf = pygame.Surface( (size, size), pygame.SRCALPHA )
         self.rect = self.surf.get_rect( center=position )
         all_sprites.add(self)
+        layer_all_sprites.add(self, layer=1)
         
         # Mostrar o no collider
         self.show_collide = show_collide
@@ -823,6 +859,7 @@ class Climate_rain(pygame.sprite.Sprite):
         self.not_move = False
         
         all_sprites.add(self)
+        layer_all_sprites.add(self, layer=1)
         climate_objects.add(self)
         
         # Sección de sprite
@@ -844,7 +881,7 @@ class Climate_rain(pygame.sprite.Sprite):
             self.sprite.surf = self.image[0]
             self.sprite.rect = self.surf.get_rect()
             all_sprites.add( self.sprite )
-            forward_sprites.add( self.sprite )
+            layer_all_sprites.add(self.sprite, layer=3)
         
     def update(self):            
         # Mover al jugador si el collider esta en false
@@ -898,7 +935,7 @@ class Climate_rain(pygame.sprite.Sprite):
                     self.rect.x, self.rect.y-(self.size_difference)
                 )
                 all_sprites.add( self.sprite_collide )
-                forward_sprites.add( self.sprite_collide )
+                layer_all_sprites.add(self.sprite_collide, layer=3)
         else:
             if not self.sprite_collide == None:
                 self.fps_count += 1
@@ -1011,6 +1048,7 @@ class Player_part(pygame.sprite.Sprite):
             center=position
         )
         all_sprites.add(self)
+        layer_all_sprites.add(self, layer=2)
         player_objects.add(self)
         
         # Movimiento
@@ -1099,6 +1137,7 @@ class Limit_indicator(pygame.sprite.Sprite):
         )
 
         all_sprites.add(self)
+        layer_all_sprites.add(self, layer=1)
         limit_objects.add(self)
 
 
@@ -1131,6 +1170,7 @@ class Level_change(pygame.sprite.Sprite):
             self.surf.fill( generic_colors('green') )
         self.rect = self.surf.get_rect( center=position )
         all_sprites.add(self)
+        layer_all_sprites.add(self, layer=1)
         level_objects.add(self)
     
     def update(self):
@@ -1144,12 +1184,98 @@ class Level_change(pygame.sprite.Sprite):
 
 
 
+class Score(pygame.sprite.Sprite):
+    def __init__(self, size=disp_width//60, position=(0, 0), show_collide=False, show_sprite=True ):
+        super().__init__()
+        
+        # Collider
+        self.surf = pygame.Surface( ( size//2, size//2 ), pygame.SRCALPHA )
+        if show_collide == True:
+            self.surf.fill( generic_colors('yellow') )
+        else:
+            self.surf.fill( (0, 0, 0, 0) )
+        self.rect = self.surf.get_rect( center=position )
+        
+        # Agregar collider
+        all_sprites.add(self)
+        layer_all_sprites.add(self, layer=3)
+        score_objects.add(self)
+        
+        # Sprite
+        if show_sprite == True:
+            self.sprite = pygame.sprite.Sprite()
+            self.sprite.surf = pygame.transform.scale(
+                pygame.image.load( os.path.join(dir_sprites, 'items/coin.png') ),
+                (size, size)
+            )
+            self.sprite.rect = self.sprite.surf.get_rect(
+                center=position
+            )
+            all_sprites.add(self.sprite)
+            layer_all_sprites.add(self.sprite, layer=3)
+        else:
+            self.sprite = None
+        
+        
+        # Variables principales
+        self.point = False
+    
+    def remove_point(self):
+        if not self.sprite == None:
+            self.sprite.kill()
+        self.kill()
+
+
+
+
+class Cloud(pygame.sprite.Sprite):
+    def __init__(self, size = (disp_width//15, disp_height//30),  position=(0,0) ):
+        super().__init__()
+        
+        # Seccion de imagen
+        image_set = random.choice( [1, 2, 3] )
+        transparency = random.choice( [8, 16, 32] )
+        self.surf = pygame.transform.scale(
+            pygame.image.load( os.path.join(dir_sprites, f'climate/clouds/cloud-{image_set}.png') ),
+            size
+        )
+        self.surf.set_alpha( transparency )
+        self.rect = self.surf.get_rect(topleft=position)
+        
+        layer_all_sprites.add(self, layer=0)
+        anim_sprites.add(self)
+        
+        # Sección de velocidad
+        self.speed = random.choice( 
+            [-disp_width//240, disp_width//240] 
+        )
+        self.fps = (fps*1.5)//( random.choice( [2, 3, 4] ) )
+        self.count_fps = 0
+        
+    def anim(self):
+        self.count_fps += 1
+        if self.count_fps == self.fps:
+            self.rect.x += self.speed
+            self.count_fps = 0
+
+        # Eventos | Si traspasa la pantalla
+        transfer_disp = obj_not_see(
+            disp_width=disp_width, disp_height=disp_height, obj=self, difference=0
+        )
+        if (
+            transfer_disp == 'width_positive'
+        ):
+            self.rect.x = 0
+        elif (
+            transfer_disp == 'width_negative'
+        ):
+            self.rect.x = disp_width
+
+
 # Grupos de sprites
 all_sprites = pygame.sprite.Group()
-#back_sprites = pygame.sprite.Group()
-forward_sprites = pygame.sprite.Group()
+layer_all_sprites = pygame.sprite.LayeredUpdates()
 
-player_sprites = pygame.sprite.Group()
 player_objects = pygame.sprite.Group()
 solid_objects = pygame.sprite.Group()
 instakill_objects = pygame.sprite.Group()
@@ -1158,3 +1284,4 @@ limit_objects = pygame.sprite.Group()
 level_objects = pygame.sprite.Group()
 anim_sprites = pygame.sprite.Group()
 climate_objects = pygame.sprite.Group()
+score_objects = pygame.sprite.Group()

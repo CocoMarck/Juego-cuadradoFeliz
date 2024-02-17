@@ -23,6 +23,9 @@ from Modulos.pygame.CF_info import (
     
     current_level
 )
+from Modulos.pygame.CF_data import (
+    set_level
+)
 from Modulos.pygame.CF_object import(
     Player,
     Floor,
@@ -34,9 +37,11 @@ from Modulos.pygame.CF_object import(
     Limit_indicator,
     Level_change,
     Stair,
+    Score,
+    Cloud,
     
     all_sprites,
-    forward_sprites,
+    layer_all_sprites,
 
     solid_objects,
     instakill_objects,
@@ -46,7 +51,7 @@ from Modulos.pygame.CF_object import(
     anim_sprites,
     climate_objects,
     player_objects,
-    player_sprites,
+    score_objects,
     
     sounds_hit,
     sounds_step,
@@ -238,6 +243,13 @@ class Start_Map():
                         invert=True
                     )
 
+                elif space == 's':
+                    x_space += 1
+                    Score(
+                        size=pixel_space,
+                        position=position,
+                    )
+
                 elif space == '~':
                     x_space += 1
 
@@ -296,15 +308,27 @@ class Start_Map():
 class Loop_allday():
     def __init__ (self, climate=None, minutes=5, fps=fps):
         self.count_fps_day = 0
-
-        if climate == None:
-            self.color_day_red = 108
-            self.color_day_green = 150
-            self.color_day_blue = 255
-        elif climate == 'rain':
+        if climate == 'rain':
             self.color_day_red = 155
             self.color_day_green = 168
             self.color_day_blue = 187
+        elif climate == 'sunny':
+            self.color_day_red = 254
+            self.color_day_green = 202
+            self.color_day_blue = 138
+        elif climate == 'alien':
+            self.color_day_red = 68
+            self.color_day_green = 38
+            self.color_day_blue = 136
+        elif climate == 'black':
+            self.color_day_red = 47
+            self.color_day_green = 47
+            self.color_day_blue = 47
+        else:
+            # climate == None
+            self.color_day_red = 108
+            self.color_day_green = 150
+            self.color_day_blue = 255
         self.color_day = [self.color_day_red, self.color_day_green, self.color_day_blue]
         self.is_night = False
 
@@ -341,41 +365,92 @@ class Loop_allday():
 end_of_track_event = pygame.USEREVENT + 1
 pygame.mixer.music.set_endevent(end_of_track_event)
 
-def play_music(music=True):
-    # Para reproducir musica en el juegito
-    list_music = [
-        #os.path.join(dir_audio, 'music/silence.ogg'),
-        [os.path.join(dir_audio, 'music/default-music.ogg'), 4],
-        [os.path.join(dir_audio, 'music/music-test1.ogg'), 1],
-        [os.path.join(dir_audio, 'music/music-test2.ogg'), 2],
-        [os.path.join(dir_audio, 'music/music-test3.ogg'), 1],
-        [os.path.join(dir_audio, 'music/music-party.ogg'), 4],
-        [os.path.join(dir_audio, 'music/music-cover.ogg'), 1]
-    ]
+class Play_Music():
+    def __init__(self, music=True, climate=None):
+        # Para reproducir musica en el juegito
+        self.list_music = [
+            #os.path.join(dir_audio, 'music/silence.ogg'),
+            [os.path.join(dir_audio, 'music/default-music.ogg'), 4],
+            [os.path.join(dir_audio, 'music/music-party.ogg'), 8],
+            [os.path.join(dir_audio, 'music/music-cover.ogg'), 1],
 
-    go = random.choice( [True, 2, 3] )
-    #go = True
-    if go == True and music == True:
-        music_ready = random.choice(list_music)
-        music = music_ready[0]
-        limit_music = music_ready[1]
-    else:
-        music = os.path.join(dir_audio, 'music/silence.ogg')
-        limit_music = 10
-    pygame.mixer.music.load( music )
-    pygame.mixer.music.set_volume( volume )
-    pygame.mixer.music.play()
+            [os.path.join(dir_audio, 'music/music-test1.ogg'), 1],
+            [os.path.join(dir_audio, 'music/music-test2.ogg'), 2],
+            [os.path.join(dir_audio, 'music/music-test3.ogg'), 2],
+            [os.path.join(dir_audio, 'music/music-test4.ogg'), 2]
+        ]
+
+        self.__go = False
+        self.music = music
+        self.climate = climate
+        self.limit_music = 0
+        self.__limit_music_climate = 8
+        self.play()
+        
+    def set_climate(self):
+        if self.climate == 'rain':
+            return os.path.join(dir_audio, 'music/climate_rain.ogg')
+        else:
+            return os.path.join(dir_audio, 'music/climate_default.ogg')
     
-    return limit_music
+    def play(self):
+        self.__go = random.choice( [True, 2, 3] )
+        #self.__go = True
+        if self.__go == True and self.music == True:
+            music_ready = random.choice(self.list_music)
+            music = music_ready[0]
+            self.limit_music = music_ready[1]
+        else:
+            music = self.set_climate()
+            self.limit_music = self.__limit_music_climate
+        pygame.mixer.music.load( music )
+        pygame.mixer.music.set_volume( volume )
+        pygame.mixer.music.play()
+        
+        return self.limit_music
+        
+    def change_climate(self, climate=None):
+        self.climate = climate
+        if not self.__go == True:
+            music = self.set_climate()
+            pygame.mixer.music.load( music )
+            pygame.mixer.music.set_volume( volume )
+            pygame.mixer.music.play()
+            self.limit_music = self.__limit_music_climate
 
-count_playmusic = 0
-limit_playmusic = play_music()
+
+# Función nubes de fondo
+def create_clouds(c_number = 15):
+    '''
+    Imagenes de fondo | Nubes de fondo
+    # Si hay demasiadas nubes se dejaran de crear.
+    # Se creara una nube de forma random, con posibilidades 1-6
+    '''
+    c_sizex = disp_width//c_number
+    c_sizey = disp_height//c_number
+    c_size = (c_sizex, c_sizey)
+
+    clouds = 0
+    for y in range(0, c_number):
+        posy = c_sizey*(y)
+        for x in range(0, c_number):
+            posx = c_sizex*(x)
+
+            create = random.choice( [True, 2, 3, 4, 5, 6] )
+            if create == True:
+                clouds += 1
+                Cloud( size=c_size, position=(posx, posy) )
 
 
 
 
 # Iniciar Funciones y contantes necesarias
+# Funcion nubes
+create_clouds()
+
+
 # Funcion del mapa
+score = 0
 start_map = Start_Map(0, 0)
 
 for plat in solid_objects:
@@ -414,6 +489,11 @@ color_change = loop_allday.color_change
 changes_day = loop_allday.changes_day
 is_night = loop_allday.is_night
 
+# Funcion musica
+play_music = Play_Music( climate=start_map.climate )
+count_playmusic = 0
+limit_playmusic = play_music.limit_music
+
 
 # Funcion juego completado
 gamecomplete = False
@@ -431,13 +511,17 @@ while True:
         if event.type == pygame.KEYDOWN:
             if event.key == player.pressed_jump:
                 player.jump()
+            elif event.key == pygame.K_r:
+                # Por si se bugea el juego, poder matar al jugaddor y por consecuensia reiniciar el nivel
+                if not player.hp <= 0:
+                    player.hp = -1
         if event.type == end_of_track_event:
             # Cuando se acaba la musica
-            #print(count_playmusic)
             count_playmusic += 1
+            #print(count_playmusic)
             if count_playmusic == limit_playmusic:
                 count_playmusic = 0
-                limit_playmusic = play_music()
+                limit_playmusic = play_music.play()
             else:
                 pygame.mixer.music.play()
 
@@ -557,6 +641,19 @@ while True:
                 color_change = loop_allday.color_change
                 changes_day = loop_allday.changes_day
                 is_night = loop_allday.is_night
+            
+            # Función musica
+            play_music.change_climate(climate=start_map.climate)
+            
+            # Establecer nivel actual
+            set_level(level=level)
+
+
+    # Objetos / Funciones / Puntos
+    for obj in score_objects:
+        if obj.point == True:
+            obj.remove_point()
+            score += 1
     
     # Objetos / Funciones / Player
     player.move()
@@ -575,26 +672,9 @@ while True:
             climate.rect.center = (
                 camera_x + dict_climate.get(number)[0], camera_y + dict_climate.get(number)[1]
             )
-
+            
     # Objetos / Mostrar / Todos los sprites, solo si se ven en la pantalla
-    for sprite in all_sprites:
-        if obj_not_see(
-            disp_width=disp_width, disp_height=disp_height, obj=sprite, difference=disp_width//60
-        ) == None:
-            if (
-                (not sprite in forward_sprites) and
-                (not sprite in player_sprites)
-            ):
-                display.blit(sprite.surf, sprite.rect)
-        
-    # Objetos / Mostrar / Jugador, el se vera encima de los demas sprites (Las lineas de arriba)
-    for sprite in player_sprites:
-        display.blit(sprite.surf, sprite.rect)
-
-    display.blit(player.surf, player.rect)
-    
-    # Objetos / Mostrar / Adelante, maxima pioridad
-    for sprite in forward_sprites:
+    for sprite in layer_all_sprites.sprites():
         if obj_not_see(
             disp_width=disp_width, disp_height=disp_height, obj=sprite, difference=disp_width//60
         ) == None:
@@ -653,6 +733,17 @@ while True:
         text_hp, (
             (disp_width)-(size_font_normal*3),
             size_font_normal
+        )
+    )
+    
+    # Mostrar Puntaje
+    text_score = font_normal.render(
+        str(score), True, (255, 255, 0)
+    )
+    display.blit(
+        text_score, (
+            (disp_width)-(size_font_normal*3),
+            size_font_normal*2
         )
     )
 
