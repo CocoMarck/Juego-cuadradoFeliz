@@ -130,3 +130,14 @@ paw=Paw
 shelf=Shelf
 shelf_square=Square shelf
 rectangular_wall=Rectangular wall
+
+
+# Videogame
+continue_jump=Press the "jump button" to continue
+gamecomplete=End of the game
+credits=Credits
+hp=Life
+score=Score
+
+stock_info=You can move with the "directional keys", and you can jump with the "space key".
+stock_info_coin=Coins are good, they restore your life and make you more beautiful.

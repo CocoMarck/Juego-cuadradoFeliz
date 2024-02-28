@@ -127,3 +127,14 @@ paw=Pata
 shelf=Repisa
 shelf_square=Repisa cuadrada
 rectangular_wall=Pared rectangular
+
+
+# Videojuego
+continue_jump=Preciona el boton "saltar", para continuar
+gamecomplete=Fin del juego
+credits=Creditos
+hp=Vida
+score=Puntos
+
+stock_info=Para moverte utiliza las "teclas direccionales", y para saltar preciona "espacio".
+stock_info_coin=Las monedas son buenas, recuperan tu vida y te hacen mas bello.

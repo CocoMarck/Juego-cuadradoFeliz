@@ -1,0 +1,6 @@
+disp=960x540
+volume=0.01
+fps=30
+music=False
+climate_sound=True
+current_level=/home/jean_abraham/Proyectos/Programacion/VideoJuegos/pygame/Plataformero de prueba/data/maps/part2/cf_map_part2-level2.txt

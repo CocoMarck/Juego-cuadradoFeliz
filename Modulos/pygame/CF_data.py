@@ -21,8 +21,14 @@ dir_game = os.path.join(dir_game)
 
 dir_data = os.path.join(dir_game, 'data')
 
+# Subcarpetas
+dir_maps = os.path.join(dir_data, 'maps')
+
 # Archivo de data
 dir_game_data = os.path.join(dir_data, 'CF.dat')
+
+# Archivo de juego completado
+file_gamecomplete = os.path.join(dir_data, 'gamecomplete.dat')
 
 
 def get_data(mode_dict=True):
@@ -58,6 +64,8 @@ def set_data():
                 'disp=960x540\n'
                 'volume=0.02\n'
                 'fps=30\n'
+                'music=True\n'
+                'climate_sound=True\n'
                 f'current_level={os.path.join(dir_data, "maps/part1/cf_map_part1-level1.txt")}'
             )
         return True
@@ -198,3 +206,147 @@ def set_volume(volume=1):
     
     with open(dir_game_data, 'w') as data_text:
         data_text.write(text_ready[:-1])
+
+
+
+
+
+def get_level_list():
+    '''
+    Obtener una lista de todos los niveles disponibles
+    Una lista con los niveles disponibles en la ruta del juego ".data/maps/*"
+    Tienen que empezar con "cf_map_"  y terminar en ".txt' (incluir subcarpetas)
+    
+    Solo detecta las carpetas: part1, part2, part3 y custom.
+    '''
+    # Subdirectorios de mapas.
+    sub_dir_maps = [
+        os.path.join(dir_maps, 'part1'),
+        os.path.join(dir_maps, 'part2')
+    ]
+
+    dir_custom = os.path.join(dir_maps, 'custom')
+    sub_dir_maps.append( dir_custom )
+    custom_dir_list = os.listdir( dir_custom )
+
+    for x in custom_dir_list:
+        sub_dir_maps.append( os.path.join(dir_custom, x) )
+
+    # Obtener mapas
+    list_level = []
+    for sub_dir in sub_dir_maps:
+        for level_map in Files_List(
+            files='cf_map_*.txt',
+            path=sub_dir,
+            remove_path=False
+        ):
+            list_level.append(level_map)
+    
+    # Asi se imprimirian
+    #for level in list_level:
+    #   print( f'{level}\n\n' )
+    
+    return list_level
+
+
+
+
+def get_music():
+    '''
+    Para saber si se desea o no escuchar musica en el juego
+    Devuelve un boleano, True or False
+    '''
+    data = get_data()
+    music = data['music']
+    if music == "True":
+        return True
+    else:
+        return False
+
+def set_music(music=True):
+    '''
+    Para establecer si reproducir musica o no
+    '''
+    # Establecer si reproducir musica o no en el archivo de data CF.dat
+    data = get_data(mode_dict=False)
+    text_ready = ''
+    for line in data.split('\n'):
+        if line.startswith('music='):
+            line = f'music={music}'
+        else:
+            pass
+        text_ready += line + '\n'
+    
+    with open(dir_game_data, 'w') as data_text:
+        data_text.write(text_ready[:-1])
+
+
+
+
+def get_climate_sound():
+    '''
+    Saber si sonara el sonido del clima
+    '''
+    data = get_data()
+    climate_sound = data['climate_sound']
+    if climate_sound == "True":
+        return True
+    else:
+        return False
+
+
+def set_climate_sound(climate_sound=True):
+    '''
+    Para establecer si reproducir el sonido de ambiente o no.
+    '''
+    # Establecer si reproducir musica o no en el archivo de data CF.dat
+    data = get_data(mode_dict=False)
+    text_ready = ''
+    for line in data.split('\n'):
+        if line.startswith('climate_sound='):
+            line = f'climate_sound={climate_sound}'
+        else:
+            pass
+        text_ready += line + '\n'
+    
+    with open(dir_game_data, 'w') as data_text:
+        data_text.write(text_ready[:-1])
+
+
+
+
+
+def save_gamecomplete(level=None, score=None):
+    '''
+    Guardar juego completado
+    '''
+    if not type(score) is int:
+        score = 0
+    line_save = f'{level}, {score}'
+    
+    if pathlib(file_gamecomplete).exists():
+        line_save = f'\n{line_save}'
+        with open(file_gamecomplete, 'a') as text:
+            text.write(line_save)
+    else:
+        with open(file_gamecomplete, 'w') as text:
+            text.write(line_save)
+
+
+def get_gamecomplete():
+    '''
+    Obtener juegos completados
+    '''
+    if pathlib(file_gamecomplete).exists():
+        text = Text_Read(
+            file_gamecomplete,
+            'ModeList'
+        )
+        list_gamecomplete = []
+        for i in text:
+            info = i.split(',')
+            info = [ info[0], info[1] ]
+            list_gamecomplete.append(info)
+        return list_gamecomplete
+    else:
+        return None

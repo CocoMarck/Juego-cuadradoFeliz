@@ -71,39 +71,11 @@ for score in sounds_score:
 
 # Objetos / Clases
 class Player(pygame.sprite.Sprite):
-    def __init__(self, position=(disp_width//2,disp_height//2), show_collide=False, show_sprite=True ):
+    def __init__(
+        self, position=(disp_width//2,disp_height//2), show_collide=False,
+        show_sprite=True, color_sprite=(153, 252, 152)
+    ):
         super().__init__()
-        
-        # Mostrar o no sprite
-        self.show_sprite = show_sprite
-        self.sprite = None
-        image_notmove = pygame.image.load(
-            os.path.join(dir_sprites, 'player/player_not-move.png')
-        )
-        image_notmove = pygame.transform.scale(
-            image_notmove, 
-            ( ((disp_width//30)*3), disp_width//30 )
-        )
-        self.sprite_notmove = Anim_sprite_set(
-            sprite_sheet=image_notmove
-        )
-
-        image_move = pygame.image.load( 
-            os.path.join(dir_sprites, 'player/player_move.png')
-        )
-        image_move = pygame.transform.scale(
-            image_move, 
-            ( ((disp_width//30)*8), disp_width//30 )
-        )
-        self.sprite_move = Anim_sprite_set(
-            sprite_sheet=image_move
-        )
-        image_move = pygame.transform.flip(image_move, True, False)
-        self.sprite_move_invert = Anim_sprite_set(
-            sprite_sheet=image_move
-        )
-        self.count_fps = 0
-        self.count_fps_invert = len(self.sprite_move_invert)
 
         # Mostrar o no collider
         self.surf = pygame.Surface( (disp_width//120, disp_width//60), pygame.SRCALPHA )
@@ -117,7 +89,6 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.surf.get_rect(
             center=position
         )
-        all_sprites.add(self)
         layer_all_sprites.add(self, layer=3)
         player_objects.add(self)
         
@@ -139,6 +110,52 @@ class Player(pygame.sprite.Sprite):
         
         # Vida
         self.hp = 100
+        
+        # Mostrar o no sprite
+        self.show_sprite = show_sprite
+        self.sprite = None
+        
+        # Sprite / Imagenes de sprite
+        image_notmove = pygame.image.load(
+            os.path.join(dir_sprites, 'player/player_not-move.png')
+        )
+        image_notmove = pygame.transform.scale(
+            image_notmove, 
+            ( ((disp_width//30)*3), disp_width//30 )
+        )
+
+        image_move = pygame.image.load( 
+            os.path.join(dir_sprites, 'player/player_move.png')
+        )
+        image_move = pygame.transform.scale(
+            image_move, 
+            ( ((disp_width//30)*8), disp_width//30 )
+        )
+
+        # Sprite / Cambiar color al de imagenes de sprite
+        if not color_sprite == None:
+            colorImage = pygame.Surface(image_notmove.get_size()).convert_alpha()
+            colorImage.fill( color_sprite )
+            image_notmove.blit(colorImage, (0,0), special_flags = pygame.BLEND_MULT)
+            
+            colorImage = pygame.Surface(image_move.get_size()).convert_alpha()
+            colorImage.fill( color_sprite )
+            image_move.blit(colorImage, (0,0), special_flags = pygame.BLEND_MULT)
+        
+        # Sprite / Dividir fotogramas de los sprites animados        
+        self.sprite_notmove = Anim_sprite_set(
+            sprite_sheet=image_notmove
+        )
+        self.sprite_move = Anim_sprite_set(
+            sprite_sheet=image_move
+        )
+
+        image_move = pygame.transform.flip(image_move, True, False)
+        self.sprite_move_invert = Anim_sprite_set(
+            sprite_sheet=image_move
+        )
+        self.count_fps = 0
+        self.count_fps_invert = len(self.sprite_move_invert)
         
         # Sonido
         self.sound_step = 'wait'
@@ -197,7 +214,6 @@ class Player(pygame.sprite.Sprite):
                 self.sprite = pygame.sprite.Sprite()
                 self.sprite.surf = self.sprite_notmove[0]
                 self.sprite.rect = self.sprite.surf.get_rect()
-                all_sprites.add(self.sprite)
                 layer_all_sprites.add(self.sprite, layer=2)
         else:
             if self.show_sprite == False:
@@ -250,6 +266,7 @@ class Player(pygame.sprite.Sprite):
             if self.rect.colliderect(level.rect):
                 level.change_level = True
                 self.hp = 100
+                self.rect.topleft = (level.rect.x+(self.rect.width//2), level.rect.y)
                 # hp al 100, para si o si que el player este vivo
 
 
@@ -418,7 +435,7 @@ class Floor(pygame.sprite.Sprite):
         size = (disp_width, disp_width//60),
         position = (disp_width//2, (disp_height-8)),
         color='grey', show_collide=False, show_sprite=True,
-        limit = True
+        limit = True, climate=None
     ):
         super().__init__()
         
@@ -441,9 +458,13 @@ class Floor(pygame.sprite.Sprite):
             center = position
         )
         self.add_limit = limit
-        all_sprites.add(self)
         layer_all_sprites.add(self, layer=1)
         solid_objects.add(self)
+        
+        # Variables Colorear
+        self.show_sprite = show_sprite
+        self.size = size
+        self.climate = climate
         
     
     def limit_collision(self):
@@ -462,7 +483,6 @@ class Floor(pygame.sprite.Sprite):
                     self.rect.y+(self.rect.height -limit_xy[1])
                 )
             )
-            all_sprites.add(limit)
             layer_all_sprites.add(limit, layer=1)
             #instakill_objects.add(limit)
             #damage_objects.add(limit)
@@ -471,6 +491,36 @@ class Floor(pygame.sprite.Sprite):
             #print(limit_xy)
             #print(self.rect.x+(self.rect.width -limit_xy[0]))
             #print(self.rect.y+(self.rect.height -limit_xy[1]))
+
+        # Coloriar sprite
+        # Solo si hay sprite y el clima no esta en None
+        if (
+            self.show_sprite == True and
+            (not self.climate == None)
+        ):
+            sprite = pygame.sprite.Sprite()
+            sprite.surf = pygame.Surface( self.size, pygame.SRCALPHA)
+
+            choice = random.choice( [1, 2, 4] )
+            color = 'black'
+            transparency = 0
+            if self.climate == 'alien':
+                transparency = 4*choice
+                color = 'sky_blue'
+            elif self.climate == 'sunny':
+                transparency = 3*choice
+                color = 'red'
+            elif self.climate == 'rain':
+                transparency = 2*choice
+                color = 'blue'
+            elif self.climate == 'black':
+                transparency = 1*choice
+                color = 'white'
+
+            sprite.surf.fill( generic_colors(color=color, transparency=transparency) )
+
+            sprite.rect = sprite.surf.get_rect( topleft=(self.rect.x, self.rect.y) )
+            layer_all_sprites.add(sprite, layer=1)
 
 
 
@@ -489,7 +539,6 @@ class Spike(pygame.sprite.Sprite):
                 self.image, (size, size)
             )
             self.sprite.rect = self.sprite.surf.get_rect(center=position)
-            all_sprites.add(self.sprite)
             layer_all_sprites.add(self.sprite, layer=1)
         else:
             self.sprite = None
@@ -508,7 +557,6 @@ class Spike(pygame.sprite.Sprite):
             center=position
         )
         self.rect.y -= self.rect.height//2
-        all_sprites.add(self)
         layer_all_sprites.add(self, layer=1)
         if moving == True:
             instakill_objects.add(self)
@@ -601,7 +649,6 @@ class Star_pointed(pygame.sprite.Sprite):
         self.surf.fill( generic_colors('green', self.transparency) )
         self.rect = self.surf.get_rect( center=position )
         
-        all_sprites.add(self)
         layer_all_sprites.add(self, layer=1)
         anim_sprites.add(self)
         
@@ -643,7 +690,7 @@ class Star_pointed(pygame.sprite.Sprite):
         square.surf = pygame.Surface( (size, size), pygame.SRCALPHA )
         square.surf.fill( color )
         square.rect = square.surf.get_rect( topleft=position)
-        all_sprites.add(square)
+        layer_all_sprites.add(square, layer=1)
         if self.moving == True:
             instakill_objects.add(square)
         else:
@@ -665,7 +712,6 @@ class Star_pointed(pygame.sprite.Sprite):
                     self.rect.x-(self.__size//4),
                     self.rect.y-(self.__size//4)
                 )
-                all_sprites.add(self.sprite)
                 layer_all_sprites.add(self.sprite, layer=1)
         else:
             self.sprite.anim()
@@ -770,13 +816,15 @@ class Star_pointed(pygame.sprite.Sprite):
 
 
 class Stair(pygame.sprite.Sprite):
-    def __init__(self, size=disp_width//60, position=(0, 0), show_collide=False, invert=False ):
+    def __init__( 
+        self, size=disp_width//60, position=(0, 0), show_collide=False,
+        invert=False, climate=None
+    ):
         super().__init__()
         
         # Ayuda necesaria
         self.surf = pygame.Surface( (size, size), pygame.SRCALPHA )
         self.rect = self.surf.get_rect( center=position )
-        all_sprites.add(self)
         layer_all_sprites.add(self, layer=1)
         
         # Mostrar o no collider
@@ -798,6 +846,7 @@ class Stair(pygame.sprite.Sprite):
             more_pixels3 = size
         
         # Partes de escalera
+        self.climate = climate
         self.stair_part( 
             size=size_part, 
             position=(self.rect.x+more_pixels1, self.rect.y)
@@ -819,12 +868,11 @@ class Stair(pygame.sprite.Sprite):
         
     def stair_part(self, size=4, position=(0,0) ):
         stair_part = Floor( 
-            size=(size, size), limit=False,
+            size=(size, size), limit=False, climate=self.climate
         )
         if self.show_collide == True:
             stair_part.surf.fill( generic_colors('blue') )
         stair_part.rect.topleft = position
-        all_sprites.add(stair_part)
         solid_objects.add(stair_part)
 
 
@@ -858,7 +906,6 @@ class Climate_rain(pygame.sprite.Sprite):
         self.move = True
         self.not_move = False
         
-        all_sprites.add(self)
         layer_all_sprites.add(self, layer=1)
         climate_objects.add(self)
         
@@ -880,7 +927,6 @@ class Climate_rain(pygame.sprite.Sprite):
             self.sprite = pygame.sprite.Sprite()
             self.sprite.surf = self.image[0]
             self.sprite.rect = self.surf.get_rect()
-            all_sprites.add( self.sprite )
             layer_all_sprites.add(self.sprite, layer=3)
         
     def update(self):            
@@ -934,7 +980,6 @@ class Climate_rain(pygame.sprite.Sprite):
                 self.sprite_collide.rect.topleft = (
                     self.rect.x, self.rect.y-(self.size_difference)
                 )
-                all_sprites.add( self.sprite_collide )
                 layer_all_sprites.add(self.sprite_collide, layer=3)
         else:
             if not self.sprite_collide == None:
@@ -948,7 +993,7 @@ class Climate_rain(pygame.sprite.Sprite):
 
 
 class Anim_player_dead(pygame.sprite.Sprite):
-    def __init__(self, position=(0,0), fps=fps, show_collide=False ):
+    def __init__(self, position=(0,0), fps=fps, show_collide=False, color_sprite=(153, 252, 152) ):
         super().__init__()
         
         self.transparent = 255
@@ -963,7 +1008,6 @@ class Anim_player_dead(pygame.sprite.Sprite):
         self.fps = fps*3
         self.__count = 0
         self.anim_fin = False
-        all_sprites.add( self )
         anim_sprites.add( self )
         
         # Partes
@@ -971,25 +1015,29 @@ class Anim_player_dead(pygame.sprite.Sprite):
         self.part1 = Player_part( 
             size=size_parts,
             position=(self.rect.x+size_parts//2, self.rect.y + (size_parts+size_parts//2) ),
-            color=generic_colors('green', self.transparent), sprite=3
+            color=generic_colors('green', self.transparent), sprite=3,
+            color_sprite=color_sprite
         )
         
         self.part2 = Player_part( 
             size=size_parts,
             position=(self.rect.x+(size_parts+size_parts//2), self.rect.y + (size_parts+size_parts//2) ),
-            color=generic_colors('blue', self.transparent), sprite=4
+            color=generic_colors('blue', self.transparent), sprite=4,
+            color_sprite=color_sprite
         )
         
         self.part3 = Player_part( 
             size=size_parts,
             position=(self.rect.x+size_parts//2, self.rect.y+size_parts//2),
-            color=generic_colors('yellow', self.transparent), sprite=1
+            color=generic_colors('yellow', self.transparent), sprite=1,
+            color_sprite=color_sprite
         )
 
         self.part4 = Player_part( 
             size=size_parts,
             position=(self.rect.x+(size_parts+size_parts//2), self.rect.y+size_parts//2),
-            color=generic_colors('sky_blue', self.transparent), sprite=2
+            color=generic_colors('sky_blue', self.transparent), sprite=2,
+            color_sprite=color_sprite
         )
     
     def anim(self):
@@ -1017,16 +1065,26 @@ class Anim_player_dead(pygame.sprite.Sprite):
 
 
 class Player_part(pygame.sprite.Sprite):
-    def __init__(self, size=disp_width//120, color=generic_colors('green'), position=(0,0), sprite=None ):
+    def __init__(
+        self, size=disp_width//120, color=generic_colors('green'), position=(0,0), 
+        sprite=None, color_sprite=None
+    ):
         super().__init__()
         
         # Collider y sprite
         self.size = size
         if not sprite == None:
+            # Sprite / Imagen y cambiar su color
             img = pygame.transform.scale(
                 pygame.image.load( os.path.join(dir_sprites, 'player/player_not-move.png') ),
                 (disp_width//30*3, disp_width//30)
             )
+            if not color_sprite == None:
+                colorImage = pygame.Surface(img.get_size()).convert_alpha()
+                colorImage.fill( color_sprite )
+                img.blit(colorImage, (0,0), special_flags = pygame.BLEND_MULT)
+
+            # Sprite / Dividir el sprite y establecer su parte indicada
             img = Anim_sprite_set(
                 sprite_sheet=img,
                 current_frame=0
@@ -1047,7 +1105,6 @@ class Player_part(pygame.sprite.Sprite):
         self.rect = self.surf.get_rect( 
             center=position
         )
-        all_sprites.add(self)
         layer_all_sprites.add(self, layer=2)
         player_objects.add(self)
         
@@ -1136,7 +1193,6 @@ class Limit_indicator(pygame.sprite.Sprite):
             center = ( position )
         )
 
-        all_sprites.add(self)
         layer_all_sprites.add(self, layer=1)
         limit_objects.add(self)
 
@@ -1169,7 +1225,6 @@ class Level_change(pygame.sprite.Sprite):
         if gamecomplete == True:
             self.surf.fill( generic_colors('green') )
         self.rect = self.surf.get_rect( center=position )
-        all_sprites.add(self)
         layer_all_sprites.add(self, layer=1)
         level_objects.add(self)
     
@@ -1197,7 +1252,6 @@ class Score(pygame.sprite.Sprite):
         self.rect = self.surf.get_rect( center=position )
         
         # Agregar collider
-        all_sprites.add(self)
         layer_all_sprites.add(self, layer=3)
         score_objects.add(self)
         
@@ -1211,7 +1265,6 @@ class Score(pygame.sprite.Sprite):
             self.sprite.rect = self.sprite.surf.get_rect(
                 center=position
             )
-            all_sprites.add(self.sprite)
             layer_all_sprites.add(self.sprite, layer=3)
         else:
             self.sprite = None
@@ -1242,7 +1295,7 @@ class Cloud(pygame.sprite.Sprite):
         self.surf.set_alpha( transparency )
         self.rect = self.surf.get_rect(topleft=position)
         
-        layer_all_sprites.add(self, layer=0)
+        nocamera_back_sprites.add(self)
         anim_sprites.add(self)
         
         # Sección de velocidad
@@ -1260,7 +1313,8 @@ class Cloud(pygame.sprite.Sprite):
 
         # Eventos | Si traspasa la pantalla
         transfer_disp = obj_not_see(
-            disp_width=disp_width, disp_height=disp_height, obj=self, difference=0
+            disp_width=disp_width, disp_height=disp_height, obj=self, difference=self.rect.width,
+            reduce_positive=True
         )
         if (
             transfer_disp == 'width_positive'
@@ -1269,12 +1323,12 @@ class Cloud(pygame.sprite.Sprite):
         elif (
             transfer_disp == 'width_negative'
         ):
-            self.rect.x = disp_width
+            self.rect.x = disp_width-(self.rect.width)
 
 
 # Grupos de sprites
-all_sprites = pygame.sprite.Group()
 layer_all_sprites = pygame.sprite.LayeredUpdates()
+nocamera_back_sprites = pygame.sprite.Group()
 
 player_objects = pygame.sprite.Group()
 solid_objects = pygame.sprite.Group()

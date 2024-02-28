@@ -5,6 +5,7 @@ from .CF_data import (
     get_level,
 
     dir_game,
+    dir_maps,
     dir_data
 )
 import os, pygame
@@ -39,7 +40,6 @@ volume = get_volume()
 # Directorio del juego "dir_data". Y...
 # Sub directorios Data
 dir_sprites = os.path.join(dir_data, 'sprites')
-dir_maps = os.path.join(dir_data, 'maps')
 dir_audio = os.path.join(dir_data, 'audio')
 
 

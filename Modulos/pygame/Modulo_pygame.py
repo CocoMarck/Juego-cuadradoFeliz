@@ -373,7 +373,7 @@ def player_camera_move(
 
 
 
-def obj_not_see(disp_width=None, disp_height=None, obj=None, difference=0):
+def obj_not_see(disp_width=None, disp_height=None, obj=None, difference=0, reduce_positive=False):
     '''
     Para detectar si esta en la pantalla el sprite, si esta fuera de la pantalla, devolvera un string indicador de la posición en la que no se ve. Y si esta adentro de la pantalla, devolvera un None.
     disp_width  =int, Ancho de pantalla
@@ -382,14 +382,26 @@ def obj_not_see(disp_width=None, disp_height=None, obj=None, difference=0):
 
     difference  =int, Añade/Dismunille, la altura y anchura de pantalla establecida. 
     difference, es un parametro opcional. Los demas son necesarios
+    
     '''
+    # Diferencia para numero positivo (Ancho positivo, o Alto positivo de pantalla)
+    if difference >= 0:
+        if reduce_positive == True:
+            difference_for_positive = -(round(difference*0.75))
+        else:
+            difference_for_positive = difference
+
+    else:
+        difference_for_positive = difference*2
+    
+    # Devolver un string si se detecta que se sobrepaso la pantalla
     direction = None
-    if obj.rect.x > disp_width +difference:
+    if obj.rect.x > disp_width +(difference_for_positive):
         direction = 'width_positive'
     elif obj.rect.x < 0 -(difference):
         direction = 'width_negative'
     
-    elif obj.rect.y > disp_height +difference:
+    elif obj.rect.y > disp_height +(difference_for_positive):
         direction = 'height_positive'
     elif obj.rect.y < 0 -(difference):
         direction = 'height_negative'

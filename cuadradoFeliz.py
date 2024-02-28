@@ -1,6 +1,7 @@
 from Modulos.Modulo_Text import (
     Text_Read, Ignore_Comment, Only_Comment
 )
+from Modulos import Modulo_Language as Lang
 from Modulos.pygame.Modulo_pygame import (
     generic_colors, obj_collision_sides_solid, obj_coordinate_multiplier,
     player_camera_prepare, player_camera_move,
@@ -24,7 +25,10 @@ from Modulos.pygame.CF_info import (
     current_level
 )
 from Modulos.pygame.CF_data import (
-    set_level
+    set_level,
+    get_music,
+    get_climate_sound,
+    save_gamecomplete
 )
 from Modulos.pygame.CF_object import(
     Player,
@@ -40,8 +44,8 @@ from Modulos.pygame.CF_object import(
     Score,
     Cloud,
     
-    all_sprites,
     layer_all_sprites,
+    nocamera_back_sprites,
 
     solid_objects,
     instakill_objects,
@@ -83,6 +87,13 @@ font_str = 'monospace'
 font_normal = pygame.font.SysFont(font_str, size_font_normal)
 font_big = pygame.font.SysFont(font_str, size_font_big)
 
+# Fondo
+image_background = pygame.transform.scale(
+    pygame.image.load( os.path.join( dir_sprites, 'background.png' ) ),
+    (disp_width, disp_height)
+).convert()
+color_background = pygame.Surface( (disp_width, disp_height), pygame.SRCALPHA )
+
 
 '''
 for x in range(0, 10):
@@ -104,7 +115,7 @@ class Start_Map():
     def __init__(self,
         x_column = 0,
         y_column = 0,
-        map_level = Text_Read(current_level, 'ModeText')
+        level = current_level
     ):
         #cf_map_default.txt
         #cf_map.txt
@@ -118,13 +129,13 @@ class Start_Map():
         
         "x, y" column son para establecer el pixel de inicio basado en la resolucion del juego. Por defecto inician en 0, 0.
         '''
-        self.player_spawn = None
-        plat_number = 0
-        pixel_space = disp_width//60
-        
-        # Establecer la información del mapa
+        # Establecer archivo y información del level
         next_level = None
+        self.level = level.replace(dir_maps, '')
+
         self.climate = None
+        self.message_start = None
+        map_level = Text_Read(level, 'ModeText')
         map_info = Only_Comment(
             text=map_level,
             comment='$$'
@@ -136,13 +147,27 @@ class Start_Map():
             for line in map_info.split('\n'):
                 info.append(line)
                 number_info += 1
-            next_level = info[0].split(':')
-        if number_info == 2:
+            if not info[0] == '':
+                next_level = info[0].split(':')
+            else:
+                next_level = [None, None]
+        if number_info >= 2:
             self.climate = info[1]
 
-        # Establecer objetos en su posición inidaca
+        if number_info >= 3:
+            if info[2].startswith('stock_'):
+                self.message_start = Lang.get_text(info[2])
+            else:
+                self.message_start = info[2]
         map_level = Ignore_Comment(text=map_level, comment='//')
         map_level = Ignore_Comment(text=map_level, comment='$$')
+                
+        # Establecer variables de inicio de juego, de posición y tamaño de objetos.
+        self.player_spawn = None
+        plat_number = 0
+        pixel_space = disp_width//60
+
+        # Establecer objetos en su posición indicada
         test = ''
         for column in map_level.split('\n'):
             if column == '':
@@ -160,7 +185,8 @@ class Start_Map():
                     x_space += 1
                     plat = Floor(
                         size=(pixel_space, pixel_space),
-                        position=position
+                        position=position,
+                        climate=self.climate
                     )
                 
                 elif space == 'P':
@@ -178,7 +204,8 @@ class Start_Map():
 
                     plat = Floor(
                         size=size,
-                        position=position
+                        position=position,
+                        climate=self.climate
                     )
 
                 elif space == '|':
@@ -232,7 +259,8 @@ class Start_Map():
                     Stair(
                         size=pixel_space,
                         position=position,
-                        invert=False
+                        invert=False,
+                        climate=self.climate
                     )
                     
                 elif space == '-':
@@ -240,7 +268,8 @@ class Start_Map():
                     Stair(
                         size=pixel_space,
                         position=position,
-                        invert=True
+                        invert=True,
+                        climate=self.climate
                     )
 
                 elif space == 's':
@@ -313,9 +342,9 @@ class Loop_allday():
             self.color_day_green = 168
             self.color_day_blue = 187
         elif climate == 'sunny':
-            self.color_day_red = 254
+            self.color_day_red = 240
             self.color_day_green = 202
-            self.color_day_blue = 138
+            self.color_day_blue = 134
         elif climate == 'alien':
             self.color_day_red = 68
             self.color_day_green = 38
@@ -366,7 +395,7 @@ end_of_track_event = pygame.USEREVENT + 1
 pygame.mixer.music.set_endevent(end_of_track_event)
 
 class Play_Music():
-    def __init__(self, music=True, climate=None):
+    def __init__(self, music=get_music(), climate=None, climate_sound=get_climate_sound()):
         # Para reproducir musica en el juegito
         self.list_music = [
             #os.path.join(dir_audio, 'music/silence.ogg'),
@@ -380,6 +409,7 @@ class Play_Music():
             [os.path.join(dir_audio, 'music/music-test4.ogg'), 2]
         ]
 
+        self.climate_sound = climate_sound
         self.__go = False
         self.music = music
         self.climate = climate
@@ -394,13 +424,23 @@ class Play_Music():
             return os.path.join(dir_audio, 'music/climate_default.ogg')
     
     def play(self):
-        self.__go = random.choice( [True, 2, 3] )
-        #self.__go = True
+        # Reproducir musica o sonido del silencio/ambiente.
+        if self.climate_sound == True:
+            self.__go = random.choice( [True, 2, 3] )
+        else:
+            if self.music == True:
+                self.__go = True
+            else:
+                self.__go = False
+        
+        # Reproducir musica o no
         if self.__go == True and self.music == True:
+            # Cuando se puede reproducir musica.
             music_ready = random.choice(self.list_music)
             music = music_ready[0]
             self.limit_music = music_ready[1]
         else:
+            # Sonido del silencio/ambiente
             music = self.set_climate()
             self.limit_music = self.__limit_music_climate
         pygame.mixer.music.load( music )
@@ -461,7 +501,7 @@ player = Player( position=start_map.player_spawn )
 player_spawn_hp = player.hp
 player_spawn_xy = player_camera_prepare(
     disp_width=disp_width, disp_height=disp_height, more_pixels=disp_width//30,
-    all_sprites=all_sprites, player=player, show_coordenades=True
+    all_sprites=layer_all_sprites.sprites(), player=player, show_coordenades=True
 )
 player_show_sprite = player.show_sprite
 player_anim_dead = None
@@ -474,6 +514,9 @@ dict_climate = {}
 for climate in climate_objects:
     climate_number += 1
     dict_climate.update( {climate_number : [climate.rect.x, climate.rect.y]} )
+    
+
+message_start = start_map.message_start
 
 
 # Funcion | Dia y noche
@@ -497,8 +540,11 @@ limit_playmusic = play_music.limit_music
 
 # Funcion juego completado
 gamecomplete = False
-fps_gamecomplete = fps*4
-fps_gamecomplete_count = 0
+
+# Función cretidos
+credits = False
+credits_fps = fps*4
+credits_count = 0
     
 
 
@@ -510,11 +556,36 @@ while True:
             sys.exit()
         if event.type == pygame.KEYDOWN:
             if event.key == player.pressed_jump:
-                player.jump()
+                # Si se preciona la tecla para saltar.
+                # Mensajes
+                if type(message_start) is str:
+                    # El mensaje se cierra
+                    message_start = None
+                else:
+                    # El jugador salta si no hay mensajes
+                    player.jump()
+                    
+                # Creditos
+                if credits == True:
+                    if credits_count >= credits_fps:
+                        pygame.quit()
+                        sys.exit()
+                    
+                # Juego completado
+                elif gamecomplete == True:
+                    # Si el juego esta completado
+                    save_gamecomplete(level=start_map.level, score=score)
+                    if credits == False:
+                        for sprite in layer_all_sprites.sprites():
+                            if not sprite == player:
+                                sprite.kill()
+                        credits = True
+
             elif event.key == pygame.K_r:
-                # Por si se bugea el juego, poder matar al jugaddor y por consecuensia reiniciar el nivel
+                # Por si se bugea el juego, poder matar al jugador y por consecuensia reiniciar el nivel
                 if not player.hp <= 0:
-                    player.hp = -1
+                    if gamecomplete == False:
+                        player.hp = -1
         if event.type == end_of_track_event:
             # Cuando se acaba la musica
             count_playmusic += 1
@@ -527,9 +598,11 @@ while True:
 
     
     # Fondo | Ciclo dia y noche
-    display.fill(
-        ( color_day[0],color_day[1],color_day[2] )
-    )
+    display.blit( image_background, (0,0) )
+
+    color_background.fill( ( color_day[0],color_day[1],color_day[2], 143 ) )
+    display.blit( color_background, (0,0) )
+
 
     if count_fps_day == color_change:
         count_fps_day = 0
@@ -593,12 +666,12 @@ while True:
         if not sprite.level == None:
             level = sprite.level
 
-            for other_sprite in all_sprites:
+            for other_sprite in layer_all_sprites.sprites():
                 other_sprite.kill()
 
             start_map = Start_Map(
                  0, 0,
-                 map_level = Text_Read(level, 'ModeText')
+                 level = level
             )
 
             for plat in solid_objects:
@@ -610,7 +683,7 @@ while True:
             #player_spawn_hp = player_spawn_hp
             player_spawn_xy = player_camera_prepare(
                 disp_width=disp_width, disp_height=disp_height, more_pixels=disp_width//30,
-                all_sprites=all_sprites, player=player, show_coordenades=True
+                all_sprites=layer_all_sprites.sprites(), player=player, show_coordenades=True
             )
             #player_show_sprite = player_show_sprite
             player_anim_dead = None
@@ -623,6 +696,8 @@ while True:
             for climate in climate_objects:
                 climate_number += 1
                 dict_climate.update( {climate_number : [climate.rect.x, climate.rect.y]} )
+            
+            message_start = start_map.message_start
                 
             # Funcion de dia y noche
             loop_allday = Loop_allday(
@@ -672,6 +747,9 @@ while True:
             climate.rect.center = (
                 camera_x + dict_climate.get(number)[0], camera_y + dict_climate.get(number)[1]
             )
+    # Objetos / Mostrar / Los sprites de atras, que no puede mover la camara.
+    for sprite in nocamera_back_sprites:
+        display.blit(sprite.surf, sprite.rect)
             
     # Objetos / Mostrar / Todos los sprites, solo si se ven en la pantalla
     for sprite in layer_all_sprites.sprites():
@@ -685,7 +763,7 @@ while True:
     camera = player_camera_move(
         disp_width=disp_width, disp_height=disp_height,
         camera_x=camera_x, camera_y=camera_y, 
-        all_sprites=all_sprites,
+        all_sprites=layer_all_sprites.sprites(),
         limit_objects=limit_objects,
         player=player,
     )
@@ -708,7 +786,7 @@ while True:
                 # Establecer todos los objetos como al inicio del juego
                 # Con base al valor xy actual de la camara, sus valores xy se invierten y se suman a las coordenadas actuales de los sprites.
                 # Recuerda que esto es posible: "x+ -x = 0"
-                for sprite in all_sprites:
+                for sprite in layer_all_sprites.sprites():
                     sprite.rect.x += (camera_x*-1)
                     sprite.rect.y += (camera_y*-1)
             
@@ -724,50 +802,181 @@ while True:
     
     
     # Sección del texto del juego (Interfaz/HUD)
-    
-    # Mostrar Vida de jugador
-    text_hp = font_normal.render(
-        str(player.hp), True, (0, 255, 0)
-    )
-    display.blit(
-        text_hp, (
-            (disp_width)-(size_font_normal*3),
-            size_font_normal
-        )
-    )
-    
-    # Mostrar Puntaje
-    text_score = font_normal.render(
-        str(score), True, (255, 255, 0)
-    )
-    display.blit(
-        text_score, (
-            (disp_width)-(size_font_normal*3),
-            size_font_normal*2
-        )
-    )
-
-    # Función juego completado
-    if gamecomplete == True:
-        # Mostrar un mensaje de juego terminado, y cerrar el juego
-        player.gravity_power = 0
-        player.gravity = False
-        player.not_move = True
-        text_gamecomplete = font_big.render(
-            'Fin del juego', True, (0, 255, 0)
+    if credits == False:
+        # Mostrar Vida de jugador
+        text_hp = font_normal.render(
+            str(player.hp), True, generic_colors('green')
         )
         display.blit(
-            text_gamecomplete, (
-                (disp_height//2)-(size_font_big//2),
-                (disp_height//2)-(size_font_big//2)
+            text_hp, (
+                (disp_width)-(size_font_normal*3),
+                size_font_normal
             )
         )
-        if fps_gamecomplete_count < fps_gamecomplete:
-            fps_gamecomplete_count += 1
-        elif fps_gamecomplete_count == fps_gamecomplete:
-            pygame.quit()
-            sys.exit()
         
+        # Mostrar Puntaje
+        text_score = font_normal.render(
+            str(score), True, generic_colors('yellow')
+        )
+        display.blit(
+            text_score, (
+                (disp_width)-(size_font_normal*3),
+                size_font_normal*2
+            )
+        )
+        
+        
+        # Función juego completado
+        # Funciones | Mensajes
+        message_continue = False
+
+        # Función | Mensaje de inicio
+        if type(message_start) is str:
+            text_message = font_normal.render(
+                message_start, True, generic_colors('white')
+            )
+            position = [
+                (disp_width//2)-(text_message.get_rect().width//2),
+                size_font_normal
+            ]
+
+            rect_text = text_message.get_rect()
+            pygame.draw.rect(
+                display, generic_colors('black'), 
+                (
+                    position[0], position[1],
+                    rect_text.width, rect_text.height
+                )
+            )
+
+            display.blit(
+                text_message, (
+                    position[0],
+                    position[1]
+                )
+            )
+            message_continue = True
+        
+        # Función mensaje fin de juego
+        if gamecomplete == True and credits == False:
+            # Lo que pasa cuando el juego es completado
+            text_gamecomplete = font_big.render(
+                Lang.get_text('gamecomplete'), True, generic_colors('yellow')
+            )
+            position = [
+                (disp_width//2)-(text_gamecomplete.get_rect().width//2),
+                (disp_height//2)-(size_font_big//2)
+            ]
+            
+            rect_text = text_gamecomplete.get_rect()
+            pygame.draw.rect(
+                display, generic_colors('black'), 
+                (
+                    position[0], position[1],
+                    rect_text.width, rect_text.height
+                )
+            )
+
+            display.blit(
+                text_gamecomplete, (
+                    position[0],
+                    position[1]
+                )
+            )
+            message_continue = True
+        
+        # Función mensaje continuar
+        if message_continue == True:
+            # El mensaje continuar, mantiene al personaje inmovil
+            player.not_move = True
+            player.gravity = False
+            player.rect.y -= player.gravity_power
+
+            text_continue = font_normal.render(
+                f"{Lang.get_text('continue_jump')}...", True, generic_colors('white')
+            )
+            position = [size_font_normal, disp_height-(size_font_normal*2)]
+            
+            rect_text = text_continue.get_rect()
+            pygame.draw.rect(
+                display, generic_colors('black'), 
+                (
+                    position[0], position[1],
+                    rect_text.width, rect_text.height
+                )
+            )
+
+            display.blit(
+                text_continue, (
+                    position[0],
+                    position[1]
+                )
+            )
+    
+    # Mostrar Creditos
+    else:
+        # Fondo negro
+        display.fill( generic_colors('black') )
+        
+        # Para que no se mueva el jugador
+        # Si, el jugador sige creado en los creditos... XD
+        player.not_move = True
+        player.gravity = False
+        player.rect.y -= player.gravity_power
+        
+        # Texto creditos
+        text_credits = font_normal.render(
+            Lang.get_text('credits'), True, generic_colors('yellow')
+        )
+        position = [(disp_width//2)-(text_credits.get_rect().width//2), (size_font_normal//2)]
+        
+        display.blit(
+            text_credits, (
+                position[0],
+                position[1]
+            )
+        )
+        
+        # Texto nombre del creador 
+        text_by = font_normal.render(
+            'Jean Abraham Chacón Candanosa @CocoMarck', True, generic_colors('green')
+        )
+        position = [(disp_width//2)-(text_by.get_rect().width//2), (disp_height//2)-(size_font_normal//2)]
+        
+        display.blit(
+            text_by, (
+                position[0],
+                position[1]
+            )
+        )
+        
+        # Mostrar Puntaje
+        text_score = font_normal.render(
+            f'{Lang.get_text("score")}: {score}', True, generic_colors('white')
+        )
+        display.blit(
+            text_score, (
+                size_font_normal,
+                size_font_normal*2
+            )
+        )
+
+        # Habilitar "Cerrar el juego"
+        if credits_count < credits_fps:
+            credits_count += 1
+        else:
+            # Texto continuar
+            text_continue = font_normal.render(
+                f"{Lang.get_text('continue_jump')}...", True, generic_colors('white')
+            )
+            position = [size_font_normal, disp_height-(size_font_normal*2)]
+
+            display.blit(
+                text_continue, (
+                    position[0],
+                    position[1]
+                )
+            )
 
     
     # Fin
