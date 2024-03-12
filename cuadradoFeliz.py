@@ -32,7 +32,10 @@ from Modulos.pygame.CF_data import (
 )
 from Modulos.pygame.CF_object import(
     Player,
+
     Floor,
+    Ladder,
+
     Spike,
     Star_pointed,
     Climate_rain,
@@ -43,12 +46,17 @@ from Modulos.pygame.CF_object import(
     Stair,
     Score,
     Cloud,
+    Trampoline,
+    Elevator,
     
     layer_all_sprites,
     nocamera_back_sprites,
 
     solid_objects,
-    instakill_objects,
+    ladder_objects,
+    jumping_objects,
+    moving_objects,
+
     damage_objects,
     limit_objects,
     level_objects,
@@ -207,6 +215,34 @@ class Start_Map():
                         position=position,
                         climate=self.climate
                     )
+                    
+                elif space == 'H':
+                    x_space += 1
+                    Ladder(
+                        size=pixel_space,
+                        position=position,
+                    )
+                    
+                elif space == '_':
+                    x_space += 1
+                    Trampoline(
+                        size=pixel_space,
+                        position=position,
+                    )
+
+                elif space == 'x':
+                    x_space += 1
+                    Elevator(
+                        size=pixel_space,
+                        position=position, move_dimension=1
+                    )
+                    
+                elif space == 'y':
+                    x_space += 1
+                    Elevator(
+                        size=pixel_space,
+                        position=position, move_dimension=2
+                    )
 
                 elif space == '|':
                     x_space += 1
@@ -222,6 +258,10 @@ class Start_Map():
                 elif space == '^':
                     x_space += 1
                     spike = Spike( position=position )
+
+                elif space == '!':
+                    x_space += 1
+                    spike = Spike( position=position, instakill=True )
                     
                 elif space == 'A':
                     x_space += 1
@@ -244,15 +284,19 @@ class Start_Map():
                     
                 elif space == '\\':
                     x_space += 1
-                    spike = Spike( position=position, moving=True )
+                    spike = Spike( position=position, moving=True, instakill=True )
                 
                 elif space == 'Y':
                     x_space += 1
                     Star_pointed(position=position)
+
+                elif space == 'X':
+                    x_space += 1
+                    Star_pointed(position=position, instakill=True)
                     
                 elif space == '*':
                     x_space += 1
-                    Star_pointed(position=position, moving=True)
+                    Star_pointed(position=position, moving=True, instakill=True)
 
                 elif space == '+':
                     x_space += 1
@@ -398,15 +442,15 @@ class Play_Music():
     def __init__(self, music=get_music(), climate=None, climate_sound=get_climate_sound()):
         # Para reproducir musica en el juegito
         self.list_music = [
-            #os.path.join(dir_audio, 'music/silence.ogg'),
             [os.path.join(dir_audio, 'music/default-music.ogg'), 4],
             [os.path.join(dir_audio, 'music/music-party.ogg'), 8],
-            [os.path.join(dir_audio, 'music/music-cover.ogg'), 1],
+            #[os.path.join(dir_audio, 'music/music-cover.ogg'), 1],
 
             [os.path.join(dir_audio, 'music/music-test1.ogg'), 1],
             [os.path.join(dir_audio, 'music/music-test2.ogg'), 2],
             [os.path.join(dir_audio, 'music/music-test3.ogg'), 2],
-            [os.path.join(dir_audio, 'music/music-test4.ogg'), 2]
+            [os.path.join(dir_audio, 'music/music-test4.ogg'), 2],
+            [os.path.join(dir_audio, 'music/music-test5.ogg'), 1]
         ]
 
         self.climate_sound = climate_sound
