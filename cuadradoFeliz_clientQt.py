@@ -204,9 +204,10 @@ class Window_Main(QWidget):
     
     def evt_set_level(self):
         # Establecer nivel
-        CF_data.set_level( 
-            level=f'{CF_data.dir_maps}{self.combobox_set_level.currentText()}' 
-        )
+        if self.__gamecomplete == True:
+            CF_data.set_level( 
+                level=f'{CF_data.dir_maps}{self.combobox_set_level.currentText()}' 
+            )
     
     def evt_set_disp(self):
         # Establecer la resolución seleccionada
