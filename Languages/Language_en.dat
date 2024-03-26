@@ -132,12 +132,30 @@ shelf_square=Square shelf
 rectangular_wall=Rectangular wall
 
 
+# Booleanos
+on=Activated
+off=Disabled
+true=True
+false=False
+
+
 # Videogame
+volume=Volume
+
 continue_jump=Press the "jump button" to continue
 gamecomplete=End of the game
 credits=Credits
 hp=Life
 score=Score
+
+lvl=Level
+ctrls=Controls
+music=Music
+completedGames=Completed games
+climateSound=Ambient Music
+default_ctrls=Directional arrows, "Space" key and "R" key
+show_collide=Show collision
+max_score=Highest score
 
 stock_info=You can move with the "directional keys", and you can jump with the "space key".
 stock_info_coin=Coins are good, they restore your life and make you more beautiful.

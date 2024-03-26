@@ -129,12 +129,30 @@ shelf_square=Repisa cuadrada
 rectangular_wall=Pared rectangular
 
 
+# Booleanos
+on=Activado
+off=Desactivado
+true=Verdadero
+false=Falso
+
+
 # Videojuego
+volume=Volume
+
 continue_jump=Preciona el boton "saltar", para continuar
 gamecomplete=Fin del juego
 credits=Creditos
 hp=Vida
 score=Puntos
+
+lvl=Nivel
+ctrls=Controles
+music=Musica
+completedGames=Juegos completados
+climateSound=Sonido de ambiente
+default_ctrls=Flechas direccionales, tecla "Espacio" y tecla "R"
+show_collide=Mostrar colisión
+max_score=Mayor puntaje
 
 stock_info=Para moverte utiliza las "teclas direccionales", y para saltar preciona "espacio".
 stock_info_coin=Las monedas son buenas, recuperan tu vida y te hacen mas bello.

@@ -39,12 +39,14 @@ class Window_Main(QWidget):
         button_play.clicked.connect( self.evt_start_game )
         vbox_main.addWidget( button_play )
         
-        button_controls = QPushButton( 'Controles' )
+        button_controls = QPushButton( Lang('ctrls') )
         button_controls.clicked.connect( self.evt_get_controls )
         vbox_main.addWidget( button_controls )
         
 
         # Seccion Vertical - SpinBox - Establecer volumen
+        vbox_main.addStretch()
+
         hbox = QHBoxLayout()
         vbox_main.addLayout(hbox)
         
@@ -101,7 +103,7 @@ class Window_Main(QWidget):
         hbox = QHBoxLayout()
         vbox_main.addLayout(hbox)
         
-        label = QLabel( 'Nivel' )
+        label = QLabel( Lang('lvl') )
         hbox.addWidget( label )
         
         hbox.addStretch()
@@ -121,6 +123,17 @@ class Window_Main(QWidget):
                     self.combobox_set_level.addItem( level.replace(CF_data.dir_maps, '') )
         self.combobox_set_level.activated.connect( self.evt_set_level )
         hbox.addWidget( self.combobox_set_level )
+                
+
+        # Sección Vertical - Boton alternable - Establecer ver collider o no
+        if self.__gamecomplete == True:
+            self.button_bool_show_collide = QPushButton()
+            self.button_bool_show_collide.setCheckable(True)
+        
+            self.evt_set_show_collide( checked=CF_data.get_show_collide() )
+        
+            self.button_bool_show_collide.clicked.connect( self.evt_set_show_collide )
+            vbox_main.addWidget( self.button_bool_show_collide )
         
         
         # Seccion Vertical - Combobox - Resolución
@@ -151,13 +164,13 @@ class Window_Main(QWidget):
         
 
         # Sección vertical | Boton | Información de juegos completados
-        button_get_gamecomplete = QPushButton( 'Juegos completados' )
+        vbox_main.addStretch()
+        button_get_gamecomplete = QPushButton( Lang('completedGames') )
         button_get_gamecomplete.clicked.connect( self.evt_get_gamecomplete )
         vbox_main.addWidget( button_get_gamecomplete )
         
         
         # Sección vertical | Boton | Creditos
-        vbox_main.addStretch()
         button_credits = QPushButton( Lang('credits') )
         button_credits.clicked.connect( self.evt_credits )
         vbox_main.addWidget( button_credits )
@@ -175,8 +188,8 @@ class Window_Main(QWidget):
         # Mostrar los controles
         QMessageBox.information(
             self,
-            'Controles', # Titulo
-            'Flechas y espacio' # Información
+            Lang('ctrls'), # Titulo
+            Lang('default_ctrls') # Información
         )
     
     def evt_set_volume(self, value):
@@ -188,18 +201,18 @@ class Window_Main(QWidget):
         # Establecer sonido de musica o no
         self.button_bool_music.setChecked( checked )
         if checked == True:
-            self.button_bool_music.setText( 'Activada | Musica ' )
+            self.button_bool_music.setText( f'{Lang("on")} | {Lang("music")}' )
         else:
-            self.button_bool_music.setText( 'Desactivado | Musica' )
+            self.button_bool_music.setText( f'{Lang("off")} | {Lang("music")}' )
         CF_data.set_music( music=checked )
             
     def evt_set_climateSound(self, checked):
         # Establecer sonido de clima o no
         self.button_bool_climateSound.setChecked( checked )
         if checked == True:
-            self.button_bool_climateSound.setText( 'Activado | Sonido de Fondo ' )
+            self.button_bool_climateSound.setText( f'{Lang("on")} | {Lang("climateSound")}' )
         else:
-            self.button_bool_climateSound.setText( 'Desactivado | Sonido de Fondo ' )
+            self.button_bool_climateSound.setText( f'{Lang("off")} | {Lang("climateSound")}' )
         CF_data.set_climate_sound( climate_sound=checked )
     
     def evt_set_level(self):
@@ -208,6 +221,14 @@ class Window_Main(QWidget):
             CF_data.set_level( 
                 level=f'{CF_data.dir_maps}{self.combobox_set_level.currentText()}' 
             )
+    def evt_set_show_collide(self, checked):
+        # Establecer si ver colliders o no
+        self.button_bool_show_collide.setChecked( checked )
+        if checked == True:
+            self.button_bool_show_collide.setText( f'{Lang("on")} | {Lang("show_collide")}' )
+        else:
+            self.button_bool_show_collide.setText( f'{Lang("off")} | {Lang("show_collide")}' )
+        CF_data.set_show_collide( show_collide=checked )
     
     def evt_set_disp(self):
         # Establecer la resolución seleccionada
@@ -217,26 +238,70 @@ class Window_Main(QWidget):
     def evt_get_gamecomplete(self):
         # Mostrar todos los juegos completados
         # Si no existen juegos completados, se indicare mediante un mensaje.
+        
+        # Establecer información de juegos completados
+        # Establecer nombre del nivel en el diccionario
         text_ready = ''
+        dict_gamecomplete = {}
+        list_gamecomplete = CF_data.get_gamecomplete()
         if self.__gamecomplete == True:
-            for gamecomplete in CF_data.get_gamecomplete():
+            for gamecomplete in list_gamecomplete:
                 text_ready += (
-                    f'Nivel: {gamecomplete[0]} | {Lang("score")}: {gamecomplete[1]}\n'
+                    f'{Lang("lvl")}: {gamecomplete[0]} | {Lang("score")}: {gamecomplete[1]}\n'
                 )
+                dict_gamecomplete.update( {gamecomplete[0]:None} )
         else:
             text_ready = 'No hay juegos completados'
         
+        # Record | Establecer en una lista los valores de score en el diccionario
+        for key in dict_gamecomplete.keys():
+            list_number = []
+            for gamecomplete in list_gamecomplete:
+                if key == gamecomplete[0]:
+                    list_number.append( gamecomplete[1] )
+                    dict_gamecomplete.update( {key:list_number} )
+
+        # Record | Establecer el texto del record
+        text_record = ''
+        for key in dict_gamecomplete.keys():
+            '''
+            # Acomodar valores del record
+            # Ordenar valores con el Metodo burbuja.
+            # El valor mas alto sera el ultimo indice de la lista de valores.
+            list_number = dict_gamecomplete[key]
+            len_list_number = len(list_number)
+            for index in range(len_list_number):
+                for current_number in range(len_list_number-1):
+                    next_number = current_number+1
+                    
+                    if list_number[current_number] > list_number[next_number]:
+                        go_prev = list_number[current_number]
+                        go_next = list_number[next_number]
+                        list_number[current_number] = go_next
+                        list_number[next_number] = go_prev
+            print( key, dict_gamecomplete[key] )
+            '''
+            text_record += f"{Lang('lvl')}: {key} | {Lang('score')}: {max(dict_gamecomplete[key])}\n"
+
+        if not text_record == '':
+            text_ready = (
+                f'{Lang("max_score")}:\n'
+                f'{text_record}\n\n\n{text_ready}'
+            )
+        
+        # Mostrar los juegos completados y su record
         QMessageBox.information(
             self,
-            'Juegos completados', #Titulo
+            Lang('completedGames'), #Titulo
             text_ready # Texto
         )
 
     def evt_credits(self):
+        # Creditos del juego
         QMessageBox.information(
             self,
             Lang('credits'), # Titulo
-            'Jean Abraham Chacón Candanosa @CocoMarck' # Texto
+            CF_data.credits( share=True,jump_lines=True ) # Texto
         )
 
 
