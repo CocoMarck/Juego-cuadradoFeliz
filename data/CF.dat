@@ -3,4 +3,6 @@ volume=0.02
 fps=30
 music=True
 climate_sound=True
+show_clouds=True
+show_collide=False
 current_level=./data/maps/part1/cf_map_part1-level1.txt
