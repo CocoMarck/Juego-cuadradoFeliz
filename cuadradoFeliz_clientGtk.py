@@ -49,7 +49,7 @@ class Window_Main(Gtk.Window):
         current_volume = round( (CF_data.get_volume())*self.__volume_multipler )
         
         hbox = Gtk.Box(spacing=0)
-        vbox_main.pack_start(hbox, True, True, 0)
+        vbox_main.pack_start(hbox, True, False, 0)
         
         label = Gtk.Label( label=Lang('volume') )
         hbox.pack_start(label, False, False, 0)
@@ -67,7 +67,7 @@ class Window_Main(Gtk.Window):
 
         # Sección Vertical - Label - Fps establecidos
         hbox = Gtk.Box(spacing=0)
-        vbox_main.pack_start(hbox, True, True, 0)
+        vbox_main.pack_start(hbox, True, False, 0)
         
         label = Gtk.Label( label=Lang('fps') )
         hbox.pack_start(label, False, False, 0)
@@ -78,7 +78,7 @@ class Window_Main(Gtk.Window):
 
         # Sección Vertical - Switch Button -  Establecer escuchar musica o no
         hbox = Gtk.Box(spacing=0)
-        vbox_main.pack_start(hbox, True, True, 0)
+        vbox_main.pack_start(hbox, True, False, 0)
         
         label = Gtk.Label( label=Lang('music') )
         hbox.pack_start(label, False, False, 0)
@@ -90,7 +90,7 @@ class Window_Main(Gtk.Window):
                 
         # Sección Vertical - Switch Button - Establecer escuchar sonido de fondo o no
         hbox = Gtk.Box(spacing=0)
-        vbox_main.pack_start(hbox, True, True, 0)
+        vbox_main.pack_start(hbox, True, False, 0)
         
         label = Gtk.Label( label=Lang('climateSound') )
         hbox.pack_start(label, False, False, 0)
@@ -99,12 +99,24 @@ class Window_Main(Gtk.Window):
         switch.connect('notify::active', self.evt_set_climateSound)
         switch.set_active( CF_data.get_climate_sound() )
         hbox.pack_end( switch, False, False, 0 )
+
+
+        # Sección Vertical - Switch Button - Establecer ver nubes o no
+        hbox = Gtk.Box(spacing=0)
+        vbox_main.pack_start(hbox, True, False, 0)
         
+        label = Gtk.Label( label=Lang('show_clouds') )
+        hbox.pack_start( label, False, False, 0 )
+        
+        switch = Gtk.Switch()
+        switch.connect('notify::active', self.evt_set_show_clouds)
+        switch.set_active( CF_data.get_show_clouds() )
+        hbox.pack_end(switch, False, False, 0)
         
         # Sección vertical - Gamecomplete - Switch button - Establecer ver collider o no
         if gamecomplete == True:
             hbox = Gtk.Box(spacing=0)
-            vbox_main.pack_start(hbox, True, True, 0)
+            vbox_main.pack_start(hbox, True, False, 0)
             
             label = Gtk.Label( label=Lang('show_collide') )
             hbox.pack_start(label, False, False, 0)
@@ -117,7 +129,7 @@ class Window_Main(Gtk.Window):
 
         # Sección vertical - Label - Ver Nivel
         hbox = Gtk.Box(spacing=0)
-        vbox_main.pack_start(hbox, True, True, 0)
+        vbox_main.pack_start(hbox, True, False, 0)
         
         label = Gtk.Label( label=Lang('lvl') )
         hbox.pack_start(label, False, False, 0)
@@ -130,14 +142,12 @@ class Window_Main(Gtk.Window):
         # Sección vertical - Gamecomplete - Comobobox - Seleccionar nivel
         else:
             # Lista de niveles
-            current_level_number = 0
-            count_level = 0
+            # El indice del nivel actual seria el numero '0"
             list_level = Gtk.ListStore(str)
+            list_level.append( [ current_level.replace(CF_data.dir_maps, '') ] )
             for level in CF_data.get_level_list():
-                list_level.append( [ level.replace(CF_data.dir_maps, '') ] )
-                if level == current_level:
-                    current_level_number = count_level
-                count_level += 1
+                if not level == current_level:
+                    list_level.append( [ level.replace(CF_data.dir_maps, '') ] )
             
             # Combobox
             rendertext = Gtk.CellRendererText()
@@ -146,14 +156,14 @@ class Window_Main(Gtk.Window):
             self.combobox_set_level.add_attribute(
                 rendertext, 'text', 0
             )
-            self.combobox_set_level.set_active(current_level_number)
+            self.combobox_set_level.set_active( 0 )
             self.combobox_set_level.connect("changed", self.evt_set_level)
             hbox.pack_end( self.combobox_set_level, False, False, 0 )
 
         
         # Sección vertical - Combobox - Seleccionar resolución
         hbox = Gtk.Box(spacing=0)
-        vbox_main.pack_start(hbox, True, True, 0)
+        vbox_main.pack_start(hbox, True, False, 0)
         
         label = Gtk.Label( label=Lang('resolution') )
         hbox.pack_start(label, False, False, 0 )
@@ -205,6 +215,7 @@ class Window_Main(Gtk.Window):
         # Cerrar cliente, y comenzar juego.
         self.destroy()
         import cuadradoFeliz
+        #self.hide()
         #subprocess.Popen( [sys.executable, 'cuadradoFeliz.py'] )
         
     def evt_get_controls(self, button):
@@ -244,6 +255,13 @@ class Window_Main(Gtk.Window):
         else:
             CF_data.set_climate_sound( climate_sound=False )
     
+
+    def evt_set_show_clouds(self, switch, gparam):
+        # Establecer mostrar nubes o no
+        if switch.get_active():
+            CF_data.set_show_clouds( show_clouds=True )
+        else:
+            CF_data.set_show_clouds( show_clouds=False )
     
     def evt_set_show_collide(self, switch, gparam):
         # Establecer el mostrar collider o no
@@ -251,6 +269,7 @@ class Window_Main(Gtk.Window):
             CF_data.set_show_collide( show_collide=True )
         else:
             CF_data.set_show_collide( show_collide=False )
+    
     
     
     def evt_set_level(self, combo):

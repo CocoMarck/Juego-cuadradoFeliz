@@ -3,6 +3,8 @@ from .CF_data import (
     get_fps,
     get_volume,
     get_level,
+    get_show_collide,
+    get_show_clouds,
 
     dir_game,
     dir_maps,
@@ -30,6 +32,16 @@ fps = get_fps()
 
 # Titulo del juego
 game_title = 'El cuadrado Feliz'
+
+# Mostrar collider
+show_collide=get_show_collide()
+if show_collide == True:
+    show_sprite = False
+else:
+    show_sprite = True
+
+# Mostrar nubes
+show_clouds=get_show_clouds()
 
 # Volumen
 volume = get_volume()

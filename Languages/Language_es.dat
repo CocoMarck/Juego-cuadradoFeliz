@@ -151,6 +151,7 @@ music=Musica
 completedGames=Juegos completados
 climateSound=Sonido de ambiente
 default_ctrls=Flechas direccionales, tecla "Espacio" y tecla "R"
+show_clouds=Mostrar nubes
 show_collide=Mostrar colisión
 max_score=Mayor puntaje
 

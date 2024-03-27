@@ -269,6 +269,7 @@ class Player(pygame.sprite.Sprite):
         if pygame.sprite.spritecollide(self, jumping_objects, False):
             collide = True
             self.jump(multipler=2)
+            self.rect.y -= 1 # Esto es para evitar bugs de colision.
             
         # Colision | Objetos | Solidos-Elevador
         for obj in moving_objects:
@@ -489,9 +490,12 @@ class Anim_player_dead(pygame.sprite.Sprite):
     def __init__(self, position=(0,0), fps=fps, show_collide=False, color_sprite=(153, 252, 152) ):
         super().__init__()
         
-        self.transparent = 255
-        if show_collide == False:
+        if show_collide == True:
+            self.transparent = 255
+            list_sprites = [None, None, None, None]
+        else:
             self.transparent = 0
+            list_sprites = [3, 4, 1, 2]
 
         # Principal
         self.size = disp_width//60
@@ -502,34 +506,35 @@ class Anim_player_dead(pygame.sprite.Sprite):
         self.__count = 0
         self.anim_fin = False
         anim_sprites.add( self )
+        layer_all_sprites.add(self, layer=2)
         
         # Partes
         size_parts = self.size//2
         self.part1 = Player_part( 
             size=size_parts,
             position=(self.rect.x+size_parts//2, self.rect.y + (size_parts+size_parts//2) ),
-            color=generic_colors('green', self.transparent), sprite=3,
+            color=generic_colors('green', self.transparent), sprite=list_sprites[0],
             color_sprite=color_sprite
         )
         
         self.part2 = Player_part( 
             size=size_parts,
             position=(self.rect.x+(size_parts+size_parts//2), self.rect.y + (size_parts+size_parts//2) ),
-            color=generic_colors('blue', self.transparent), sprite=4,
+            color=generic_colors('blue', self.transparent), sprite=list_sprites[1],
             color_sprite=color_sprite
         )
         
         self.part3 = Player_part( 
             size=size_parts,
             position=(self.rect.x+size_parts//2, self.rect.y+size_parts//2),
-            color=generic_colors('yellow', self.transparent), sprite=1,
+            color=generic_colors('yellow', self.transparent), sprite=list_sprites[2],
             color_sprite=color_sprite
         )
 
         self.part4 = Player_part( 
             size=size_parts,
             position=(self.rect.x+(size_parts+size_parts//2), self.rect.y+size_parts//2),
-            color=generic_colors('sky_blue', self.transparent), sprite=2,
+            color=generic_colors('sky_blue', self.transparent), sprite=list_sprites[3],
             color_sprite=color_sprite
         )
     
@@ -735,7 +740,7 @@ class Floor(pygame.sprite.Sprite):
                 round(self.rect.width*0.75, 4), round(self.rect.height*0.75, 4)
             ]
             limit.surf = pygame.Surface( (limit_xy[0], limit_xy[1]), pygame.SRCALPHA )
-            limit.surf.fill( generic_colors(color='red', transparency=self.transparency) )
+            limit.surf.fill( (191, 127, 127, self.transparency) )
             limit.rect = limit.surf.get_rect(
                 topleft=(
                     self.rect.x,
@@ -745,7 +750,7 @@ class Floor(pygame.sprite.Sprite):
             limit.rect.x += (self.rect.width-limit.rect.width) //2
             limit.rect.y += (self.rect.height-limit.rect.height) //2
             layer_all_sprites.add(limit, layer=2)
-            #limit.damage = 1
+            #limit.damage = 10
             #damage_objects.add(limit)
             #print(self.rect.width)
             #print(self.rect.height)
@@ -767,7 +772,7 @@ class Ladder(pygame.sprite.Sprite):
         
         size_collide = round(size*0.75)
         self.surf = pygame.Surface( (size_collide, size_collide), pygame.SRCALPHA )
-        self.surf.fill( generic_colors('grey', transparency=transparency) )
+        self.surf.fill( (113,77,41, transparency) )
         
         self.rect = self.surf.get_rect( center=position )
         
@@ -786,7 +791,7 @@ class Ladder(pygame.sprite.Sprite):
 
 
 class Trampoline(pygame.sprite.Sprite):
-    def __init__(self, size=disp_width//60, position=(0,0), show_collide=True, show_sprite=True):
+    def __init__(self, size=disp_width//60, position=(0,0), show_collide=False, show_sprite=True):
         super().__init__()
         
         # Collide
@@ -895,18 +900,6 @@ class Spike(pygame.sprite.Sprite):
         moving=False, instakill=False
     ):
         super().__init__()
-
-        # Sprite
-        self.image = pygame.image.load(os.path.join(dir_sprites, 'spikes/spike.png'))
-        if show_sprite == True:
-            self.sprite = pygame.sprite.Sprite()
-            self.sprite.surf = pygame.transform.scale(
-                self.image, (size, size)
-            )
-            self.sprite.rect = self.sprite.surf.get_rect(center=position)
-            layer_all_sprites.add(self.sprite, layer=1)
-        else:
-            self.sprite = None
         
         # Collider
         self.surf = pygame.Surface( (size/4, size/2), pygame.SRCALPHA )
@@ -925,18 +918,31 @@ class Spike(pygame.sprite.Sprite):
         
         # Añadir a los grupos de sprites
         # Daño
-        layer_all_sprites.add(self, layer=1)
+        layer_all_sprites.add(self, layer=2)
         if moving == True:
             anim_sprites.add(self)
-
+            
         self.__color = (0, 0, 71)
         if instakill == True:
             self.__color = (71, 0, 0)
             self.damage = 0
         else:
             self.damage = 20
+
         damage_objects.add(self)
-        self.sprite.surf.fill( self.__color, special_flags=pygame.BLEND_ADD )
+        
+        # Sprite
+        self.image = pygame.image.load(os.path.join(dir_sprites, 'spikes/spike.png'))
+        if show_sprite == True:
+            self.sprite = pygame.sprite.Sprite()
+            self.sprite.surf = pygame.transform.scale(
+                self.image, (size, size)
+            )
+            self.sprite.rect = self.sprite.surf.get_rect(center=position)
+            layer_all_sprites.add(self.sprite, layer=1)
+            self.sprite.surf.fill( self.__color, special_flags=pygame.BLEND_ADD )
+        else:
+            self.sprite = None
         
         # Cuadrados solidos
         square_size = self.rect.height
@@ -964,40 +970,53 @@ class Spike(pygame.sprite.Sprite):
         self.size = size
         self.size_y = size
         self.moving = moving
-        self.move_count = 0
-        self.move_pixels = size*4
-        self.move_speed = size//2
+        self.__move_count = 0
+        self.__move_pixels = size*4
+        self.__move_speed = size//2
+        self.__move_type = 'UP'
     
     def anim(self):
         # Solo se activa esta función si se mueve el picote
         if self.moving == True:
-            if self.move_count < self.move_pixels:
-                self.move_count += self.move_speed
-                self.rect.y -= self.move_speed
+            if self.__move_type == 'UP':
+                self.__move_count += self.__move_speed                
+                self.size_y += self.__move_speed
+
+                self.surf = pygame.Surface( (self.rect.width, self.size_y), pygame.SRCALPHA )
+                self.surf.fill( generic_colors(color='red', transparency=self.transparency) )
+                position = (self.rect.x, self.rect.y)
+                self.rect = self.surf.get_rect( topleft=position )
+                self.rect.y -= self.__move_speed
                 
                 if not self.sprite == None:
-                    self.size_y += self.move_speed
                     self.sprite.surf = pygame.transform.scale(
                         self.image, (self.size, (self.size_y))
                     )
                     self.sprite.surf.fill( self.__color, special_flags=pygame.BLEND_ADD )
-                    self.sprite.rect.y -= self.move_speed
+                    self.sprite.rect.y -= self.__move_speed
+                
+                if self.__move_count >= self.__move_pixels:
+                    self.__move_type = 'DOWN'
 
-            elif self.move_count >= self.move_pixels:
-                if self.move_count < self.move_pixels*2:
-                    self.move_count += self.move_speed//2
-                    self.rect.y += self.move_speed//2
-                    
-                    if not self.sprite == None:
-                        self.size_y -= self.move_speed//2
-                        self.sprite.surf = pygame.transform.scale(
-                            self.image, (self.size, (self.size_y))
-                        )
-                        self.sprite.surf.fill( self.__color, special_flags=pygame.BLEND_ADD )
-                        self.sprite.rect.y += self.move_speed//2
+            elif self.__move_type == 'DOWN':
+                self.__move_count -= self.__move_speed//2
+                self.size_y -= self.__move_speed//2
 
-                elif self.move_count == self.move_pixels*2:
-                    self.move_count = 0
+                self.surf = pygame.Surface( (self.rect.width, self.size_y), pygame.SRCALPHA )
+                self.surf.fill( generic_colors(color='red', transparency=self.transparency) )
+                position = (self.rect.x, self.rect.y)
+                self.rect = self.surf.get_rect( topleft=position )
+                self.rect.y += self.__move_speed//2
+                
+                if not self.sprite == None:
+                    self.sprite.surf = pygame.transform.scale(
+                        self.image, (self.size, (self.size_y))
+                    )
+                    self.sprite.surf.fill( self.__color, special_flags=pygame.BLEND_ADD )
+                    self.sprite.rect.y += self.__move_speed//2
+                
+                if self.__move_count <= 0:
+                    self.__move_type = 'UP'
 
 
 
@@ -1214,7 +1233,7 @@ class Stair(pygame.sprite.Sprite):
         # Mostrar o no collider
         self.show_collide = show_collide
         if self.show_collide == True:
-            self.surf.fill( generic_colors('yellow') )
+            self.surf.fill( generic_colors('white') )
         else:
             pass
         
@@ -1277,7 +1296,7 @@ class Climate_rain(pygame.sprite.Sprite):
         
         # Sección de collider
         self.surf = pygame.Surface( (size//4, size//4), pygame.SRCALPHA )
-        self.surf.fill( generic_colors('yellow', self.transparency) )
+        self.surf.fill( generic_colors('sky_blue', self.transparency) )
         self.rect = self.surf.get_rect( center=position )
         self.speed_y = random.choice(
             [  
@@ -1405,7 +1424,10 @@ class Limit_indicator(pygame.sprite.Sprite):
 
 
 class Level_change(pygame.sprite.Sprite):
-    def __init__(self, level=None, dir_level=None, position=(0,0), gamecomplete=False ):
+    def __init__(
+        self, level=None, dir_level=None, position=(0,0), gamecomplete=False,
+        show_collide=False, show_sprite=True
+    ):
         super().__init__()
 
         if dir_level == None:
@@ -1426,21 +1448,43 @@ class Level_change(pygame.sprite.Sprite):
         self.__gamecomplete = gamecomplete
         self.gamecomplete = False
         
-        # Collider y sprite
-        self.surf = pygame.Surface( (disp_width//60, disp_width//60) )
+        # Collider
+        size = (disp_width//60, disp_width//60)
+        self.__transparency = 0
+        if show_collide == True:
+            self.__transparency = 255
+
+        self.surf = pygame.Surface( size, pygame.SRCALPHA )
         if gamecomplete == True:
-            self.surf.fill( generic_colors('green') )
+            self.surf.fill( generic_colors('green', transparency=self.__transparency) )
+        else:
+            self.surf.fill( generic_colors('black', transparency=self.__transparency) )
         self.rect = self.surf.get_rect( center=position )
-        layer_all_sprites.add(self, layer=1)
+        layer_all_sprites.add(self, layer=2)
         level_objects.add(self)
+        
+        # Sprite
+        if show_sprite == True:
+            sprite = pygame.sprite.Sprite()
+            sprite.surf = pygame.transform.scale(
+                pygame.image.load(
+                    os.path.join(dir_sprites, 'floor/level_change.png') 
+                ), size
+            )
+            
+            if gamecomplete == True:
+                sprite.surf.fill( (0, 48, 0), special_flags=pygame.BLEND_ADD )
+            else:
+                sprite.surf.fill( (39, 28, 18), special_flags=pygame.BLEND_ADD )
+
+            sprite.rect = sprite.surf.get_rect( center=position )
+            layer_all_sprites.add(sprite, layer=1)
     
     def update(self):
         if self.change_level == True:
+            self.level = os.path.join( dir_maps, self.dir_level, self.name )
             if self.__gamecomplete == True:
-                self.level = None
                 self.gamecomplete = True
-            else:
-                self.level = os.path.join( dir_maps, self.dir_level, self.name )
 
 
 
@@ -1488,17 +1532,25 @@ class Score(pygame.sprite.Sprite):
 
 
 class Cloud(pygame.sprite.Sprite):
-    def __init__(self, size = (disp_width//15, disp_height//30),  position=(0,0) ):
+    def __init__(
+        self, size = (disp_width//15, disp_height//30),  position=(0,0),
+        show_collide=False
+    ):
         super().__init__()
         
         # Seccion de imagen
         image_set = random.choice( [1, 2, 3] )
         transparency = random.choice( [8, 16, 32] )
-        self.surf = pygame.transform.scale(
-            pygame.image.load( os.path.join(dir_sprites, f'climate/clouds/cloud-{image_set}.png') ),
-            size
-        )
-        self.surf.set_alpha( transparency )
+        
+        if show_collide == False:
+            self.surf = pygame.transform.scale(
+                pygame.image.load( os.path.join(dir_sprites, f'climate/clouds/cloud-{image_set}.png') ),
+                size
+            )
+            self.surf.set_alpha( transparency )
+        else:
+            self.surf = pygame.Surface( size, pygame.SRCALPHA )
+            self.surf.fill( (191,191,191, transparency) )
         self.rect = self.surf.get_rect(topleft=position)
         
         nocamera_back_sprites.add(self)

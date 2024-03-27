@@ -66,6 +66,8 @@ def set_data():
                 'fps=30\n'
                 'music=True\n'
                 'climate_sound=True\n'
+                'show_clouds=False\n'
+                'show_collide=False\n'
                 f'current_level={os.path.join(dir_data, "maps/part1/cf_map_part1-level1.txt")}'
             )
         return True
@@ -345,8 +347,91 @@ def get_gamecomplete():
         list_gamecomplete = []
         for i in text:
             info = i.split(',')
-            info = [ info[0], info[1] ]
+            info = [ info[0], int(info[1]) ]
             list_gamecomplete.append(info)
         return list_gamecomplete
     else:
         return None
+        
+        
+
+
+def get_show_collide():
+    '''
+    Para saber si se desea o ver colliders o no
+    Devuelve un boleano, True or False
+    '''
+    data = get_data()
+    show_collide = data['show_collide']
+    if show_collide == "True":
+        return True
+    else:
+        return False
+
+def set_show_collide(show_collide=True):
+    '''
+    Para establecer si se desea ver colliders o no
+    '''
+    data = get_data(mode_dict=False)
+    text_ready = ''
+    for line in data.split('\n'):
+        if line.startswith('show_collide='):
+            line = f'show_collide={show_collide}'
+        else:
+            pass
+        text_ready += line + '\n'
+    
+    with open(dir_game_data, 'w') as data_text:
+        data_text.write(text_ready[:-1])
+
+
+
+
+def get_show_clouds():
+    '''
+    Para saber si se mostraran las nubes o no.
+    Devuelve un boleano, True o False
+    '''
+    data = get_data()
+    show_clouds = data['show_clouds']
+    if show_clouds == 'True':
+        return True
+    else:
+        return False
+
+def set_show_clouds(show_clouds=True):
+    '''
+    Para mostrar o no las nubes
+    '''
+    data = get_data(mode_dict=False)
+    text_ready = ''
+    for line in data.split('\n'):
+        if line.startswith('show_clouds='):
+            line = f'show_clouds={show_clouds}'
+        else:
+            pass
+        text_ready += line + '\n'
+    
+    with open(dir_game_data, 'w') as data_text:
+        data_text.write( text_ready[:-1] )
+
+
+
+
+def credits(share=True, jump_lines=False):
+    # Creditos al creador
+    # Establecer si se quiere compartir el arroba del creador
+    # y si se quiere separar mediente un salto de linea
+    credits = 'Jean Abraham Chacón Candanosa'
+
+    if jump_lines == True:
+        jln = '\n'
+    else:
+        jln = ' '
+    
+    if share == True:
+        credits += f'{jln}@CocoMarck'
+    else:
+        pass
+
+    return credits

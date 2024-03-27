@@ -154,6 +154,7 @@ music=Music
 completedGames=Completed games
 climateSound=Ambient Music
 default_ctrls=Directional arrows, "Space" key and "R" key
+show_clouds=Show clouds
 show_collide=Show collision
 max_score=Highest score
 

@@ -15,6 +15,9 @@ from Modulos.pygame.CF_info import (
     fps,
     game_title,
     volume,
+    show_collide,
+    show_clouds,
+    show_sprite,
 
     dir_game,
     dir_data,
@@ -28,7 +31,8 @@ from Modulos.pygame.CF_data import (
     set_level,
     get_music,
     get_climate_sound,
-    save_gamecomplete
+    save_gamecomplete,
+    credits as CF_data_credits
 )
 from Modulos.pygame.CF_object import(
     Player,
@@ -96,10 +100,14 @@ font_normal = pygame.font.SysFont(font_str, size_font_normal)
 font_big = pygame.font.SysFont(font_str, size_font_big)
 
 # Fondo
-image_background = pygame.transform.scale(
-    pygame.image.load( os.path.join( dir_sprites, 'background.png' ) ),
-    (disp_width, disp_height)
-).convert()
+if show_sprite == True:
+    image_background = pygame.transform.scale(
+        pygame.image.load( os.path.join( dir_sprites, 'background.png' ) ),
+        (disp_width, disp_height)
+    ).convert()
+else:
+    image_background = pygame.Surface( (disp_width, disp_height) )
+    image_background.fill( (63, 63, 63) )
 color_background = pygame.Surface( (disp_width, disp_height), pygame.SRCALPHA )
 
 
@@ -123,7 +131,7 @@ class Start_Map():
     def __init__(self,
         x_column = 0,
         y_column = 0,
-        level = current_level
+        level = current_level,
     ):
         #cf_map_default.txt
         #cf_map.txt
@@ -194,7 +202,9 @@ class Start_Map():
                     plat = Floor(
                         size=(pixel_space, pixel_space),
                         position=position,
-                        climate=self.climate
+                        climate=self.climate,
+                        show_collide=show_collide,
+                        show_sprite=show_sprite
                     )
                 
                 elif space == 'P':
@@ -213,7 +223,9 @@ class Start_Map():
                     plat = Floor(
                         size=size,
                         position=position,
-                        climate=self.climate
+                        climate=self.climate,
+                        show_collide=show_collide,
+                        show_sprite=show_sprite
                     )
                     
                 elif space == 'H':
@@ -221,6 +233,8 @@ class Start_Map():
                     Ladder(
                         size=pixel_space,
                         position=position,
+                        show_collide=show_collide,
+                        show_sprite=show_sprite
                     )
                     
                 elif space == '_':
@@ -228,27 +242,33 @@ class Start_Map():
                     Trampoline(
                         size=pixel_space,
                         position=position,
+                        show_collide=show_collide,
+                        show_sprite=show_sprite
                     )
 
                 elif space == 'x':
                     x_space += 1
                     Elevator(
                         size=pixel_space,
-                        position=position, move_dimension=1
+                        position=position, move_dimension=1,
+                        show_collide=show_collide,
+                        show_sprite=show_sprite
                     )
                     
                 elif space == 'y':
                     x_space += 1
                     Elevator(
                         size=pixel_space,
-                        position=position, move_dimension=2
+                        position=position, move_dimension=2,
+                        show_collide=show_collide,
+                        show_sprite=show_sprite
                     )
 
                 elif space == '|':
                     x_space += 1
                     limit = Limit_indicator(
                         position=position,
-                        show_collide=False
+                        show_collide=show_collide
                     )
 
                 elif space == 'j':
@@ -257,11 +277,19 @@ class Start_Map():
 
                 elif space == '^':
                     x_space += 1
-                    spike = Spike( position=position )
+                    spike = Spike( 
+                        position=position,
+                        show_collide=show_collide,
+                        show_sprite=show_sprite
+                    )
 
                 elif space == '!':
                     x_space += 1
-                    spike = Spike( position=position, instakill=True )
+                    spike = Spike( 
+                        position=position, instakill=True,
+                        show_collide=show_collide,
+                        show_sprite=show_sprite
+                    )
                     
                 elif space == 'A':
                     x_space += 1
@@ -279,24 +307,42 @@ class Start_Map():
 
                     spike = Spike(
                         size=size,
-                        position=position
+                        position=position,
+                        show_collide=show_collide,
+                        show_sprite=show_sprite
                     )
                     
                 elif space == '\\':
                     x_space += 1
-                    spike = Spike( position=position, moving=True, instakill=True )
+                    spike = Spike( 
+                        position=position, moving=True, instakill=True,
+                        show_collide=show_collide,
+                        show_sprite=show_sprite
+                    )
                 
                 elif space == 'Y':
                     x_space += 1
-                    Star_pointed(position=position)
+                    Star_pointed(
+                        position=position,
+                        show_collide=show_collide,
+                        show_sprite=show_sprite
+                    )
 
                 elif space == 'X':
                     x_space += 1
-                    Star_pointed(position=position, instakill=True)
+                    Star_pointed(
+                        position=position, instakill=True,
+                        show_collide=show_collide,
+                        show_sprite=show_sprite
+                    )
                     
                 elif space == '*':
                     x_space += 1
-                    Star_pointed(position=position, moving=True, instakill=True)
+                    Star_pointed(
+                        position=position, moving=True, instakill=True,
+                        show_collide=show_collide,
+                        show_sprite=show_sprite
+                    )
 
                 elif space == '+':
                     x_space += 1
@@ -304,7 +350,8 @@ class Start_Map():
                         size=pixel_space,
                         position=position,
                         invert=False,
-                        climate=self.climate
+                        climate=self.climate,
+                        show_collide=show_collide
                     )
                     
                 elif space == '-':
@@ -313,7 +360,8 @@ class Start_Map():
                         size=pixel_space,
                         position=position,
                         invert=True,
-                        climate=self.climate
+                        climate=self.climate,
+                        show_collide=show_collide
                     )
 
                 elif space == 's':
@@ -321,13 +369,17 @@ class Start_Map():
                     Score(
                         size=pixel_space,
                         position=position,
+                        show_collide=show_collide,
+                        show_sprite=show_sprite
                     )
 
                 elif space == '~':
                     x_space += 1
 
                     Climate_rain(
-                        position=position
+                        position=position,
+                        show_collide=show_collide,
+                        show_sprite=show_sprite
                     )
 
                 elif space == '0':
@@ -336,7 +388,9 @@ class Start_Map():
                     level = Level_change(
                         dir_level=next_level[0],
                         level=next_level[1],
-                        position=position
+                        position=position,
+                        show_collide=show_collide,
+                        show_sprite=show_sprite
                     )
                     
                 elif space == 'F':
@@ -346,7 +400,9 @@ class Start_Map():
                         dir_level=next_level[0],
                         level=next_level[1],
                         position=position,
-                        gamecomplete=True
+                        gamecomplete=True,
+                        show_collide=show_collide,
+                        show_sprite=show_sprite
                     )
         
         # Sección de genración de clima:
@@ -373,7 +429,9 @@ class Start_Map():
                         position=( 
                             random.randint( difference_x, rain_pixels_x+(difference_x) ),
                             random.randint( (difference_y)-(difference_x//2),  difference_y )
-                        )
+                        ),
+                        show_collide=show_collide,
+                        show_sprite=show_sprite
                     )
 
 
@@ -523,14 +581,18 @@ def create_clouds(c_number = 15):
             create = random.choice( [True, 2, 3, 4, 5, 6] )
             if create == True:
                 clouds += 1
-                Cloud( size=c_size, position=(posx, posy) )
+                Cloud(
+                    size=c_size, position=(posx, posy),
+                    show_collide=show_collide
+                )
 
 
 
 
 # Iniciar Funciones y contantes necesarias
 # Funcion nubes
-create_clouds()
+if show_clouds == True:
+    create_clouds()
 
 
 # Funcion del mapa
@@ -540,7 +602,11 @@ start_map = Start_Map(0, 0)
 for plat in solid_objects:
     plat.limit_collision()
 
-player = Player( position=start_map.player_spawn )
+player = Player( 
+    position=start_map.player_spawn,
+    show_collide=show_collide,
+    show_sprite=show_sprite
+)
 
 player_spawn_hp = player.hp
 player_spawn_xy = player_camera_prepare(
@@ -703,13 +769,13 @@ while True:
     # Objetos / Funciones / Para cambiar de nivel
     for sprite in level_objects:
         sprite.update()
-        if sprite.gamecomplete == True:
-            sprite.level = None
+
+        level = sprite.level
+        if (sprite.gamecomplete == True) and (gamecomplete == False):
             gamecomplete = True
+            set_level(level=level)
 
-        if not sprite.level == None:
-            level = sprite.level
-
+        if (not sprite.level == None) and (sprite.gamecomplete == False):
             for other_sprite in layer_all_sprites.sprites():
                 other_sprite.kill()
 
@@ -721,7 +787,11 @@ while True:
             for plat in solid_objects:
                 plat.limit_collision()
 
-            player = Player( position=start_map.player_spawn )
+            player = Player( 
+                position=start_map.player_spawn,
+                show_collide=show_collide,
+                show_sprite=show_sprite
+            )
             player.hp = player_spawn_hp
 
             #player_spawn_hp = player_spawn_hp
@@ -820,7 +890,8 @@ while True:
                 position=(
                     (player.rect.x +(player.rect.width/2)),
                     player.rect.y+(player.rect.height//2)
-                )
+                ),
+                show_collide=show_collide
             )
             player.show_sprite = False
             ( random.choice(sounds_dead) ).play()
@@ -983,7 +1054,7 @@ while True:
         
         # Texto nombre del creador 
         text_by = font_normal.render(
-            'Jean Abraham Chacón Candanosa @CocoMarck', True, generic_colors('green')
+            CF_data_credits(), True, generic_colors('green')
         )
         position = [(disp_width//2)-(text_by.get_rect().width//2), (disp_height//2)-(size_font_normal//2)]
         
