@@ -1,5 +1,5 @@
 disp=960x540
-volume=0.02
+volume=0.01
 fps=30
 music=True
 climate_sound=True
