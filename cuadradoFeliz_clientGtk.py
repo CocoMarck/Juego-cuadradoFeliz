@@ -333,7 +333,7 @@ class Window_Main(Gtk.Window):
             message_type=Gtk.MessageType.INFO,
             buttons=Gtk.ButtonsType.OK,
             title=Lang('credits'),
-            text=CF_data.credits()
+            text=CF_data.credits( share=True,jump_lines=True )
         )
         dialog.run()
         dialog.destroy()
