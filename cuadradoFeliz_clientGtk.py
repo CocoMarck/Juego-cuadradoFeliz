@@ -1,7 +1,8 @@
 from Modulos.Modulo_Language import get_text as Lang
 from Modulos.pygame import CF_data
-import subprocess, sys
+#import subprocess, sys
 
+import threading
 
 import gi
 
@@ -23,7 +24,7 @@ else:
 # Ventana principal
 class Window_Main(Gtk.Window):
     def __init__(self):
-        super().__init__( title='Texto' )
+        super().__init__( title='El Cuadrado Feliz' )
         
         self.set_resizable(True)
         self.set_default_size(384, -1)
@@ -213,10 +214,17 @@ class Window_Main(Gtk.Window):
     
     def evt_start_game(self, button):
         # Cerrar cliente, y comenzar juego.
+        self.thread = threading.Thread(target=self.thread_start_game)
+        self.thread.start()
+        
         self.destroy()
-        import cuadradoFeliz
         #self.hide()
-        #subprocess.Popen( [sys.executable, 'cuadradoFeliz.py'] )
+    
+    def thread_start_game(self):
+        import cuadradoFeliz
+    #    GLib.idle_add(self.thread_fin_game)
+    #def thread_fin_game(self):
+    #    self.show_all()
         
     def evt_get_controls(self, button):
         # Obtener los controles default
