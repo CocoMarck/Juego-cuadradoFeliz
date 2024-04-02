@@ -3,7 +3,6 @@ from Modulos.pygame import CF_data
 #import subprocess, sys
 
 import threading
-
 import gi
 
 gi.require_version('Gtk', '3.0')

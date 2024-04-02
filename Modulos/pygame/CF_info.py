@@ -1,4 +1,4 @@
-from .CF_data import (
+from Modulos.pygame.CF_data import (
     get_disp,
     get_fps,
     get_volume,

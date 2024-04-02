@@ -2,9 +2,6 @@ import os, sys
 from pathlib import Path as pathlib
 
 
-current_dir = os.path.dirname( os.path.abspath(sys.argv[0]) )
-
-
 import pygame, random
 from pygame.locals import *
 

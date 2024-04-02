@@ -1,4 +1,4 @@
-import os
+import os, sys
 from Modulos.Modulo_System import(
     get_system
 )
@@ -14,10 +14,10 @@ from Modulos.Modulo_Text import(
 from pathlib import Path as pathlib
 
 # Directorio del juego
-dir_game = os.path.dirname(__file__)
-dir_game = os.path.dirname( os.path.abspath(dir_game) )
-dir_game = os.path.dirname( os.path.abspath(dir_game) )
-dir_game = os.path.join(dir_game)
+#dir_game = os.path.dirname(__file__)
+#dir_game = os.path.join(dir_game, '../..')
+#dir_game = os.path.join('')
+dir_game = pathlib().absolute()
 
 dir_data = os.path.join(dir_game, 'data')
 
@@ -87,7 +87,7 @@ def get_level():
     if pathlib(last_level).exists():
         return last_level
     else:
-        return None
+        return os.path.join(dir_maps, 'cf_map_default.txt')
 
 def set_level(level=None):
     '''

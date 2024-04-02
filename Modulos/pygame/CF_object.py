@@ -854,7 +854,17 @@ class Elevator(pygame.sprite.Sprite):
         # Velocidades
         self.move_dimension = move_dimension
         self.move_positive = True#bool(random.getrandbits(1))
-        self.speed = round( (self.rect.height)*0.19 )
+        #self.speed = int( (size)*0.25 ) # Entero, funcional, pero demasiado rapido | 4
+        #self.speed = int( (size)*0.125 ) # Entero, funcional, pero demasiado lento | 2
+
+        # Decimal, funcinal pero en resoluciones inferiores a 960 irregular | 3
+        # Por default; 4.5, no se redondea a 5, se rodondea a 4. 1.5 a 2.
+        # Esto se debe a la Regla del redondeo. Se redondeara siempre al numero par mas cercano.
+        self.speed = int( (size)*0.1875 )
+        #if self.speed == 2:
+        #    self.speed = 1
+
+        #print(self.speed)
     
     def anim(self):
         # Si colisiona con algun objeto solido.

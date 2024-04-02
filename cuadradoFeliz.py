@@ -522,6 +522,12 @@ class Play_Music():
     def set_climate(self):
         if self.climate == 'rain':
             return os.path.join(dir_audio, 'music/climate_rain.ogg')
+        if self.climate == 'alien':
+            return os.path.join(dir_audio, 'music/climate_alien.ogg')
+        if self.climate == 'sunny':
+            return os.path.join(dir_audio, 'music/climate_sunny.ogg')
+        if self.climate == 'black':
+            return os.path.join(dir_audio, 'music/climate_black.ogg')
         else:
             return os.path.join(dir_audio, 'music/climate_default.ogg')
     
@@ -659,11 +665,11 @@ credits_count = 0
 
 
 # Bucle del juego
-while True:
+exec_game = True
+while exec_game:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
+            exec_game = False
         if event.type == pygame.KEYDOWN:
             if event.key == player.pressed_jump:
                 # Si se preciona la tecla para saltar.
@@ -678,8 +684,7 @@ while True:
                 # Creditos
                 if credits == True:
                     if credits_count >= credits_fps:
-                        pygame.quit()
-                        sys.exit()
+                        exec_game = False
                     
                 # Juego completado
                 elif gamecomplete == True:
@@ -1097,3 +1102,5 @@ while True:
     # Fin
     clock.tick(fps)
     pygame.display.update()
+
+pygame.quit()
