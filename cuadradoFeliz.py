@@ -1,14 +1,14 @@
-from Modulos.Modulo_Text import (
+from logic.Modulo_Text import (
     Text_Read, Ignore_Comment, Only_Comment
 )
-from Modulos import Modulo_Language as Lang
-from Modulos.pygame.Modulo_pygame import (
+from data import Modulo_Language as Lang
+from logic.pygame.Modulo_pygame import (
     generic_colors, obj_collision_sides_solid, obj_coordinate_multiplier,
     player_camera_prepare, player_camera_move,
     obj_collision_sides_rebound, obj_not_see,
     Anim_sprite, Anim_sprite_set, Split_sprite
 )
-from Modulos.pygame.CF_info import (
+from data.CF_info import (
     disp_width,
     disp_height,
     
@@ -27,14 +27,14 @@ from Modulos.pygame.CF_info import (
     
     current_level
 )
-from Modulos.pygame.CF_data import (
+from data.CF_data import (
     set_level,
     get_music,
     get_climate_sound,
     save_gamecomplete,
     credits as CF_data_credits
 )
-from Modulos.pygame.CF_object import(
+from logic.pygame.CF_object import(
     Player,
 
     Floor,

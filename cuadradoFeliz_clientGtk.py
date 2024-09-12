@@ -1,5 +1,5 @@
-from Modulos.Modulo_Language import get_text as Lang
-from Modulos.pygame import CF_data
+from data.Modulo_Language import get_text as Lang
+from data import CF_data
 #import subprocess, sys
 
 import threading

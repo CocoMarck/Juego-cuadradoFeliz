@@ -4,22 +4,15 @@ Poner CF_data.py en la ruta "./"
 Soluciona el problema de compilación
 
 
-Entorno de desarrollo / Carpetas:
-cuadradoFeliz.py
-cuadradoFeliz_clientGtk.py
-cuadradoFeliz_clientQt.py
-
-data/
+Estructura / Entorno de desarrollo / Capas /  Carpetas:
+resources/
     CF.dat
     maps/
         custom/
         part1/
         part2/
-
     sprites/
         floor/
-        
-
     audio/
         effects/
             dead/
@@ -29,11 +22,15 @@ data/
             steps/
         music/
 
-Languages/
-    Langauge_en.dat
-    Language_es.dat
+    languages/
+        Langauge_en.dat
+        Language_es.dat
 
-Modulos/
+data/
+    Modulo_Language.py
+    System_data.py
+
+logic/
     pygame/
         CF_data.py
         CF_info.py
@@ -41,16 +38,21 @@ Modulos/
         Modulo_pygame.py
 
     Modulo_Files.py
-    Modulo_Language.py
-    Modulo_ShowPrint.py
     Modulo_System.py
     Modulo_Text.py
+
+interface/    
+    Modulo_ShowPrint.py
+    
+cuadradoFeliz.py
+cuadradoFeliz_clientGtk.py
+cuadradoFeliz_clientQt.py
 
 
 
 
 El error al compilar, quizas sea en el modulo CF_info.py, en dir_sprites y dir_audio
-El modulo "CF_data.py" es cricial en la comunicación con los datos del juego; se comunica desde :
+El modulo "CF_data.py" es crucial en la comunicación con los datos del juego; se comunica desde :
 "Modulos/pygame/" A "data/*" (Todos los archivos contenidos en esta carpeta.
 Es decir el dir_data = "Modulos/pygame/../../data"
 Y el main_dir = "Modulos/pygame/../.."
