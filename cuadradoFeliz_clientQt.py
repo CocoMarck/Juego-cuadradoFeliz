@@ -1,5 +1,6 @@
 from data.Modulo_Language import get_text as Lang
-from data import CF_data
+from data.CF_info import *
+from data.CF_data import *
 
 import sys
 from PyQt6.QtWidgets import(
@@ -22,7 +23,7 @@ from PyQt6.QtCore import Qt
 
 
 # Detectar si el juego esta completado
-if CF_data.get_gamecomplete() == None:
+if get_gamecomplete() == None:
     gamecomplete = False
 else:
     gamecomplete = True
@@ -67,7 +68,7 @@ class Window_Main(QWidget):
         hbox.addStretch()
         
         self.__volume_multipler = 100
-        current_volume = round( (CF_data.get_volume())*self.__volume_multipler )
+        current_volume = round( (data_CF.volume)*self.__volume_multipler )
         spinbox_volume = QSpinBox( 
             minimum=1, maximum=self.__volume_multipler,
             value=current_volume
@@ -85,7 +86,7 @@ class Window_Main(QWidget):
         
         hbox.addStretch()
         
-        label = QLabel( str(CF_data.get_fps()) )
+        label = QLabel( str( data_CF.fps ) )
         hbox.addWidget(label)
         
         
@@ -93,7 +94,7 @@ class Window_Main(QWidget):
         self.button_bool_music = QPushButton()
         self.button_bool_music.setCheckable(True)
 
-        self.evt_set_music( checked=CF_data.get_music() )
+        self.evt_set_music( checked=data_CF.music )
 
         self.button_bool_music.clicked.connect( self.evt_set_music )
         vbox_main.addWidget( self.button_bool_music )
@@ -101,8 +102,7 @@ class Window_Main(QWidget):
         # Sección Vertical - Boton alternable - Establecer sonido de fondo o no
         self.button_bool_climateSound = QPushButton()
         self.button_bool_climateSound.setCheckable(True)
-        
-        self.evt_set_climateSound( checked=CF_data.get_climate_sound() )
+        self.evt_set_climateSound( checked=data_CF.climate_sound )
         
         self.button_bool_climateSound.clicked.connect( self.evt_set_climateSound )
         vbox_main.addWidget( self.button_bool_climateSound )
@@ -111,7 +111,7 @@ class Window_Main(QWidget):
         self.button_bool_show_clouds = QPushButton()
         self.button_bool_show_clouds.setCheckable(True)
         
-        self.evt_set_show_clouds( checked=CF_data.get_show_clouds() )
+        self.evt_set_show_clouds( checked=data_CF.show_clouds )
         self.button_bool_show_clouds.clicked.connect( self.evt_set_show_clouds )
         vbox_main.addWidget( self.button_bool_show_clouds )
         
@@ -121,7 +121,7 @@ class Window_Main(QWidget):
             self.button_bool_show_collide = QPushButton()
             self.button_bool_show_collide.setCheckable(True)
         
-            self.evt_set_show_collide( checked=CF_data.get_show_collide() )
+            self.evt_set_show_collide( checked=data_CF.show_collide )
         
             self.button_bool_show_collide.clicked.connect( self.evt_set_show_collide )
             vbox_main.addWidget( self.button_bool_show_collide )
@@ -136,9 +136,9 @@ class Window_Main(QWidget):
         
         hbox.addStretch()
         
-        current_level = CF_data.get_level()
+        current_level = data_CF.current_level
         if gamecomplete == False:
-            label = QLabel( current_level.replace(CF_data.dir_maps, '') )
+            label = QLabel( current_level.replace(dir_maps, '') )
             hbox.addWidget( label )
         else:
             # Seccion Vertical - Gamecomplete - Combobox - Nivel
@@ -147,13 +147,13 @@ class Window_Main(QWidget):
             self.combobox_set_level = QComboBox(self)
             self.combobox_set_level.addItem(
                  current_level.replace( 
-                    CF_data.dir_maps, ''
+                    dir_maps, ''
                  )
             )
 
-            for level in CF_data.get_level_list():
+            for level in get_level_list():
                 if not level == current_level:
-                    self.combobox_set_level.addItem( level.replace(CF_data.dir_maps, '') )
+                    self.combobox_set_level.addItem( level.replace(dir_maps, '') )
             self.combobox_set_level.activated.connect( self.evt_set_level )
             hbox.addWidget( self.combobox_set_level )
         
@@ -170,7 +170,7 @@ class Window_Main(QWidget):
         hbox.addStretch()
 
         self.combobox_set_resolution = QComboBox(self)
-        current_resolution = CF_data.get_disp()
+        current_resolution = data_CF.disp
         self.combobox_set_resolution.addItem( f'{current_resolution[0]}x{current_resolution[1]}' )
         list_resolution_ready = [
             [1920, 1080],
@@ -220,7 +220,8 @@ class Window_Main(QWidget):
     def evt_set_volume(self, value):
         # Establecer volumen en el archivo CF_data
         # Preparar el valor entero a decimal. Dividiendolo entre 100
-        CF_data.set_volume( volume=value/self.__volume_multipler )
+        data_CF.volume=value/self.__volume_multipler
+        save_CF( data_CF )
     
     def evt_set_music(self, checked):
         # Establecer sonido de musica o no
@@ -229,7 +230,8 @@ class Window_Main(QWidget):
             self.button_bool_music.setText( f'{Lang("on")} | {Lang("music")}' )
         else:
             self.button_bool_music.setText( f'{Lang("off")} | {Lang("music")}' )
-        CF_data.set_music( music=checked )
+        data_CF.music=checked
+        save_CF( data_CF )
             
     def evt_set_climateSound(self, checked):
         # Establecer sonido de clima o no
@@ -238,7 +240,8 @@ class Window_Main(QWidget):
             self.button_bool_climateSound.setText( f'{Lang("on")} | {Lang("climateSound")}' )
         else:
             self.button_bool_climateSound.setText( f'{Lang("off")} | {Lang("climateSound")}' )
-        CF_data.set_climate_sound( climate_sound=checked )
+        data_CF.climate_sound=checked
+        save_CF( data_CF )
     
     def evt_set_show_clouds(self, checked):
         # Establecer ver nubes o no
@@ -247,13 +250,13 @@ class Window_Main(QWidget):
             self.button_bool_show_clouds.setText( f'{Lang("on")} | {Lang("show_clouds")}')
         else:
             self.button_bool_show_clouds.setText( f'{Lang("off")} | {Lang("show_clouds")}')
-        CF_data.set_show_clouds( show_clouds=checked )
+        data_CF.show_clouds=checked
+        save_CF( data_CF )
     
     def evt_set_level(self):
         # Establecer nivel
-        CF_data.set_level( 
-            level=f'{CF_data.dir_maps}{self.combobox_set_level.currentText()}' 
-        )
+        data_CF.current_level = f'{dir_maps}{self.combobox_set_level.currentText()}' 
+        save_CF( data_CF )
 
     def evt_set_show_collide(self, checked):
         # Establecer si ver colliders o no
@@ -262,19 +265,21 @@ class Window_Main(QWidget):
             self.button_bool_show_collide.setText( f'{Lang("on")} | {Lang("show_collide")}' )
         else:
             self.button_bool_show_collide.setText( f'{Lang("off")} | {Lang("show_collide")}' )
-        CF_data.set_show_collide( show_collide=checked )
+        data_CF.show_collide=checked
+        save_CF( data_CF )
     
     def evt_set_disp(self):
         # Establecer la resolución seleccionada
-        disp_xy = self.combobox_set_resolution.currentText().split('x')
-        CF_data.set_disp( width=disp_xy[0], height=disp_xy[1] )
+        display = self.combobox_set_resolution.currentText().split('x')
+        data_CF.disp = [ int(display[0]), int(display[1]) ]
+        save_CF( data_CF )
     
     def evt_get_gamecomplete(self):
         # Mostrar el record de juegos completados
 
         # Obtener el record de score
         dict_gamecomplete = {}
-        list_gamecomplete = CF_data.get_gamecomplete()
+        list_gamecomplete = get_gamecomplete()
         str_gamecomplete = ''
         for gamecomplete in list_gamecomplete:
             dict_gamecomplete.update( {gamecomplete[0]:None} )
@@ -309,7 +314,7 @@ class Window_Main(QWidget):
         QMessageBox.information(
             self,
             Lang('credits'), # Titulo
-            CF_data.credits( share=True,jump_lines=True ) # Texto
+            credits( share=True,jump_lines=True ) # Texto
         )
 
 

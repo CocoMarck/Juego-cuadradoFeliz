@@ -11,6 +11,7 @@ from logic.Modulo_Text import(
     Ignore_Comment,
     Text_Separe
 )
+from entities import CF, Map
 from pathlib import Path as pathlib
 
 # Directorio del juego
@@ -54,6 +55,8 @@ def get_data(mode_dict=True):
         return data_cf
     else:
         return archive_cf
+
+
 
 
 def set_data():
@@ -435,3 +438,51 @@ def credits(share=True, jump_lines=False):
         pass
 
     return credits
+
+
+
+
+def read_CF( CF ) -> bool:
+    CF.disp = get_disp()
+    CF.pixel_space = CF.disp[0]//60
+
+    CF.volume = get_volume()
+    CF.fps = get_fps()
+
+    CF.music = get_music()
+    CF.climate_sound = get_climate_sound()
+    CF.show_clouds = get_show_clouds()
+
+    CF.show_collide = get_show_collide()
+    if CF.show_collide == True:
+        CF.show_sprite = False
+    else:
+        CF.show_sprite = True
+    
+    CF.current_level = get_level()
+
+
+
+
+def save_CF( CF ) -> bool:
+    try:
+        set_disp( CF.disp[0], CF.disp[1] )
+        CF.pixel_space = CF.disp[0]//60
+
+        set_volume( CF.volume )
+        set_fps( CF.fps )
+
+        set_music( CF.music )
+        set_show_clouds( CF.show_clouds )
+
+        set_show_collide( CF.show_collide )
+        if CF.show_collide == True:
+            CF.show_sprite = False
+        else:
+            CF.show_sprite = True
+    
+        set_level( CF.current_level )
+        
+        return True
+    except:
+        return False

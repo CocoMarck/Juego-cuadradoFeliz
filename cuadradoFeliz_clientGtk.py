@@ -1,5 +1,6 @@
 from data.Modulo_Language import get_text as Lang
-from data import CF_data
+from data.CF_info import data_CF
+from data.CF_data import *
 #import subprocess, sys
 
 import threading
@@ -12,7 +13,7 @@ from gi.repository import Gtk
 
 
 # Detectar si se completo el juego o no
-if not CF_data.get_gamecomplete() == None:
+if not get_gamecomplete() == None:
     gamecomplete = True
 else:
     gamecomplete = False
@@ -46,7 +47,7 @@ class Window_Main(Gtk.Window):
 
         # Sección Vertical - SpinBox - Establecer volumen
         self.__volume_multipler = 100
-        current_volume = round( (CF_data.get_volume())*self.__volume_multipler )
+        current_volume = round( (data_CF.volume )*self.__volume_multipler )
         
         hbox = Gtk.Box(spacing=0)
         vbox_main.pack_start(hbox, True, False, 0)
@@ -72,7 +73,7 @@ class Window_Main(Gtk.Window):
         label = Gtk.Label( label=Lang('fps') )
         hbox.pack_start(label, False, False, 0)
         
-        label = Gtk.Label( label=f'{CF_data.get_fps()}' )
+        label = Gtk.Label( label=f'{ data_CF.fps }' )
         hbox.pack_end(label, False, False, 0)
         
 
@@ -85,7 +86,7 @@ class Window_Main(Gtk.Window):
         
         switch = Gtk.Switch()
         switch.connect('notify::active', self.evt_set_music)
-        switch.set_active( CF_data.get_music() )
+        switch.set_active( data_CF.music )
         hbox.pack_end( switch, False, False, 0)
                 
         # Sección Vertical - Switch Button - Establecer escuchar sonido de fondo o no
@@ -97,7 +98,7 @@ class Window_Main(Gtk.Window):
         
         switch = Gtk.Switch()
         switch.connect('notify::active', self.evt_set_climateSound)
-        switch.set_active( CF_data.get_climate_sound() )
+        switch.set_active( data_CF.climate_sound )
         hbox.pack_end( switch, False, False, 0 )
 
 
@@ -110,7 +111,7 @@ class Window_Main(Gtk.Window):
         
         switch = Gtk.Switch()
         switch.connect('notify::active', self.evt_set_show_clouds)
-        switch.set_active( CF_data.get_show_clouds() )
+        switch.set_active( data_CF.show_clouds )
         hbox.pack_end(switch, False, False, 0)
         
         # Sección vertical - Gamecomplete - Switch button - Establecer ver collider o no
@@ -123,7 +124,7 @@ class Window_Main(Gtk.Window):
         
             switch = Gtk.Switch()
             switch.connect('notify::active', self.evt_set_show_collide )
-            switch.set_active( CF_data.get_show_collide() )
+            switch.set_active( data_CF.show_collide )
             hbox.pack_end( switch, False, False, 0 )
             
 
@@ -134,9 +135,9 @@ class Window_Main(Gtk.Window):
         label = Gtk.Label( label=Lang('lvl') )
         hbox.pack_start(label, False, False, 0)
 
-        current_level = CF_data.get_level()
+        current_level = data_CF.current_level
         if gamecomplete == False:
-            label = Gtk.Label( label=current_level.replace(CF_data.dir_maps, '') )
+            label = Gtk.Label( label=current_level.replace(dir_maps, '') )
             hbox.pack_end( label, False, False, 0 )
             
         # Sección vertical - Gamecomplete - Comobobox - Seleccionar nivel
@@ -144,10 +145,10 @@ class Window_Main(Gtk.Window):
             # Lista de niveles
             # El indice del nivel actual seria el numero '0"
             list_level = Gtk.ListStore(str)
-            list_level.append( [ current_level.replace(CF_data.dir_maps, '') ] )
-            for level in CF_data.get_level_list():
+            list_level.append( [ current_level.replace(dir_maps, '') ] )
+            for level in get_level_list():
                 if not level == current_level:
-                    list_level.append( [ level.replace(CF_data.dir_maps, '') ] )
+                    list_level.append( [ level.replace(dir_maps, '') ] )
             
             # Combobox
             rendertext = Gtk.CellRendererText()
@@ -179,7 +180,7 @@ class Window_Main(Gtk.Window):
         count_resolution = 0
         for resolution in list_resolution:
             listStore_resolution.append( [f'{resolution[0]}x{resolution[1]}'] ) 
-            if resolution == CF_data.get_disp():
+            if resolution == data_CF.disp :
                 current_resolution = count_resolution
             count_resolution += 1
 
@@ -243,39 +244,32 @@ class Window_Main(Gtk.Window):
         # Establecer volumen
         # Valor actual del spinbutton, dividido entre self.__volume_multipler
         # Ejemplo: 50/100 = 0.5
-        CF_data.set_volume(
+        data_CF.volume = (
             self.spinbutton_volume.get_value_as_int()/self.__volume_multipler 
         )
+        save_CF( data_CF )
         
 
     def evt_set_music(self, switch, gparam):
         # Establecer el escuchar musica o no.
-        if switch.get_active():
-            CF_data.set_music(music=True)
-        else:
-            CF_data.set_music(music=False)
+        data_CF.music=switch.get_active()
+        save_CF( data_CF )
 
     def evt_set_climateSound(self, switch, gparam):
         # Establecer el escuchar sonido de clima o no.
-        if switch.get_active():
-            CF_data.set_climate_sound( climate_sound=True )
-        else:
-            CF_data.set_climate_sound( climate_sound=False )
+        data_CF.climate_sound=switch.get_active()
+        save_CF( data_CF )
     
 
     def evt_set_show_clouds(self, switch, gparam):
         # Establecer mostrar nubes o no
-        if switch.get_active():
-            CF_data.set_show_clouds( show_clouds=True )
-        else:
-            CF_data.set_show_clouds( show_clouds=False )
+        data_CF.show_clouds=switch.get_active()
+        save_CF( data_CF )
     
     def evt_set_show_collide(self, switch, gparam):
         # Establecer el mostrar collider o no
-        if switch.get_active():
-            CF_data.set_show_collide( show_collide=True )
-        else:
-            CF_data.set_show_collide( show_collide=False )
+        data_CF.show_collide=switch.get_active()
+        save_CF( data_CF )
     
     
     
@@ -283,9 +277,10 @@ class Window_Main(Gtk.Window):
         # Establecer nivel
         combo_iter = combo.get_active_iter()
         combo_model = combo.get_model()
-        CF_data.set_level( 
-            f'{CF_data.dir_maps}{combo_model[combo_iter][0]}'
+        data_CF.current_level( 
+            f'{dir_maps}{combo_model[combo_iter][0]}'
         )
+        save_CF( data_CF )
     
 
     def evt_set_disp(self, combo):
@@ -293,7 +288,8 @@ class Window_Main(Gtk.Window):
         combo_iter = combo.get_active_iter()
         combo_model = combo.get_model()
         disp_xy = combo_model[combo_iter][0].split('x')
-        CF_data.set_disp( width=disp_xy[0], height=disp_xy[1] )
+        data_CF.disp = [ disp_xy[0], disp_xy[1] ]
+        save_CF( data_CF )
     
     
     def evt_get_gamecomplete(self, button):
@@ -301,7 +297,7 @@ class Window_Main(Gtk.Window):
 
         # Obtener el record de score
         dict_gamecomplete = {}
-        list_gamecomplete = CF_data.get_gamecomplete()
+        list_gamecomplete = get_gamecomplete()
         for gamecomplete in list_gamecomplete:
              dict_gamecomplete.update( {gamecomplete[0]:None} )
          
@@ -340,7 +336,7 @@ class Window_Main(Gtk.Window):
             message_type=Gtk.MessageType.INFO,
             buttons=Gtk.ButtonsType.OK,
             title=Lang('credits'),
-            text=CF_data.credits( share=True,jump_lines=True )
+            text=credits( share=True,jump_lines=True )
         )
         dialog.run()
         dialog.destroy()

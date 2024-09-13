@@ -1,3 +1,4 @@
+from entities import CF
 from data.CF_data import (
     get_disp,
     get_fps,
@@ -8,7 +9,8 @@ from data.CF_data import (
 
     dir_game,
     dir_maps,
-    dir_data
+    dir_data,
+    read_CF
 )
 import os, pygame
 #import sys
@@ -23,38 +25,14 @@ pygame.init()
 # 960x540
 # 1440x810
 # 1920x1080
-disp = get_disp()
-disp_width = disp[0]
-disp_height = disp[1]
-
-# Fotogramas del juego
-fps = get_fps()
+data_CF = CF
+read_CF( data_CF )
 
 # Titulo del juego
 game_title = 'El cuadrado Feliz'
-
-# Mostrar collider
-show_collide=get_show_collide()
-if show_collide == True:
-    show_sprite = False
-else:
-    show_sprite = True
-
-# Mostrar nubes
-show_clouds=get_show_clouds()
-
-# Volumen
-volume = get_volume()
-
-
 
 
 # Directorio del juego "dir_data". Y...
 # Sub directorios Data
 dir_sprites = os.path.join(dir_data, 'sprites')
 dir_audio = os.path.join(dir_data, 'audio')
-
-
-
-# Nivel actual
-current_level = get_level()

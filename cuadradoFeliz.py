@@ -9,15 +9,7 @@ from logic.pygame.Modulo_pygame import (
     Anim_sprite, Anim_sprite_set, Split_sprite
 )
 from data.CF_info import (
-    disp_width,
-    disp_height,
-    
-    fps,
     game_title,
-    volume,
-    show_collide,
-    show_clouds,
-    show_sprite,
 
     dir_game,
     dir_data,
@@ -25,12 +17,11 @@ from data.CF_info import (
     dir_maps,
     dir_audio,
     
-    current_level
+    data_CF
 )
 from data.CF_data import (
-    set_level,
-    get_music,
-    get_climate_sound,
+    save_CF,
+    read_CF,
     save_gamecomplete,
     credits as CF_data_credits
 )
@@ -80,7 +71,7 @@ import pygame, sys, os, random
 from pygame.locals import *
 
 # Resolución de pantalla de juego
-disp_resolution = ( disp_width, disp_height )
+disp_resolution = ( data_CF.disp[0], data_CF.disp[1] )
 display = pygame.display.set_mode( disp_resolution )
 
 # Fotogramas del juego
@@ -93,31 +84,31 @@ pygame.display.set_caption(game_title)
 #...
 
 # Fuentes de texto
-size_font_big = disp_width//15
-size_font_normal = disp_width//60
+size_font_big = int(data_CF.pixel_space*4)
+size_font_normal = data_CF.pixel_space
 font_str = 'monospace'
 font_normal = pygame.font.SysFont(font_str, size_font_normal)
 font_big = pygame.font.SysFont(font_str, size_font_big)
 
 # Fondo
-if show_sprite == True:
+if data_CF.show_sprite == True:
     image_background = pygame.transform.scale(
         pygame.image.load( os.path.join( dir_sprites, 'background.png' ) ),
-        (disp_width, disp_height)
+        (data_CF.disp[0], data_CF.disp[1])
     ).convert()
 else:
-    image_background = pygame.Surface( (disp_width, disp_height) )
+    image_background = pygame.Surface( (data_CF.disp[0], data_CF.disp[1]) )
     image_background.fill( (63, 63, 63) )
-color_background = pygame.Surface( (disp_width, disp_height), pygame.SRCALPHA )
+color_background = pygame.Surface( (data_CF.disp[0], data_CF.disp[1]), pygame.SRCALPHA )
 
 
 '''
 for x in range(0, 10):
     floor = Floor(
-        size=(disp_width//30, disp_width//60),
+        size=(int(data_CF.pixel_space*2), data_CF.disp[1]//60),
         position=(
-            random.randint(disp_width//60, disp_width-disp_width//60),
-            random.randint(disp_width//60, disp_height-disp_width//60)            
+            random.randint(data_CF.pixel_space, data_CF.disp[0]-data_CF.pixel_space),
+            random.randint(data_CF.pixel_space, data_CF.disp[1]-data_CF.pixel_space)            
         ),
         limit=False,
         show_collide=False
@@ -131,7 +122,7 @@ class Start_Map():
     def __init__(self,
         x_column = 0,
         y_column = 0,
-        level = current_level,
+        level = data_CF.current_level,
     ):
         #cf_map_default.txt
         #cf_map.txt
@@ -181,7 +172,7 @@ class Start_Map():
         # Establecer variables de inicio de juego, de posición y tamaño de objetos.
         self.player_spawn = None
         plat_number = 0
-        pixel_space = disp_width//60
+        pixel_space = data_CF.pixel_space
 
         # Establecer objetos en su posición indicada
         test = ''
@@ -203,8 +194,8 @@ class Start_Map():
                         size=(pixel_space, pixel_space),
                         position=position,
                         climate=self.climate,
-                        show_collide=show_collide,
-                        show_sprite=show_sprite
+                        show_collide=data_CF.show_collide,
+                        show_sprite=data_CF.show_sprite
                     )
                 
                 elif space == 'P':
@@ -224,8 +215,8 @@ class Start_Map():
                         size=size,
                         position=position,
                         climate=self.climate,
-                        show_collide=show_collide,
-                        show_sprite=show_sprite
+                        show_collide=data_CF.show_collide,
+                        show_sprite=data_CF.show_sprite
                     )
                     
                 elif space == 'H':
@@ -233,8 +224,8 @@ class Start_Map():
                     Ladder(
                         size=pixel_space,
                         position=position,
-                        show_collide=show_collide,
-                        show_sprite=show_sprite
+                        show_collide=data_CF.show_collide,
+                        show_sprite=data_CF.show_sprite
                     )
                     
                 elif space == '_':
@@ -242,8 +233,8 @@ class Start_Map():
                     Trampoline(
                         size=pixel_space,
                         position=position,
-                        show_collide=show_collide,
-                        show_sprite=show_sprite
+                        show_collide=data_CF.show_collide,
+                        show_sprite=data_CF.show_sprite
                     )
 
                 elif space == 'x':
@@ -251,8 +242,8 @@ class Start_Map():
                     Elevator(
                         size=pixel_space,
                         position=position, move_dimension=1,
-                        show_collide=show_collide,
-                        show_sprite=show_sprite
+                        show_collide=data_CF.show_collide,
+                        show_sprite=data_CF.show_sprite
                     )
                     
                 elif space == 'y':
@@ -260,15 +251,15 @@ class Start_Map():
                     Elevator(
                         size=pixel_space,
                         position=position, move_dimension=2,
-                        show_collide=show_collide,
-                        show_sprite=show_sprite
+                        show_collide=data_CF.show_collide,
+                        show_sprite=data_CF.show_sprite
                     )
 
                 elif space == '|':
                     x_space += 1
                     limit = Limit_indicator(
                         position=position,
-                        show_collide=show_collide
+                        show_collide=data_CF.show_collide
                     )
 
                 elif space == 'j':
@@ -279,16 +270,16 @@ class Start_Map():
                     x_space += 1
                     spike = Spike( 
                         position=position,
-                        show_collide=show_collide,
-                        show_sprite=show_sprite
+                        show_collide=data_CF.show_collide,
+                        show_sprite=data_CF.show_sprite
                     )
 
                 elif space == '!':
                     x_space += 1
                     spike = Spike( 
                         position=position, instakill=True,
-                        show_collide=show_collide,
-                        show_sprite=show_sprite
+                        show_collide=data_CF.show_collide,
+                        show_sprite=data_CF.show_sprite
                     )
                     
                 elif space == 'A':
@@ -308,40 +299,40 @@ class Start_Map():
                     spike = Spike(
                         size=size,
                         position=position,
-                        show_collide=show_collide,
-                        show_sprite=show_sprite
+                        show_collide=data_CF.show_collide,
+                        show_sprite=data_CF.show_sprite
                     )
                     
                 elif space == '\\':
                     x_space += 1
                     spike = Spike( 
                         position=position, moving=True, instakill=True,
-                        show_collide=show_collide,
-                        show_sprite=show_sprite
+                        show_collide=data_CF.show_collide,
+                        show_sprite=data_CF.show_sprite
                     )
                 
                 elif space == 'Y':
                     x_space += 1
                     Star_pointed(
                         position=position,
-                        show_collide=show_collide,
-                        show_sprite=show_sprite
+                        show_collide=data_CF.show_collide,
+                        show_sprite=data_CF.show_sprite
                     )
 
                 elif space == 'X':
                     x_space += 1
                     Star_pointed(
                         position=position, instakill=True,
-                        show_collide=show_collide,
-                        show_sprite=show_sprite
+                        show_collide=data_CF.show_collide,
+                        show_sprite=data_CF.show_sprite
                     )
                     
                 elif space == '*':
                     x_space += 1
                     Star_pointed(
                         position=position, moving=True, instakill=True,
-                        show_collide=show_collide,
-                        show_sprite=show_sprite
+                        show_collide=data_CF.show_collide,
+                        show_sprite=data_CF.show_sprite
                     )
 
                 elif space == '+':
@@ -351,7 +342,7 @@ class Start_Map():
                         position=position,
                         invert=False,
                         climate=self.climate,
-                        show_collide=show_collide
+                        show_collide=data_CF.show_collide
                     )
                     
                 elif space == '-':
@@ -361,7 +352,7 @@ class Start_Map():
                         position=position,
                         invert=True,
                         climate=self.climate,
-                        show_collide=show_collide
+                        show_collide=data_CF.show_collide
                     )
 
                 elif space == 's':
@@ -369,8 +360,8 @@ class Start_Map():
                     Score(
                         size=pixel_space,
                         position=position,
-                        show_collide=show_collide,
-                        show_sprite=show_sprite
+                        show_collide=data_CF.show_collide,
+                        show_sprite=data_CF.show_sprite
                     )
 
                 elif space == '~':
@@ -378,8 +369,8 @@ class Start_Map():
 
                     Climate_rain(
                         position=position,
-                        show_collide=show_collide,
-                        show_sprite=show_sprite
+                        show_collide=data_CF.show_collide,
+                        show_sprite=data_CF.show_sprite
                     )
 
                 elif space == '0':
@@ -389,8 +380,8 @@ class Start_Map():
                         dir_level=next_level[0],
                         level=next_level[1],
                         position=position,
-                        show_collide=show_collide,
-                        show_sprite=show_sprite
+                        show_collide=data_CF.show_collide,
+                        show_sprite=data_CF.show_sprite
                     )
                     
                 elif space == 'F':
@@ -401,8 +392,8 @@ class Start_Map():
                         level=next_level[1],
                         position=position,
                         gamecomplete=True,
-                        show_collide=show_collide,
-                        show_sprite=show_sprite
+                        show_collide=data_CF.show_collide,
+                        show_sprite=data_CF.show_sprite
                     )
         
         # Sección de genración de clima:
@@ -430,14 +421,14 @@ class Start_Map():
                             random.randint( difference_x, rain_pixels_x+(difference_x) ),
                             random.randint( (difference_y)-(difference_x//2),  difference_y )
                         ),
-                        show_collide=show_collide,
-                        show_sprite=show_sprite
+                        show_collide=data_CF.show_collide,
+                        show_sprite=data_CF.show_sprite
                     )
 
 
 # Loop dia y noche
 class Loop_allday():
-    def __init__ (self, climate=None, minutes=5, fps=fps):
+    def __init__ (self, climate=None, minutes=5, fps=data_CF.fps):
         self.count_fps_day = 0
         if climate == 'rain':
             self.color_day_red = 155
@@ -497,7 +488,7 @@ end_of_track_event = pygame.USEREVENT + 1
 pygame.mixer.music.set_endevent(end_of_track_event)
 
 class Play_Music():
-    def __init__(self, music=get_music(), climate=None, climate_sound=get_climate_sound()):
+    def __init__(self, music=data_CF.music, climate=None, climate_sound=data_CF.climate_sound ):
         # Para reproducir musica en el juegito
         self.list_music = [
             [os.path.join(dir_audio, 'music/default-music.ogg'), 4],
@@ -552,7 +543,7 @@ class Play_Music():
             music = self.set_climate()
             self.limit_music = self.__limit_music_climate
         pygame.mixer.music.load( music )
-        pygame.mixer.music.set_volume( volume )
+        pygame.mixer.music.set_volume( data_CF.volume )
         pygame.mixer.music.play()
         
         return self.limit_music
@@ -562,7 +553,7 @@ class Play_Music():
         if not self.__go == True:
             music = self.set_climate()
             pygame.mixer.music.load( music )
-            pygame.mixer.music.set_volume( volume )
+            pygame.mixer.music.set_volume( data_CF.volume )
             pygame.mixer.music.play()
             self.limit_music = self.__limit_music_climate
 
@@ -574,8 +565,8 @@ def create_clouds(c_number = 15):
     # Si hay demasiadas nubes se dejaran de crear.
     # Se creara una nube de forma random, con posibilidades 1-6
     '''
-    c_sizex = disp_width//c_number
-    c_sizey = disp_height//c_number
+    c_sizex = data_CF.disp[0]//c_number
+    c_sizey = data_CF.disp[1]//c_number
     c_size = (c_sizex, c_sizey)
 
     clouds = 0
@@ -589,7 +580,7 @@ def create_clouds(c_number = 15):
                 clouds += 1
                 Cloud(
                     size=c_size, position=(posx, posy),
-                    show_collide=show_collide
+                    show_collide=data_CF.show_collide
                 )
 
 
@@ -597,7 +588,7 @@ def create_clouds(c_number = 15):
 
 # Iniciar Funciones y contantes necesarias
 # Funcion nubes
-if show_clouds == True:
+if data_CF.show_clouds == True:
     create_clouds()
 
 
@@ -610,13 +601,13 @@ for plat in solid_objects:
 
 player = Player( 
     position=start_map.player_spawn,
-    show_collide=show_collide,
-    show_sprite=show_sprite
+    show_collide=data_CF.show_collide,
+    show_sprite=data_CF.show_sprite
 )
 
 player_spawn_hp = player.hp
 player_spawn_xy = player_camera_prepare(
-    disp_width=disp_width, disp_height=disp_height, more_pixels=disp_width//30,
+    disp_width=data_CF.disp[0], disp_height=data_CF.disp[1], more_pixels=int(data_CF.pixel_space*2),
     all_sprites=layer_all_sprites.sprites(), player=player, show_coordenades=True
 )
 player_show_sprite = player.show_sprite
@@ -659,7 +650,7 @@ gamecomplete = False
 
 # Función cretidos
 credits = False
-credits_fps = fps*4
+credits_fps = data_CF.fps*4
 credits_count = 0
     
 
@@ -690,6 +681,7 @@ while exec_game:
                 elif gamecomplete == True:
                     # Si el juego esta completado
                     save_gamecomplete(level=start_map.level, score=score)
+                    read_CF( data_CF )
                     if credits == False:
                         for sprite in layer_all_sprites.sprites():
                             if not sprite == player:
@@ -778,7 +770,8 @@ while exec_game:
         level = sprite.level
         if (sprite.gamecomplete == True) and (gamecomplete == False):
             gamecomplete = True
-            set_level(level=level)
+            data_CF.current_level=level
+            save_CF( data_CF )
 
         if (not sprite.level == None) and (sprite.gamecomplete == False):
             for other_sprite in layer_all_sprites.sprites():
@@ -794,14 +787,14 @@ while exec_game:
 
             player = Player( 
                 position=start_map.player_spawn,
-                show_collide=show_collide,
-                show_sprite=show_sprite
+                show_collide=data_CF.show_collide,
+                show_sprite=data_CF.show_sprite
             )
             player.hp = player_spawn_hp
 
             #player_spawn_hp = player_spawn_hp
             player_spawn_xy = player_camera_prepare(
-                disp_width=disp_width, disp_height=disp_height, more_pixels=disp_width//30,
+                disp_width=data_CF.disp[0], disp_height=data_CF.disp[1], more_pixels=int(data_CF.pixel_space*2),
                 all_sprites=layer_all_sprites.sprites(), player=player, show_coordenades=True
             )
             #player_show_sprite = player_show_sprite
@@ -840,7 +833,8 @@ while exec_game:
             play_music.change_climate(climate=start_map.climate)
             
             # Establecer nivel actual
-            set_level(level=level)
+            data_CF.current_level = level
+            save_CF( data_CF )
 
 
     # Objetos / Funciones / Puntos
@@ -873,14 +867,14 @@ while exec_game:
     # Objetos / Mostrar / Todos los sprites, solo si se ven en la pantalla
     for sprite in layer_all_sprites.sprites():
         if obj_not_see(
-            disp_width=disp_width, disp_height=disp_height, obj=sprite, difference=disp_width//60
+            disp_width=data_CF.disp[0], disp_height=data_CF.disp[1], obj=sprite, difference=data_CF.pixel_space
         ) == None:
             display.blit(sprite.surf, sprite.rect)
 
 
     # Camara
     camera = player_camera_move(
-        disp_width=disp_width, disp_height=disp_height,
+        disp_width=data_CF.disp[0], disp_height=data_CF.disp[1],
         camera_x=camera_x, camera_y=camera_y, 
         all_sprites=layer_all_sprites.sprites(),
         limit_objects=limit_objects,
@@ -896,7 +890,7 @@ while exec_game:
                     (player.rect.x +(player.rect.width/2)),
                     player.rect.y+(player.rect.height//2)
                 ),
-                show_collide=show_collide
+                show_collide=data_CF.show_collide
             )
             player.show_sprite = False
             ( random.choice(sounds_dead) ).play()
@@ -929,7 +923,7 @@ while exec_game:
         )
         display.blit(
             text_hp, (
-                (disp_width)-(size_font_normal*3),
+                (data_CF.disp[0])-(size_font_normal*3),
                 size_font_normal
             )
         )
@@ -940,7 +934,7 @@ while exec_game:
         )
         display.blit(
             text_score, (
-                (disp_width)-(size_font_normal*3),
+                (data_CF.disp[0])-(size_font_normal*3),
                 size_font_normal*2
             )
         )
@@ -956,7 +950,7 @@ while exec_game:
                 message_start, True, generic_colors('white')
             )
             position = [
-                (disp_width//2)-(text_message.get_rect().width//2),
+                (data_CF.disp[0]//2)-(text_message.get_rect().width//2),
                 size_font_normal
             ]
 
@@ -984,8 +978,8 @@ while exec_game:
                 Lang.get_text('gamecomplete'), True, generic_colors('yellow')
             )
             position = [
-                (disp_width//2)-(text_gamecomplete.get_rect().width//2),
-                (disp_height//2)-(size_font_big//2)
+                (data_CF.disp[0]//2)-(text_gamecomplete.get_rect().width//2),
+                (data_CF.disp[1]//2)-(size_font_big//2)
             ]
             
             rect_text = text_gamecomplete.get_rect()
@@ -1015,7 +1009,7 @@ while exec_game:
             text_continue = font_normal.render(
                 f"{Lang.get_text('continue_jump')}...", True, generic_colors('white')
             )
-            position = [size_font_normal, disp_height-(size_font_normal*2)]
+            position = [size_font_normal, data_CF.disp[0]-(size_font_normal*2)]
             
             rect_text = text_continue.get_rect()
             pygame.draw.rect(
@@ -1048,7 +1042,7 @@ while exec_game:
         text_credits = font_normal.render(
             Lang.get_text('credits'), True, generic_colors('yellow')
         )
-        position = [(disp_width//2)-(text_credits.get_rect().width//2), (size_font_normal//2)]
+        position = [(data_CF.disp[0]//2)-(text_credits.get_rect().width//2), (size_font_normal//2)]
         
         display.blit(
             text_credits, (
@@ -1061,7 +1055,7 @@ while exec_game:
         text_by = font_normal.render(
             CF_data_credits(), True, generic_colors('green')
         )
-        position = [(disp_width//2)-(text_by.get_rect().width//2), (disp_height//2)-(size_font_normal//2)]
+        position = [(data_CF.disp[0]//2)-(text_by.get_rect().width//2), (data_CF.disp[1]//2)-(size_font_normal//2)]
         
         display.blit(
             text_by, (
@@ -1089,7 +1083,7 @@ while exec_game:
             text_continue = font_normal.render(
                 f"{Lang.get_text('continue_jump')}...", True, generic_colors('white')
             )
-            position = [size_font_normal, disp_height-(size_font_normal*2)]
+            position = [size_font_normal, data_CF.disp[1]-(size_font_normal*2)]
 
             display.blit(
                 text_continue, (
@@ -1100,7 +1094,7 @@ while exec_game:
 
     
     # Fin
-    clock.tick(fps)
+    clock.tick(data_CF.fps)
     pygame.display.update()
 
 pygame.quit()
