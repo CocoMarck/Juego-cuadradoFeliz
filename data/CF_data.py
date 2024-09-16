@@ -9,7 +9,8 @@ from logic.Modulo_Files import(
 from logic.Modulo_Text import(
     Text_Read,
     Ignore_Comment,
-    Text_Separe
+    Text_Separe,
+    Only_Comment
 )
 from entities import CF, Map
 from pathlib import Path as pathlib
@@ -486,3 +487,49 @@ def save_CF( CF ) -> bool:
         return True
     except:
         return False
+
+
+
+
+def read_Map( Map, level=str ) -> bool:
+    '''Leer el archivo map y establecer sus parametros'''
+    # Leer archivo
+    text_level = Text_Read(level, 'ModeText')
+    
+    # Obtener información de parametros
+    #Map.path = None
+    #Map.next_level = None
+    #Map.climate = None
+    #Map.message_start = None
+    
+    map_info = Only_Comment(
+        text=text_level,
+        comment='$$'
+    )
+    number_info = 0
+    info = None
+    if not map_info == None:
+        info = []
+        for line in map_info.split('\n'):
+            info.append(line)
+            number_info += 1
+        if not info[0] == '':
+            path_and_level = info[0].split(':')
+            Map.path = path_and_level[0]
+            Map.next_level = path_and_level[1]
+            
+    if number_info >= 2:
+        Map.climate = info[1]
+    
+    if number_info >= 3:
+        if info[2].startswith('stock_'):
+            Map.message_start = get_text(info[2])
+        else:
+            Map.message_start = info[2]
+    
+    
+    # Obtener información del mapa
+    map_level = Ignore_Comment(text=text_level, comment='//')
+    map_level = Ignore_Comment(text=text_level, comment='$$')
+    
+    Map.list_map = map_level.split('\n')
