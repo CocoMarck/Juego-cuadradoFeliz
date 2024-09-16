@@ -205,7 +205,7 @@ while exec_game:
         if event.type == pygame.MOUSEBUTTONDOWN:
             # Detección de mouse
             left, middle, right = pygame.mouse.get_pressed()
-            if left:
+            if left or right:
                 # Click izquierdo
                 mouse_pos = pygame.mouse.get_pos()
                 for obj in grid_objects:
@@ -286,15 +286,32 @@ while exec_game:
     scroll_int = [int(scroll_float[0]), int(scroll_float[1])]
     
     
+    
+    
     # Objetos / Mostrar / Todos los sprites
     for sprite in layer_all_sprites.sprites():
-        display.blit(
-            sprite.surf, 
-            (
-                sprite.rect.x -scroll_int[0],
-                sprite.rect.y -scroll_int[1]
+        # Detectar que el sprite no sebrepase la pantalla
+        sprite_goes_off_screen = False
+        if (
+            (sprite.rect.x-scroll_int[0] > data_CF.disp[0]) or 
+            (sprite.rect.x-scroll_int[0] < 0)
+        ):
+            sprite_goes_off_screen = True
+        if (
+            (sprite.rect.y-scroll_int[1] > data_CF.disp[1]) or 
+            (sprite.rect.y-scroll_int[1] < 0)
+        ):
+            sprite_goes_off_screen = True
+
+        # Si el esprite esta en pantalla, mostrarlo.
+        if sprite_goes_off_screen == False:
+            display.blit(
+                sprite.surf, 
+                (
+                    sprite.rect.x -scroll_int[0],
+                    sprite.rect.y -scroll_int[1]
+                )
             )
-        )
     
     
     
