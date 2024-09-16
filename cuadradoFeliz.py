@@ -1009,7 +1009,7 @@ while exec_game:
             text_continue = font_normal.render(
                 f"{Lang.get_text('continue_jump')}...", True, generic_colors('white')
             )
-            position = [size_font_normal, data_CF.disp[0]-(size_font_normal*2)]
+            position = [size_font_normal, data_CF.disp[1]-(size_font_normal*2)]
             
             rect_text = text_continue.get_rect()
             pygame.draw.rect(
