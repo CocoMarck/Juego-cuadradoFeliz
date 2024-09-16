@@ -75,7 +75,7 @@ class Player(pygame.sprite.Sprite):
         super().__init__()
 
         # Mostrar o no collider
-        self.surf = pygame.Surface( (data_CF.disp[0]//120, data_CF.disp[0]//60), pygame.SRCALPHA )
+        self.surf = pygame.Surface( (data_CF.pixel_space//2, data_CF.pixel_space), pygame.SRCALPHA )
         if show_collide == True:
             self.transparency = 255
         else:
@@ -101,6 +101,8 @@ class Player(pygame.sprite.Sprite):
         self.__current_max_height   = self.jump_max_height
         self.__jump_count           = 0
 
+        self.speed_multipler    = 1
+        self.speed_run          = self.rect.height//2
         self.speed              = self.rect.height//2
         self.not_move           = False
         self.x_move_type        = None
@@ -114,6 +116,7 @@ class Player(pygame.sprite.Sprite):
         self.pressed_left       = pygame.K_LEFT
         self.pressed_right      = pygame.K_RIGHT
         self.pressed_down       = pygame.K_DOWN
+        self.pressed_walk       = pygame.K_LSHIFT
         
         # Mostrar o no sprite
         self.show_sprite = show_sprite
@@ -125,7 +128,7 @@ class Player(pygame.sprite.Sprite):
         )
         image_notmove = pygame.transform.scale(
             image_notmove, 
-            ( ((data_CF.disp[0]//30)*3), data_CF.disp[0]//30 )
+            ( ((data_CF.pixel_space*2)*3), data_CF.pixel_space*2 )
         )
 
         image_move = pygame.image.load( 
@@ -133,7 +136,7 @@ class Player(pygame.sprite.Sprite):
         )
         image_move = pygame.transform.scale(
             image_move, 
-            ( ((data_CF.disp[0]//30)*8), data_CF.disp[0]//30 )
+            ( ((data_CF.pixel_space*2)*8), data_CF.pixel_space*2 )
         )
 
         # Sprite / Cambiar color al de imagenes de sprite
@@ -185,6 +188,7 @@ class Player(pygame.sprite.Sprite):
         pressed_left = pressed_keys[self.pressed_left]
         pressed_right = pressed_keys[self.pressed_right]
         pressed_down = pressed_keys[self.pressed_down]
+        pressed_walk = pressed_keys[self.pressed_walk]
         
         # Iniciar o no el movimiento
         # Si el not_move esta en false, entonces puede seguir.
@@ -216,6 +220,12 @@ class Player(pygame.sprite.Sprite):
             
             if pressed_down:
                 self.move_down = True
+            
+            if pressed_walk:
+                self.speed_multipler = 0.5
+            else:
+                self.speed_multipler = 1
+            self.speed = self.speed_run * self.speed_multipler
     
     def jump(self, multipler=1):
         if self.gravity == False and self.not_move == False:
@@ -420,8 +430,8 @@ class Player(pygame.sprite.Sprite):
             self.x_move_type == 'right-anim' or self.x_move_type == 'left-anim'
         ):
             self.surf.fill( generic_colors('yellow', transparency=self.transparency) )
-            self.__step_count += 1
-            if self.__step_count == self.__sound_step_number:
+            self.__step_count += 1*self.speed_multipler
+            if int(self.__step_count) == self.__sound_step_number:
                 ( random.choice(sounds_step) ).play()
                 self.__step_count = 0
         elif (
@@ -439,8 +449,8 @@ class Player(pygame.sprite.Sprite):
         # Scción sprite movimiento x
         if self.show_sprite == True and (not self.sprite == None):
             if self.x_move_type == 'right-anim':
-                self.count_fps =(self.count_fps +1) % len(self.sprite_move)
-                self.sprite.surf = self.sprite_move[self.count_fps]
+                self.count_fps = (self.count_fps +(1*self.speed_multipler)) % len(self.sprite_move)
+                self.sprite.surf = self.sprite_move[int(self.count_fps)]
 
             elif self.x_move_type == 'right-jump':
                 self.sprite.surf = self.sprite_move[1]
@@ -448,8 +458,10 @@ class Player(pygame.sprite.Sprite):
                 self.sprite.surf = self.sprite_move[6]
                 
             elif self.x_move_type == 'left-anim':
-                self.count_fps_invert = (self.count_fps_invert -1) % len(self.sprite_move_invert)
-                self.sprite.surf = self.sprite_move_invert[self.count_fps_invert]
+                self.count_fps_invert = (
+                    (self.count_fps_invert -(1*self.speed_multipler) ) % len(self.sprite_move_invert)
+                )
+                self.sprite.surf = self.sprite_move_invert[int(self.count_fps_invert)]
 
             elif self.x_move_type == 'left-jump':
                 self.sprite.surf = self.sprite_move_invert[6]
@@ -495,7 +507,7 @@ class Anim_player_dead(pygame.sprite.Sprite):
             list_sprites = [3, 4, 1, 2]
 
         # Principal
-        self.size = data_CF.disp[0]//60
+        self.size = data_CF.pixel_space
         self.surf = pygame.Surface( (self.size, self.size), pygame.SRCALPHA )
         self.rect = self.surf.get_rect( center=position )
     
@@ -561,7 +573,7 @@ class Anim_player_dead(pygame.sprite.Sprite):
 
 class Player_part(pygame.sprite.Sprite):
     def __init__(
-        self, size=data_CF.disp[0]//120, color=generic_colors('green'), position=(0,0), 
+        self, size=data_CF.pixel_space//2, color=generic_colors('green'), position=(0,0), 
         sprite=None, color_sprite=None
     ):
         super().__init__()
@@ -572,7 +584,7 @@ class Player_part(pygame.sprite.Sprite):
             # Sprite / Imagen y cambiar su color
             img = pygame.transform.scale(
                 pygame.image.load( os.path.join(dir_sprites, 'player/player_not-move.png') ),
-                (data_CF.disp[0]//30*3, data_CF.disp[0]//30)
+                ( data_CF.pixel_space*6, data_CF.pixel_space*2)
             )
             if not color_sprite == None:
                 colorImage = pygame.Surface(img.get_size()).convert_alpha()
@@ -667,7 +679,7 @@ class Player_part(pygame.sprite.Sprite):
 class Floor(pygame.sprite.Sprite):
     def __init__(
         self,
-        size = (data_CF.disp[0], data_CF.disp[0]//60),
+        size = (data_CF.pixel_space, data_CF.pixel_space),
         position = (data_CF.disp[0]//2, (data_CF.disp[1]-8)),
         color='grey', show_collide=False, show_sprite=True,
         limit = True, climate=None
@@ -759,7 +771,7 @@ class Floor(pygame.sprite.Sprite):
 
 
 class Ladder(pygame.sprite.Sprite):
-    def __init__(self, size=data_CF.disp[0]//60, position=(0,0), show_collide=False, show_sprite=True):
+    def __init__(self, size=data_CF.pixel_space, position=(0,0), show_collide=False, show_sprite=True):
         super().__init__()
         
         # Collider y surface
@@ -788,7 +800,7 @@ class Ladder(pygame.sprite.Sprite):
 
 
 class Trampoline(pygame.sprite.Sprite):
-    def __init__(self, size=data_CF.disp[0]//60, position=(0,0), show_collide=False, show_sprite=True):
+    def __init__(self, size=data_CF.pixel_space, position=(0,0), show_collide=False, show_sprite=True):
         super().__init__()
         
         # Collide
@@ -818,7 +830,7 @@ class Trampoline(pygame.sprite.Sprite):
 
 class Elevator(pygame.sprite.Sprite):
     def __init__(
-        self, size=data_CF.disp[0]//60, position=(0,0),
+        self, size=data_CF.pixel_space, position=(0,0),
         show_collide=False, show_sprite=True, move_dimension=1
     ):
         super().__init__()
@@ -903,7 +915,7 @@ class Elevator(pygame.sprite.Sprite):
 
 class Spike(pygame.sprite.Sprite):
     def __init__(
-        self, size=data_CF.disp[0]//60, position=(0,0), show_collide=False, show_sprite=True,
+        self, size=data_CF.pixel_space, position=(0,0), show_collide=False, show_sprite=True,
         moving=False, instakill=False
     ):
         super().__init__()
@@ -1029,7 +1041,7 @@ class Spike(pygame.sprite.Sprite):
 
 class Star_pointed(pygame.sprite.Sprite):
     def __init__(
-        self, size=data_CF.disp[0]//60, position=(0,0), show_collide=False, show_sprite=True,
+        self, size=data_CF.pixel_space, position=(0,0), show_collide=False, show_sprite=True,
         moving=False, instakill=False
     ):
         super().__init__()
@@ -1227,7 +1239,7 @@ class Star_pointed(pygame.sprite.Sprite):
 
 class Stair(pygame.sprite.Sprite):
     def __init__( 
-        self, size=data_CF.disp[0]//60, position=(0, 0), show_collide=False,
+        self, size=data_CF.pixel_space, position=(0, 0), show_collide=False,
         invert=False, climate=None
     ):
         super().__init__()
@@ -1290,7 +1302,7 @@ class Stair(pygame.sprite.Sprite):
 
 class Climate_rain(pygame.sprite.Sprite):
     def __init__(
-        self, size=data_CF.disp[0]//60, position=(data_CF.disp[0]//2, data_CF.disp[1]//2),
+        self, size=data_CF.pixel_space, position=(data_CF.disp[0]//2, data_CF.disp[1]//2),
         show_collide=False, show_sprite=True
     ):
         super().__init__()
@@ -1410,7 +1422,7 @@ class Climate_rain(pygame.sprite.Sprite):
             
 class Limit_indicator(pygame.sprite.Sprite):
     def __init__(self, 
-        size = (data_CF.disp[0]//60, data_CF.disp[0]//60), show_collide = True, position = (0, 0)
+        size = (data_CF.pixel_space, data_CF.pixel_space), show_collide = True, position = (0, 0)
     ):
         super().__init__()
         
@@ -1456,7 +1468,7 @@ class Level_change(pygame.sprite.Sprite):
         self.gamecomplete = False
         
         # Collider
-        size = (data_CF.disp[0]//60, data_CF.disp[0]//60)
+        size = (data_CF.pixel_space, data_CF.pixel_space)
         self.__transparency = 0
         if show_collide == True:
             self.__transparency = 255
@@ -1497,7 +1509,7 @@ class Level_change(pygame.sprite.Sprite):
 
 
 class Score(pygame.sprite.Sprite):
-    def __init__(self, size=data_CF.disp[0]//60, position=(0, 0), show_collide=False, show_sprite=True ):
+    def __init__(self, size=data_CF.pixel_space, position=(0, 0), show_collide=False, show_sprite=True ):
         super().__init__()
         
         # Collider
@@ -1540,7 +1552,7 @@ class Score(pygame.sprite.Sprite):
 
 class Cloud(pygame.sprite.Sprite):
     def __init__(
-        self, size = (data_CF.disp[0]//15, data_CF.disp[1]//30),  position=(0,0),
+        self, size = (data_CF.pixel_space*4, data_CF.pixel_space*2),  position=(0,0),
         show_collide=False
     ):
         super().__init__()
@@ -1565,7 +1577,7 @@ class Cloud(pygame.sprite.Sprite):
         
         # Sección de velocidad
         self.speed = random.choice( 
-            [-data_CF.disp[0]//240, data_CF.disp[0]//240] 
+            [-data_CF.pixel_space//4, data_CF.pixel_space//4] 
         )
         self.fps = (data_CF.fps*1.5)//( random.choice( [2, 3, 4] ) )
         self.count_fps = 0
