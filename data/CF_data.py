@@ -12,6 +12,7 @@ from logic.Modulo_Text import(
     Text_Separe,
     Only_Comment
 )
+from data.Modulo_Language import get_text
 from entities import CF, Map
 from pathlib import Path as pathlib
 
@@ -522,10 +523,7 @@ def read_Map( Map, level=str ) -> bool:
         Map.climate = info[1]
     
     if number_info >= 3:
-        if info[2].startswith('stock_'):
-            Map.message_start = get_text(info[2])
-        else:
-            Map.message_start = info[2]
+        Map.message_start = info[2]
     
     
     # Obtener información del mapa
