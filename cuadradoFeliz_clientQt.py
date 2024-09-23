@@ -2,6 +2,9 @@ from data.Modulo_Language import get_text as Lang
 from data.CF_info import *
 from data.CF_data import *
 
+from interface.interface_number import *
+from interface.css_util import *
+
 import sys
 from PyQt6.QtWidgets import(
     QApplication,
@@ -37,7 +40,7 @@ class Window_Main(QWidget):
         
         self.setWindowTitle('Cuadrado Feliz')
         #self.setWindowIcon( QIcon('ruta') )
-        self.resize(384, -1)
+        self.resize(nums_win_main[0], nums_win_main[1])
 
         self.__gamecomplete = gamecomplete
         
@@ -319,7 +322,19 @@ class Window_Main(QWidget):
 
 
 
+
+# Bucle y estilo de programa
+qss_style = ''
+for widget in get_list_text_widget( 'Qt' ):
+    qss_style += text_widget_style(
+        widget=widget, font=None, font_size=num_font, 
+        margin_xy=num_margin_xy, padding=num_space_padding, idented=4
+    )
+print(qss_style)
+
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+    app.setStyleSheet(qss_style)
     window = Window_Main()
     sys.exit( app.exec() )

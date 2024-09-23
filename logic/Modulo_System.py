@@ -130,3 +130,19 @@ def Command_Run(
         # Hacer todo desde la misma terminal/programa
         os.system(cmd)
         input(f'{text_input}...')
+
+
+
+
+def get_display_resolution() -> list:
+    '''Retorna la resolucion del sistema'''
+    if system == 'win':
+        import ctypes
+        user32 = ctypes.windll.user32
+        user32.SetProcessDPIAware()
+        width, height = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
+    elif system == 'linux':
+        from screeninfo import get_monitors
+        for monitor in get_monitors():
+            width, height = monitor.width, monitor.height
+    return [width, height]

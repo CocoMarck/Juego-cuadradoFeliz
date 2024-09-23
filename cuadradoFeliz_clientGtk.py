@@ -3,11 +3,14 @@ from data.CF_info import data_CF
 from data.CF_data import *
 #import subprocess, sys
 
+from interface.interface_number import *
+from interface.css_util import *
+
 import threading
 import gi
 
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk
 
 
 
@@ -27,7 +30,7 @@ class Window_Main(Gtk.Window):
         super().__init__( title='El Cuadrado Feliz' )
         
         self.set_resizable(True)
-        self.set_default_size(384, -1)
+        self.set_default_size(nums_win_main[0], nums_win_main[1])
         #self.set_icon_from_file( 'Icon.png' )
         
         # Contenedor principal
@@ -342,6 +345,29 @@ class Window_Main(Gtk.Window):
         dialog.destroy()
 
 
+
+
+# Bucle y estilo de programa
+css_style = ''
+for widget in get_list_text_widget( 'Gtk' ):
+    if widget == 'textview':
+        css_style += text_widget_style(
+            widget=widget, font=None, font_size=num_font,
+            padding=None, margin_xy=None, idented=4
+        )
+    else:
+        css_style += text_widget_style(
+            widget=widget, font=None, font_size=num_font,
+            padding=num_space_padding, margin_xy=None, idented=4
+        )
+screen = Gdk.Screen.get_default()
+provider = Gtk.CssProvider()
+style_context = Gtk.StyleContext()
+style_context.add_provider_for_screen(
+    screen, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+)
+provider.load_from_data( str.encode(css_style) )
+print( css_style )
 
 
 win = Window_Main()
