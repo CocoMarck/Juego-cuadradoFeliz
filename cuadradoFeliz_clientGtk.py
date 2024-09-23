@@ -247,9 +247,7 @@ class Window_Main(Gtk.Window):
         # Establecer volumen
         # Valor actual del spinbutton, dividido entre self.__volume_multipler
         # Ejemplo: 50/100 = 0.5
-        data_CF.volume = (
-            self.spinbutton_volume.get_value_as_int()/self.__volume_multipler 
-        )
+        data_CF.volume = self.spinbutton_volume.get_value_as_int()/self.__volume_multipler 
         save_CF( data_CF )
         
 
@@ -280,9 +278,7 @@ class Window_Main(Gtk.Window):
         # Establecer nivel
         combo_iter = combo.get_active_iter()
         combo_model = combo.get_model()
-        data_CF.current_level( 
-            f'{dir_maps}{combo_model[combo_iter][0]}'
-        )
+        data_CF.current_level = f'{dir_maps}{combo_model[combo_iter][0]}'
         save_CF( data_CF )
     
 
@@ -291,7 +287,7 @@ class Window_Main(Gtk.Window):
         combo_iter = combo.get_active_iter()
         combo_model = combo.get_model()
         disp_xy = combo_model[combo_iter][0].split('x')
-        data_CF.disp = [ disp_xy[0], disp_xy[1] ]
+        data_CF.disp = [ int(disp_xy[0]), int(disp_xy[1]) ]
         save_CF( data_CF )
     
     
