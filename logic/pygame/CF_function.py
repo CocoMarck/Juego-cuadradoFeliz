@@ -101,6 +101,9 @@ def get_sound( sound=None, number=None ) -> pygame.mixer.Sound:
 
 # Sprites
 all_images = {
+    'icon':
+    ( os.path.join(dir_data, 'icons', 'cuadradoFeliz.png') ),
+
     'background':
     ( os.path.join(dir_sprites, 'background.png') ),
     
@@ -230,3 +233,27 @@ player_key = {
     'left': pygame.K_LEFT,
     'right': pygame.K_RIGHT
 }
+
+
+
+
+def scroll_display_collision( 
+        pos_xy=[int,int], scroll_xy=[int, int], display_xy=[int, int], 
+        more_pixels_positive_negative=[0,0], 
+    ) -> str:
+    '''
+    Detectar que el sprite no sebrepase la pantalla, se necesita de una camara funcionando con el metodo "scroll".
+    Donde scroll es una lista de xy de enteros.
+    '''
+    side = None
+    if pos_xy[0]-scroll_xy[0] < 0 -more_pixels_positive_negative[0]:
+        side = 'left'
+    elif pos_xy[0]-scroll_xy[0] > display_xy[0] +more_pixels_positive_negative[1]:
+        side = 'right'
+        
+    if pos_xy[1]-scroll_xy[1] < 0 -more_pixels_positive_negative[0]:
+        side = 'top'
+    elif pos_xy[1]-scroll_xy[1] > display_xy[1] +more_pixels_positive_negative[1]:
+        side = 'bottom'
+    
+    return side

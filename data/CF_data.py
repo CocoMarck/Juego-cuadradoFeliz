@@ -476,6 +476,7 @@ def save_CF( CF ) -> bool:
 
         set_music( CF.music )
         set_show_clouds( CF.show_clouds )
+        set_climate_sound( CF.climate_sound )
 
         set_show_collide( CF.show_collide )
         if CF.show_collide == True:
@@ -531,3 +532,5 @@ def read_Map( Map, level=str ) -> bool:
     map_level = Ignore_Comment(text=text_level, comment='$$')
     
     Map.list_map = map_level.split('\n')
+    for index in range( 0, len(Map.list_map) ):
+        Map.list_map[index] = list(Map.list_map[index])
