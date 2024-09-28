@@ -214,7 +214,7 @@ scroll_float = [0,0]
 
 
 # Posición de camara
-camera_xy = player_spawn_xy
+camera_xy = [player_spawn_xy[0],player_spawn_xy[1]]
 click_left = False
 click_right = False
 move_up = False
@@ -222,6 +222,18 @@ move_down = False
 move_left = False
 move_right = False
 
+
+
+# Camara | Limite del mapa
+def get_limit_xy():
+    limit_xy = [ [], [] ]
+    for sprite in grid_objects:
+        if sprite.type_object == '|':
+            limit_xy[0].append( sprite.rect.x )
+            limit_xy[1].append( sprite.rect.y )
+    return [ max(limit_xy[0]),  max(limit_xy[1]) ]
+limit_xy = get_limit_xy()
+print(limit_xy)
 
 
 
@@ -306,20 +318,54 @@ while exec_game:
     
     
     
-    # Movimiento camara:
+    # Movimiento camara | Establecer si direccion de movimietno
+    moving_xy = [0,0]
     if move_up == True:
-        camera_xy[1] -= data_CF.pixel_space
+        moving_xy[1] -= data_CF.pixel_space
     if move_down == True:
-        camera_xy[1] += data_CF.pixel_space
+        moving_xy[1] += data_CF.pixel_space
         
     if move_left == True:
-        camera_xy[0] -= data_CF.pixel_space
+        moving_xy[0] -= data_CF.pixel_space
     if move_right == True:
-        camera_xy[0] += data_CF.pixel_space
+        moving_xy[0] += data_CF.pixel_space
+    
+    # Movimienteo camara 
+    # Detactar limites | Función para bloquear el movimiento de camara
+    print(limit_xy, 'limit of map')
+    print(player_spawn_xy, 'camera spawn')
+    print(camera_xy, 'camera')
+    print(scroll_float, 'scroll')
 
+    for index in range(0, 2):
+        if camera_xy[index] + (size_display_edit[index]/2) > limit_xy[index]:
+            if moving_xy[index] > 0:
+                moving_xy[index] = 0
+        elif camera_xy[index] < (size_display_edit[index]/2):
+            if moving_xy[index] < 0:
+                moving_xy[index] = 0
+    camera_xy[0] += moving_xy[0]
+    camera_xy[1] += moving_xy[1]
     
+    '''
+    # Función objetos que limitan la camara
+    not_scroll_xy = [False, False]
+    for obj in grid_objects:
+        if obj.type_object == '|':
+            not_scroll_xy = detect_camera_limit(
+                limit_xy=[obj.rect.x, obj.rect.y], moving_xy=moving_xy, 
+                camera_xy=camera_xy, camera_spawn_xy=player_spawn_xy,
+                scroll_float=scroll_float, not_scroll_xy=not_scroll_xy,
+                grid_square=data_CF.pixel_space, disp_xy=size_display_edit
+            )
+                
     
-    
+    # Función Scroll/Camara
+    if not_scroll_xy[0] == False:
+        scroll_float[0] += (camera_xy[0] -scroll_float[0] -size_display_edit[0]/2)/4
+    if not_scroll_xy[1] == False:
+        scroll_float[1] += (camera_xy[1] -scroll_float[1] -size_display_edit[1]/2)/4
+    '''
     # Función scroll | Camara
     scroll_float[0] += (camera_xy[0] -scroll_float[0] -size_display_edit[0]/2)/4
     scroll_float[1] += (camera_xy[1] -scroll_float[1] -size_display_edit[1]/2)/4
