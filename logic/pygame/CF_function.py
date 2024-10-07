@@ -257,3 +257,71 @@ def scroll_display_collision(
         side = 'bottom'
     
     return side
+
+
+
+
+
+def detect_camera_limit(
+    limit_xy=[int,int], moving_xy=[int,int], camera_xy=[int,int], camera_spawn_xy=[int,int], 
+    scroll_float=[float,float], not_scroll_xy=[bool,bool], grid_square=int, disp_xy=[int,int]
+    ) -> bool:
+    '''
+    Función objetos que limitan la camara/scroll, para detectar la posición del limite y detectar si el scroll esta sobrepasando el limite y entonces parar el scroll.
+    
+    limit_xy = coordenadas xy de objeto tipo limite de camara.
+    camera_xy = coordenadas xy de camara/player
+    moving_xy = coordenadas xy de movimiento del objeto camara/player
+    '''
+    # Limite positivo x
+    if limit_xy[0] >= disp_xy[0]:
+        if scroll_float[0] >= limit_xy[0]-(disp_xy[0]):
+            if moving_xy[0] < 0:
+                # Cuando quiere salir del limite positivo
+                if not camera_xy[0] <= limit_xy[0]-(disp_xy[0]/2):
+                    not_scroll_xy[0] = True
+            else:
+                # Cuando llega al limite positivo
+                not_scroll_xy[0] = True
+                
+    # Limite negativo x
+    if limit_xy[0] <= 0:
+        if scroll_float[0] <= limit_xy[0]:
+            if moving_xy[0] > 0:
+                # Cuando quiere salir del limite negativo
+                if not camera_xy[0] >= limit_xy[0]+(disp_xy[0]/2):
+                    not_scroll_xy[0] = True
+            else:
+                # Cuando llega al limite negativo
+                not_scroll_xy[0] = True
+    
+    
+    # Limite positivo y
+    if limit_xy[1] >= disp_xy[1]-grid_square:
+        if scroll_float[1] >= limit_xy[1]-(disp_xy[1]):
+            if moving_xy[1] < 0:
+                # Cuando quiere salir del limite positivo
+                if not camera_xy[1] <= limit_xy[1]-(disp_xy[1]/2):
+                    not_scroll_xy[1] = True
+            else:
+                # Cuando llega al limite positivo
+                not_scroll_xy[1] = True
+                
+    # Limite negativo y
+    if limit_xy[1] <= 0:
+        if scroll_float[1] <= limit_xy[1]:
+            if moving_xy[1] > 0:
+                # Cuando quiere salir del limite negativo
+                if not camera_xy[1] >= limit_xy[1]+(disp_xy[1]/2):
+                    not_scroll_xy[1] = True
+            else:
+                # Cuando llega al limite negativo
+                not_scroll_xy[1] = True
+
+    # Restablecer camara al spawn
+    # volver a anlizar los limites, para que se acomode al 100% bien
+    if camera_xy[1] == camera_spawn_xy[0] and camera_xy[1] == camera_spawn_xy[1]:
+        not_scroll_xy = [False, False]
+    
+    # Devolver el mover el scroll en x o en y.
+    return not_scroll_xy

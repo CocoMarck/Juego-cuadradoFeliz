@@ -26,6 +26,99 @@ display_edit = pygame.Surface( size_display_edit )
 
 
 
+# Objetos de interfaz agregar boton.
+buttons = pygame.sprite.Group()
+interface_background = pygame.sprite.Group()
+class Button(pygame.sprite.Sprite):
+    def __init__(
+        self, font=pygame.font.SysFont, text=str, use_lang=False,
+        color_text=[int,int,int], color_background=(int,int,int,int),
+        position_xy=[int,int], size_xy=[int, int] 
+    ):
+        super().__init__()
+        
+        # Parametros
+        self.text = text
+        self.color_text = color_text
+        self.spawn_xy = position_xy
+        
+        # Cambiar tamaño de todo o no
+        change_size = True
+        if isinstance(size_xy, list):
+            for item in size_xy:
+                if not isinstance(item, int):
+                    change_size = False
+        else:
+            change_size = False
+        
+        # Fondo para el boton o no
+        set_background = True
+        if isinstance(color_background, tuple):
+            for item in color_background:
+                if isinstance(item, int):
+                    if item > 255:
+                        set_background = False
+                else:
+                    set_background = False
+        else:
+            set_background = False
+        
+        # Superficie y rectangulo
+        # Utilizar la función Language
+        # Cambiar tamaño del texto escrito
+        if use_lang == True:
+            text_ready = get_text(self.text)
+        else:
+            text_ready = self.text
+        self.surf = font.render(text_ready, True, self.color_text)
+        if change_size == True:
+            self.surf = pygame.transform.scale( self.surf, size_xy )
+        self.rect = self.surf.get_rect( topleft=self.spawn_xy )
+        
+        # Fondo para el texto
+        if set_background == True:
+            self.background = pygame.sprite.Sprite()
+            self.background.surf = pygame.Surface( (self.rect.width, self.rect.height) )
+            self.background.surf.fill( color_background )
+            self.background.rect = self.background.surf.get_rect( topleft=self.spawn_xy )
+            interface_background.add( self.background )
+        else:
+            self.background = None
+
+        # Rectangulo y agregar a los sprites
+        buttons.add( self )
+
+font_str='monospace'
+font=pygame.font.SysFont(font_str, data_CF.pixel_space)
+color_background=generic_colors('white')
+color_text=generic_colors('black')
+use_lang=False
+list_option = ['load', 'save', 'save-as']
+for index in range(0, len(list_option)) :
+    Button(
+        font=font, text=list_option[index], use_lang=use_lang,
+        color_text=color_text, color_background=color_background,
+        position_xy=[data_CF.pixel_space, data_CF.pixel_space*(index+1)]
+    )
+        
+
+
+# Tipos de objetos
+dict_object = {
+    'space': '.',
+    'player': 'j',
+    'limit': '|',
+    'stone': 'p',
+    'stone-big': 'P',
+    'spike': '^',
+    'spike-big': 'A',
+    'star-pointed': 'Y',
+    'ladder': 'H',
+    'trampoline': '_'
+}
+
+
+
 # Objetos
 layer_all_sprites = pygame.sprite.LayeredUpdates()
 grid_objects = pygame.sprite.Group()
@@ -36,45 +129,58 @@ grid_objects = pygame.sprite.Group()
 class object_grid( pygame.sprite.Sprite ):
     def __init__(self, size=[data_CF.pixel_space, data_CF.pixel_space], position=[0,0], image=None ):
         super().__init__()
+        
+        # Para mostrar cuadricula, ayuda visual.
+        transparency = 47
+        color = 'black'
+        layer = 1
+        
+        square = pygame.sprite.Sprite()
+        square.surf = pygame.Surface( [data_CF.pixel_space, data_CF.pixel_space*0.125], pygame.SRCALPHA )
+        square.surf.fill( generic_colors(color, transparency) )
+        square.rect = square.surf.get_rect( topleft=position )
+        layer_all_sprites.add(square, layer=layer)
+        
+        square = pygame.sprite.Sprite()
+        square.surf = pygame.Surface( [data_CF.pixel_space, data_CF.pixel_space*0.125], pygame.SRCALPHA )
+        square.surf.fill( generic_colors(color, transparency) )
+        square.rect = square.surf.get_rect(
+            topleft=[ position[0], position[1]+(data_CF.pixel_space-data_CF.pixel_space*0.125) ] 
+        )
+        layer_all_sprites.add(square, layer=layer)
+        
+        square = pygame.sprite.Sprite()
+        square.surf = pygame.Surface( [data_CF.pixel_space*0.125, data_CF.pixel_space], pygame.SRCALPHA )
+        square.surf.fill( generic_colors(color, transparency) )
+        square.rect = square.surf.get_rect( topleft=position )
+        layer_all_sprites.add(square, layer=layer)
+        
+        square = pygame.sprite.Sprite()
+        square.surf = pygame.Surface( [data_CF.pixel_space*0.125, data_CF.pixel_space], pygame.SRCALPHA )
+        square.surf.fill( generic_colors(color, transparency) )
+        square.rect = square.surf.get_rect( 
+            topleft=[ position[0]+(data_CF.pixel_space-data_CF.pixel_space*0.125), position[1] ] 
+        )
+        layer_all_sprites.add(square, layer=layer)
 
+        # Establecer imagen con size personalizado
         if image is None:
-            transparency = 47
-            color = 'black'
-            layer = 1
-            
-            self.surf = pygame.Surface( size, pygame.SRCALPHA )
-            self.surf.fill( generic_colors(color, 0) )
+            self.image = None
 
-            square = pygame.sprite.Sprite()
-            square.surf = pygame.Surface( [size[0], size[1]*0.125], pygame.SRCALPHA )
-            square.surf.fill( generic_colors(color, transparency) )
-            square.rect = square.surf.get_rect( topleft=position )
-            layer_all_sprites.add(square, layer=layer)
-            
-            square = pygame.sprite.Sprite()
-            square.surf = pygame.Surface( [size[0], size[1]*0.125], pygame.SRCALPHA )
-            square.surf.fill( generic_colors(color, transparency) )
-            square.rect = square.surf.get_rect( topleft=[ position[0], position[1]+(size[1]-size[1]*0.125) ] )
-            layer_all_sprites.add(square, layer=layer)
-            
-            square = pygame.sprite.Sprite()
-            square.surf = pygame.Surface( [size[0]*0.125, size[1]], pygame.SRCALPHA )
-            square.surf.fill( generic_colors(color, transparency) )
-            square.rect = square.surf.get_rect( topleft=position )
-            layer_all_sprites.add(square, layer=layer)
-            
-            square = pygame.sprite.Sprite()
-            square.surf = pygame.Surface( [size[0]*0.125, size[1]], pygame.SRCALPHA )
-            square.surf.fill( generic_colors(color, transparency) )
-            square.rect = square.surf.get_rect( topleft=[ position[0]+(size[0]-size[0]*0.125), position[1] ] )
-            layer_all_sprites.add(square, layer=layer)
         else:
+            self.image = pygame.sprite.Sprite()
             if image == 'limit':
-                self.surf = pygame.Surface( size )
-                self.surf.fill( generic_colors('red') )
+                self.image.surf = pygame.Surface( size )
+                self.image.surf.fill( generic_colors('red') )
             else:
-                self.surf = get_image( image=image, number=0, size=size )
+                self.image.surf = get_image( image=image, number=0, size=size )
+            
+            self.image.rect = self.image.surf.get_rect( topleft=position )
+            layer_all_sprites.add(self.image, layer=0)
 
+        # Superficie/collider que sera para los clicks
+        self.surf = pygame.Surface( (data_CF.pixel_space, data_CF.pixel_space), pygame.SRCALPHA )
+        self.surf.fill( generic_colors(color, 0) )
         self.rect = self.surf.get_rect( topleft=position )
         layer_all_sprites.add(self, layer=0)
         grid_objects.add(self)
@@ -87,10 +193,67 @@ class object_grid( pygame.sprite.Sprite ):
         )
         self.xy_spawn = [ (self.rect.y) //data_CF.pixel_space,  (self.rect.x) //data_CF.pixel_space ]
         
+        #self.update_type_object()
+        
     def update_type_object(self):
-        if self.type_object == '.':
-            self.surf = pygame.Surface( (self.rect.width, self.rect.height), pygame.SRCALPHA )
-            self.surf.fill( (0, 0, 0, 0) )
+        # Establecer superficie de colision
+        self.surf = pygame.Surface( (self.rect.width, self.rect.height), pygame.SRCALPHA )
+        self.surf.fill( (0, 0, 0, 0) )
+
+        # Borrar imagen actual
+        if not self.image == None:
+            self.image.kill()
+        
+        # Establecer imagen basado en el tipo de objeto
+        if not (self.type_object == '.' or self.type_object == '#'):
+            # Parametros necesarios
+            image = 'stone'
+            multipler_size_xy = [1,1]
+            position_reduction_xy = [0,0]
+            frame_number = 0
+            
+            # Establecer imagen dependiendo el tipo de caracter.
+            if self.type_object == 'j':
+                image = 'icon'
+            elif self.type_object == '|':
+                image = 'limit'
+            elif self.type_object == 'p' or self.type_object == 'P':
+                image = 'stone'
+            elif self.type_object == '^' or self.type_object == 'A':
+                image = 'spike'
+            elif self.type_object == 'Y' or self.type_object == 'X' or self.type_object == '*':
+                image = 'star-pointed'
+            elif self.type_object == 's':
+                image = 'coin'
+                
+            elif self.type_object == '_':
+                image = 'trampoline'
+            elif self.type_object == 'H':
+                image = 'ladder'
+
+            # Cambiar tamaño y pos
+            if self.type_object == 'P' or self.type_object == 'A':
+                multipler_size_xy = [2,2]
+            elif self.type_object == '*':
+                multipler_size_xy = [5,3]
+                position_reduction_xy[1] = self.rect.height *(multipler_size_xy[1]-1)
+
+            # Establecer objeto tipo sprite para la previsualización
+            self.image = pygame.sprite.Sprite()
+            if image == 'limit':
+                self.image.surf = pygame.Surface( 
+                    [self.rect.width*multipler_size_xy[0], self.rect.height*multipler_size_xy[1]] 
+                )
+                self.image.surf.fill( generic_colors('red') )
+            else:
+                self.image.surf = get_image( 
+                    image=image, number=frame_number,
+                    size=[self.rect.width*multipler_size_xy[0], self.rect.height*multipler_size_xy[1]]
+                )
+            self.image.rect = self.image.surf.get_rect( 
+                topleft=(self.rect.x -position_reduction_xy[0], self.rect.y -position_reduction_xy[1]) 
+            )
+            layer_all_sprites.add(self.image, layer=0)
             
         # Establecer nuevo tipo de texto en el texto a guardar/cambiar
         current_map.list_map [self.xy_spawn[0]] [self.xy_spawn[1]] = self.type_object
@@ -99,10 +262,7 @@ class object_grid( pygame.sprite.Sprite ):
 
 
 # Generador de cuadritos para hacer el mapa
-dict_object = {
-    'space': '.',
-    'plataform': 'p'
-}
+
 
 current_map = Map
 read_Map( current_map, level=data_CF.current_level )
@@ -138,7 +298,6 @@ for line in current_map.list_map:
             'P': ['stone', 2 ],
             '+': ['stone', None ],
             '-': ['stone', None ],
-            '-': ['stone', None ],
 
             'H': ['ladder', None ],
             '_': ['trampoline', None ],
@@ -164,7 +323,6 @@ for line in current_map.list_map:
             if character == preset:
                 # Agregar espacio y cuadrito
                 xy[0] += 1
-                object_grid( position=position )
                 
                 # Agregar imagen si es que tiene
                 if type(dict_preset[preset][0]) == str:
@@ -192,6 +350,8 @@ for line in current_map.list_map:
                         object_grid(
                             position=position, size=size, image=dict_preset[preset][0]
                         )
+                else:
+                    object_grid( position=position )
 
 
 
@@ -213,8 +373,49 @@ scroll_float = [0,0]
 
 
 
-# Posición de camara
-camera_xy = [player_spawn_xy[0],player_spawn_xy[1]]
+# Función | Limite del mapa y de camara | Camara
+def get_limit_xy():
+    limit_xy = [ [], [] ]
+    for sprite in grid_objects:
+        if sprite.type_object == '|':
+            limit_xy[0].append( sprite.rect.x )
+            limit_xy[1].append( sprite.rect.y )
+    return [ max(limit_xy[0]),  max(limit_xy[1]) ]
+limit_xy = get_limit_xy()
+
+
+
+
+# Posición de camara en donde esta el jugador
+print(size_display_edit, 'display edit')
+print(limit_xy, 'limit of map')
+print(player_spawn_xy, 'camera spawn')
+print( player_spawn_xy[0] - (size_display_edit[0]/2) )
+#input()
+def start_camera( pos_xy=[0,0], display_xy=[0,0], limit_xy=[0,0], difference_xy=[0,0] ) ->[int, int]:
+    xy = [0,0]
+    
+    # Posicionar camara, con el jugador a la der o izq, arriba o abajo
+    if (pos_xy[0] + difference_xy[0] + (display_xy[0]/2)) > limit_xy[0]:
+        # Jugador en la izq
+        xy[0] = pos_xy[0] -(display_xy[0]/2) +difference_xy[0]
+    else:
+        # Jugador en la der
+        xy[0] = pos_xy[0] +(display_xy[0]/2) -difference_xy[0]
+    
+    if (pos_xy[1] +difference_xy[1] + (display_xy[1]/2)) > limit_xy[1]:
+        # Jugador abajo
+        xy[1] = pos_xy[1] -(display_xy[1]/2) +difference_xy[1]
+    else:
+        # Jugador arriba
+        xy[1] = pos_xy[1] +(display_xy[1]/2) -difference_xy[1]
+    return xy
+camera_xy = start_camera(
+    pos_xy=player_spawn_xy, display_xy=size_display_edit, limit_xy=limit_xy,
+    #pos_xy=player_spawn_xy, display_xy=size_display_edit,
+    difference_xy=[data_CF.pixel_space*2, data_CF.pixel_space*3]
+)
+#camera_xy = [size_display_edit[0]/2,size_display_edit[1]/2]
 click_left = False
 click_right = False
 move_up = False
@@ -224,35 +425,27 @@ move_right = False
 
 
 
-# Camara | Limite del mapa
-def get_limit_xy():
-    limit_xy = [ [], [] ]
-    for sprite in grid_objects:
-        if sprite.type_object == '|':
-            limit_xy[0].append( sprite.rect.x )
-            limit_xy[1].append( sprite.rect.y )
-    return [ max(limit_xy[0]),  max(limit_xy[1]) ]
-limit_xy = get_limit_xy()
-print(limit_xy)
 
-
-
-# Función Scroll/Camara | Posicionar camara en donde esta el jugador
-def start_camera():
-    scroll_float = [0,0]
-    scroll_float[0] += (camera_xy[0] -scroll_float[0] -size_display_edit[0]/2)
-    scroll_float[1] += (camera_xy[1] -scroll_float[1] -size_display_edit[1]/2)
+# Función Scroll/Camara | Posicionar camara en donde esta la posición de camara
+def start_scroll( pos_xy=[0,0] ):
+    scroll_float[0] += (pos_xy[0] -size_display_edit[0]/2)
+    scroll_float[1] += (pos_xy[1] -size_display_edit[1]/2)
     
     return [int(scroll_float[0]), int(scroll_float[1])]
                         
-scroll_float = start_camera()
+scroll_float = start_scroll( camera_xy )
 scroll_int = [0,0]
 
+
+# Seleccion de objeto en el grid
+current_object_selected = None
 
 
 # Loop del juego
 exec_game = True
 while exec_game:
+    click_left = False
+    click_right = False
     # Eventos de juego
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -279,8 +472,6 @@ while exec_game:
                 if mouse_movement[0] > 0:
                     move_right = True
         if event.type == pygame.MOUSEBUTTONUP:
-            click_right = False
-            click_left = False
             move_up = False
             move_down = False
             move_left = False
@@ -332,13 +523,15 @@ while exec_game:
     
     # Movimienteo camara 
     # Detactar limites | Función para bloquear el movimiento de camara
+    '''
     print(limit_xy, 'limit of map')
     print(player_spawn_xy, 'camera spawn')
     print(camera_xy, 'camera')
     print(scroll_float, 'scroll')
+    '''
 
     for index in range(0, 2):
-        if camera_xy[index] + (size_display_edit[index]/2) > limit_xy[index]:
+        if camera_xy[index] + ((size_display_edit[index]/2)-data_CF.pixel_space) > limit_xy[index]:
             if moving_xy[index] > 0:
                 moving_xy[index] = 0
         elif camera_xy[index] < (size_display_edit[index]/2):
@@ -375,22 +568,66 @@ while exec_game:
     
     # Función | Mouse | Cuando se hace click a un objeto
     if click_left == True or click_right == True:
-        for obj in grid_objects:
-            # Calcular la posición relativa del objeto dentro de la vista previa
-            rel_pos_x = obj.rect.x - scroll_int[0]
-            rel_pos_y = obj.rect.y - scroll_int[1]
+        click_left = False
+        
+        # Detectar si se clickea una opcion
+        button_collide = False
+        button_text = None
+        for button in buttons:
+            if button.rect.collidepoint( 
+                mouse_pos[0],
+                mouse_pos[1]
+            ):
+                for text in dict_object.keys():
+                    if button.text == text:
+                        button_collide = True
+                        button_text = button.text
+                        print( button.text )
+        if button_collide == True:
+            # Establecer tipo de objeto
+            if not current_object_selected == None:
+                if isinstance(button_text, str):
+                    current_object_selected.type_object = dict_object[button_text]
+                    current_object_selected.update_type_object()
+            # Borrar                                
+            for button in buttons:
+                for text in dict_object.keys():
+                    if button.text == text:
+                        button.kill()
+                        if not button.background == None:
+                            button.background.kill()
+            
 
-            # Comprobar si el objeto está dentro de la vista previa (display_edit)
-            if (0 <= rel_pos_x < size_display_edit[0]) and (0 <= rel_pos_y < size_display_edit[1]):
-                if obj.rect.collidepoint(
-                    mouse_pos[0] - difference_display_edit[0] + scroll_int[0],
-                    mouse_pos[1] - difference_display_edit[1] + scroll_int[1]
-                ):
-                    # Si el objeto está en la vista y se hace clic, realizar la acción
-                    print(obj.rect.x, obj.rect.y)  # Posición en píxeles
-                    print(obj.type_object)
-                    obj.type_object = '.'
-                    obj.update_type_object()
+        # Detectar que se clickea un objeto_grid
+        if button_collide == False:
+            for obj in grid_objects:
+                # Calcular la posición relativa del objeto dentro de la vista previa
+                rel_pos_x = obj.rect.x - scroll_int[0]
+                rel_pos_y = obj.rect.y - scroll_int[1]
+
+                # Comprobar si el objeto está dentro de la vista previa (display_edit)
+                if (0 <= rel_pos_x < size_display_edit[0]) and (0 <= rel_pos_y < size_display_edit[1]):
+                    if obj.rect.collidepoint(
+                        mouse_pos[0] - difference_display_edit[0] + scroll_int[0],
+                        mouse_pos[1] - difference_display_edit[1] + scroll_int[1]
+                    ):
+                        # Si el objeto está en la vista y se hace clic, realizar la acción
+                        #print(obj.rect.x, obj.rect.y)  # Posición en píxeles
+                        #print(obj.type_object)
+                        #obj.type_object = '.'
+                        #obj.update_type_object()
+                        current_object_selected = obj
+                        
+                        number = 0
+                        for option in dict_object.keys():
+                            Button(
+                                font=font, text=option, use_lang=use_lang,
+                                color_text=color_text, color_background=color_background,
+                                position_xy=[mouse_pos[0], mouse_pos[1] +(data_CF.pixel_space*number)]
+                            )
+                            number+=1
+
+
     '''
     if click_left == True or click_right == True:
         for obj in grid_objects:
@@ -425,9 +662,34 @@ while exec_game:
             )
     
     
-    
     # Mostrar display edit
     display.blit( display_edit, (difference_display_edit[0], difference_display_edit[1]) )
+
+
+
+    # Sección de interfaz/hud
+    if click_left == False:
+        for sprite in buttons:
+            for x in buttons:
+                if not sprite == x:
+                    if sprite.rect.x == x.rect.x and sprite.rect.y == x.rect.y:
+                        print('borrar')
+                        x.kill()
+                        if not x.background == None:
+                            x.background.kill()
+                    elif sprite.text == x.text:
+                        print('borrar')
+                        x.kill()
+                        if not x.background == None:
+                            x.background.kill()
+    
+    for sprite in interface_background:
+        display.blit( sprite.surf, sprite.rect )
+    
+    for sprite in buttons:
+        display.blit( sprite.surf, sprite.rect )
+
+
     
     # Fin
     pygame.display.update()
