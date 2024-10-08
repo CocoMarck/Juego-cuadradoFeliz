@@ -89,7 +89,8 @@ class Button(pygame.sprite.Sprite):
         buttons.add( self )
 
 font_str='monospace'
-font=pygame.font.SysFont(font_str, data_CF.pixel_space)
+font_size = int(data_CF.pixel_space*0.75)
+font=pygame.font.SysFont(font_str, font_size)
 color_background=generic_colors('white')
 color_text=generic_colors('black')
 use_lang=False
@@ -98,7 +99,7 @@ for index in range(0, len(list_option)) :
     Button(
         font=font, text=list_option[index], use_lang=use_lang,
         color_text=color_text, color_background=color_background,
-        position_xy=[data_CF.pixel_space, data_CF.pixel_space*(index+1)]
+        position_xy=[data_CF.pixel_space, font_size*(index+1)]
     )
         
 
@@ -106,16 +107,66 @@ for index in range(0, len(list_option)) :
 # Tipos de objetos
 dict_object = {
     'space': '.',
-    'player': 'j',
     'limit': '|',
+    'player': 'j',
+
     'stone': 'p',
     'stone-big': 'P',
+    'coin': 's',
+
     'spike': '^',
     'spike-big': 'A',
+    'spike-anim': '\\',
+    'spike-instakill': '!',
+
     'star-pointed': 'Y',
-    'ladder': 'H',
-    'trampoline': '_'
+    'star-pointed-anim': '*',
+    'star-pointed-instakill': 'X',
+
+    'ladder-y': 'H',
+    'trampoline': '_',
+
+    'ladder-x-right': '+',
+    'ladder-x-left': '-',
+
+    'elevator-y': 'x',
+    'elevator-x': 'y',
+
+    'level-change': '0',
+    'end-game': 'F'
 }
+'''
+'.': [None, None], 
+'#': [None, None],
+'|': ['limit', None],
+
+'j': ['icon', None],
+
+'p': ['stone', None],
+'P': ['stone', 2 ],
+'+': ['stone', None ],
+'-': ['stone', None ],
+
+'H': ['ladder', None ],
+'_': ['trampoline', None ],
+
+'^': ['spike', None],
+'A': ['spike', 2 ],
+'!': ['spike', None],
+'\\': ['spike', None ],
+
+'*': ['star-pointed', None],
+'Y': ['star-pointed', None],
+'X': ['star-pointed', None ],
+
+'x': ['elevator', None],
+'y': ['elevator', None],
+
+'s': ['coin', None],
+
+'0': ['level_change', None],
+'F': ['level_change', None],
+'''
 
 
 
@@ -164,6 +215,8 @@ class object_grid( pygame.sprite.Sprite ):
         layer_all_sprites.add(square, layer=layer)
 
         # Establecer imagen con size personalizado
+        self.image = pygame.sprite.Sprite()
+        '''
         if image is None:
             self.image = None
 
@@ -177,6 +230,7 @@ class object_grid( pygame.sprite.Sprite ):
             
             self.image.rect = self.image.surf.get_rect( topleft=position )
             layer_all_sprites.add(self.image, layer=0)
+        '''
 
         # Superficie/collider que sera para los clicks
         self.surf = pygame.Surface( (data_CF.pixel_space, data_CF.pixel_space), pygame.SRCALPHA )
@@ -193,7 +247,7 @@ class object_grid( pygame.sprite.Sprite ):
         )
         self.xy_spawn = [ (self.rect.y) //data_CF.pixel_space,  (self.rect.x) //data_CF.pixel_space ]
         
-        #self.update_type_object()
+        self.update_type_object()
         
     def update_type_object(self):
         # Establecer superficie de colision
@@ -219,24 +273,48 @@ class object_grid( pygame.sprite.Sprite ):
                 image = 'limit'
             elif self.type_object == 'p' or self.type_object == 'P':
                 image = 'stone'
-            elif self.type_object == '^' or self.type_object == 'A':
+
+            elif (
+                self.type_object == '^' or self.type_object == 'A' or
+                self.type_object == '\\' or self.type_object == '!'
+            ):
                 image = 'spike'
             elif self.type_object == 'Y' or self.type_object == 'X' or self.type_object == '*':
                 image = 'star-pointed'
+
             elif self.type_object == 's':
                 image = 'coin'
                 
             elif self.type_object == '_':
                 image = 'trampoline'
+
             elif self.type_object == 'H':
                 image = 'ladder'
+            elif self.type_object == 'x' or self.type_object == 'y':
+                image = 'elevator'
+
+            elif self.type_object == '0' or self.type_object == 'F':
+                image = 'level_change'
 
             # Cambiar tamaño y pos
             if self.type_object == 'P' or self.type_object == 'A':
                 multipler_size_xy = [2,2]
+                
+            elif self.type_object == '\\':
+                multipler_size_xy[1] = 4
+                position_reduction_xy[1] = self.rect.width*(multipler_size_xy[1]-1)
+
             elif self.type_object == '*':
                 multipler_size_xy = [5,3]
                 position_reduction_xy[1] = self.rect.height *(multipler_size_xy[1]-1)
+            elif (
+                self.type_object == '+' or self.type_object == '-' or
+                self.type_object == 'x' or self.type_object == 'y'
+            ):
+                multipler_size_xy[0] = 2
+                if self.type_object == '-':
+                    position_reduction_xy[0] = self.rect.width
+                
 
             # Establecer objeto tipo sprite para la previsualización
             self.image = pygame.sprite.Sprite()
@@ -319,11 +397,17 @@ for line in current_map.list_map:
             '0': ['level_change', None],
             'F': ['level_change', None],
         }
-        for preset in dict_preset.keys():
+        for key in dict_object.keys():
+            preset = dict_object[key]
             if character == preset:
                 # Agregar espacio y cuadrito
                 xy[0] += 1
                 
+                object_grid( position=position )
+                if preset == 'j':
+                    player_spawn_xy[0] = position[0]
+                    player_spawn_xy[1] = position[1]
+                '''
                 # Agregar imagen si es que tiene
                 if type(dict_preset[preset][0]) == str:
                     if dict_preset[preset][1] is None:
@@ -352,6 +436,13 @@ for line in current_map.list_map:
                         )
                 else:
                     object_grid( position=position )
+                '''
+        if character == '#':
+            # Agregar espacio y cuadrito
+            xy[0] += 1
+            
+            object_grid( position=position )
+
 
 
 
@@ -623,7 +714,7 @@ while exec_game:
                             Button(
                                 font=font, text=option, use_lang=use_lang,
                                 color_text=color_text, color_background=color_background,
-                                position_xy=[mouse_pos[0], mouse_pos[1] +(data_CF.pixel_space*number)]
+                                position_xy=[mouse_pos[0], mouse_pos[1] +(font_size*number)]
                             )
                             number+=1
 
@@ -666,9 +757,35 @@ while exec_game:
     display.blit( display_edit, (difference_display_edit[0], difference_display_edit[1]) )
 
 
+    
+    # Detectar dimencion x.
+    size_buttons_xy = [0,0]
+    pos_x = []
+    pos_y = []
+    aditional = 0
+    for button in buttons:
+        if button.text in dict_object.keys():
+            size_buttons_xy[0] = button.rect.width
+            size_buttons_xy[1] += button.rect.height
+            aditional = button.rect.height
+            pos_x.append(button.rect.x)
+            pos_y.append(button.rect.y)
+
+    #print(size_buttons_xy)
+    if not (pos_x == [] or pos_y == []):
+        #print( max(pos_x), max(pos_y)+aditional )
+        #print( min(pos_x), min(pos_y) )
+        if max(pos_y)+aditional >= data_CF.disp[1]:
+            #print( max(pos_y)+aditional )
+            #print( ( max(pos_y)+aditional ) -data_CF.disp[1] )
+            for button in buttons:
+                if button.text in dict_object.keys():
+                    button.rect.y -= ( max(pos_y)+aditional ) -data_CF.disp[1]
+                    button.background.rect.y -= ( max(pos_y)+aditional ) -data_CF.disp[1]
 
     # Sección de interfaz/hud
     if click_left == False:
+        # Borrar botones repetidos
         for sprite in buttons:
             for x in buttons:
                 if not sprite == x:
