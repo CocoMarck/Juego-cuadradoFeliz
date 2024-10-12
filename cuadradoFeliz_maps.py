@@ -108,6 +108,7 @@ for index in range(0, len(list_option)) :
 dict_object = {
     'space': '.',
     'limit': '|',
+
     'player': 'j',
 
     'stone': 'p',
@@ -135,6 +136,10 @@ dict_object = {
     'level-change': '0',
     'end-game': 'F'
 }
+prefix_object = ''
+for key in dict_object.keys():
+    prefix_object += dict_object[key]
+print( f'"{prefix_object}"')
 '''
 '.': [None, None], 
 '#': [None, None],
@@ -338,10 +343,46 @@ class object_grid( pygame.sprite.Sprite ):
 
 
 
+# Funcion para crear un mapa default
+def save_map( size_xy=[int,int], with_limit=True ):
+    text = ''
+    if isinstance( size_xy[0], int) and isinstance( size_xy[1], int):
+        if size_xy[1] >= 4 and size_xy[0] >= 4:
+            for line in range(0, size_xy[1]):
+                for number in range(0, size_xy[0]):
+                    obj = 'space'
+                    if with_limit == True:
+                        if line == 0 or line == size_xy[1]-1:
+                            if number == 0 or number == size_xy[0]-1:
+                                obj = 'limit'
+                    if line == 1:
+                        if number == 1:
+                            obj = 'player'
 
-# Generador de cuadritos para hacer el mapa
+                    text += dict_object[obj]
+                text += '\n'
+
+            text_to_save = os.path.join(dir_maps, 'custom', 'cf_map_custumTumTum.txt')
+            if not os.path.isfile(text_to_save):
+                with open(
+                    text_to_save, 
+                    'w', encoding="utf-8"
+                ) as text_file:
+                    text_file.write(text)
+            data_CF.current_level=text_to_save
+            save_CF( data_CF )
+
+            return text
+        else:
+            print( 'ERROR: The game min-size is 4x4')
+    else:
+        print( 'ERROR: Only int values' )
+print( save_map( [60, 34] ) )
+    
 
 
+
+# Generador de cuadritos para hacer el mapa / Renderizado del mapa
 current_map = Map
 read_Map( current_map, level=data_CF.current_level )
 #read_Map( current_map, level='./resources/maps/cf_map_default.txt' )
@@ -466,13 +507,25 @@ scroll_float = [0,0]
 
 # Función | Limite del mapa y de camara | Camara
 def get_limit_xy():
+    '''
+    Limite del mapa
+    '''
+    '''
     limit_xy = [ [], [] ]
     for sprite in grid_objects:
         if sprite.type_object == '|':
             limit_xy[0].append( sprite.rect.x )
             limit_xy[1].append( sprite.rect.y )
     return [ max(limit_xy[0]),  max(limit_xy[1]) ]
+    '''
+    pos_x = []
+    pos_y = []
+    for sprite in grid_objects:
+        pos_x.append(sprite.rect.x)
+        pos_y.append(sprite.rect.y)
+    return [ max(pos_x), max(pos_y)]
 limit_xy = get_limit_xy()
+#input(get_limit_xy())
 
 
 
@@ -537,6 +590,7 @@ exec_game = True
 while exec_game:
     click_left = False
     click_right = False
+    set_object_prefix = None
     # Eventos de juego
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -570,6 +624,13 @@ while exec_game:
                     
 
         if event.type == pygame.KEYDOWN:
+            # Detectar letra actual precionada
+            letter = event.unicode
+            if letter in prefix_object:
+                #print( letter )
+                set_object_prefix = letter
+        
+            # Mover camara/scroll
             if event.key == player_key['up']:
                 move_up = True
             if event.key == player_key['down']:
@@ -579,7 +640,12 @@ while exec_game:
                 move_left = True
             if event.key == player_key['right']:
                 move_right = True    
+
         if event.type == pygame.KEYUP:
+            # Detectar letra actual precionada
+            set_object_prefix = None
+        
+            # Mover camara/scroll
             if event.key == player_key['up']:
                 move_up = False
             if event.key == player_key['down']:
@@ -662,7 +728,8 @@ while exec_game:
         click_left = False
         
         # Detectar si se clickea una opcion
-        button_collide = False
+        button_change_object = False
+        button_change_map = False
         button_text = None
         for button in buttons:
             if button.rect.collidepoint( 
@@ -671,10 +738,17 @@ while exec_game:
             ):
                 for text in dict_object.keys():
                     if button.text == text:
-                        button_collide = True
+                        button_change_object = True
                         button_text = button.text
                         print( button.text )
-        if button_collide == True:
+                if button_text == None:
+                    button_change_map = True
+                    button_text = button.text
+                    print( button.text )
+                    if button.text == 'save':
+                        with open( data_CF.current_level, 'w', encoding='utf-8') as file_text:
+                            file_text.write( return_map( current_map ) )
+        if button_change_object == True:
             # Establecer tipo de objeto
             if not current_object_selected == None:
                 if isinstance(button_text, str):
@@ -690,7 +764,7 @@ while exec_game:
             
 
         # Detectar que se clickea un objeto_grid
-        if button_collide == False:
+        if button_change_object == False:
             for obj in grid_objects:
                 # Calcular la posición relativa del objeto dentro de la vista previa
                 rel_pos_x = obj.rect.x - scroll_int[0]
@@ -717,6 +791,20 @@ while exec_game:
                                 position_xy=[mouse_pos[0], mouse_pos[1] +(font_size*number)]
                             )
                             number+=1
+                            
+    
+    # Funcion cambiar objeto con teclado
+    if not current_object_selected == None:
+        if not set_object_prefix == None:
+            if not set_object_prefix.replace(' ', '') == '':
+                #print(set_object_prefix)
+                for button in buttons:
+                    if button.text in dict_object.keys():
+                        button.kill()
+                        button.background.kill()
+                current_object_selected.type_object = set_object_prefix
+                current_object_selected.update_type_object()
+                current_object_selected = None
 
 
     '''
