@@ -1,5 +1,6 @@
 from entities import CF, Map
 from data.CF_info import *
+from data.CF_data import (save_Map, dict_object, prefix_object, return_map, dict_climate)
 from logic.pygame.Modulo_pygame import *
 from logic.pygame.CF_function import *
 import pygame, os, random
@@ -88,90 +89,38 @@ class Button(pygame.sprite.Sprite):
         # Rectangulo y agregar a los sprites
         buttons.add( self )
 
+
 font_str='monospace'
 font_size = int(data_CF.pixel_space*0.75)
 font=pygame.font.SysFont(font_str, font_size)
 color_background=generic_colors('white')
 color_text=generic_colors('black')
 use_lang=False
-list_option = ['load', 'save', 'save-as']
+
+list_option = ['message', 'save', 'play']
+posx = data_CF.disp[0]//(len(list_option)+1)
 for index in range(0, len(list_option)) :
     Button(
         font=font, text=list_option[index], use_lang=use_lang,
         color_text=color_text, color_background=color_background,
-        position_xy=[data_CF.pixel_space, font_size*(index+1)]
+        position_xy=[ posx*(index+1), data_CF.pixel_space ]
     )
-        
+    print( posx*(index+1) )
+
+
+posx = data_CF.disp[0]//(len(dict_climate.keys())+1)
+posy = data_CF.disp[1] -data_CF.pixel_space*2
+for index in range(0, len(dict_climate.keys()) ):
+    Button(
+        font=font, text=list(dict_climate.keys())[index], use_lang=use_lang,
+        color_text=color_text, color_background=color_background,
+        position_xy=[ posx*(index+1), posy ]
+    )
+    
 
 
 # Tipos de objetos
-dict_object = {
-    'space': '.',
-    'limit': '|',
-
-    'player': 'j',
-
-    'stone': 'p',
-    'stone-big': 'P',
-    'coin': 's',
-
-    'spike': '^',
-    'spike-big': 'A',
-    'spike-anim': '\\',
-    'spike-instakill': '!',
-
-    'star-pointed': 'Y',
-    'star-pointed-anim': '*',
-    'star-pointed-instakill': 'X',
-
-    'ladder-y': 'H',
-    'trampoline': '_',
-
-    'ladder-x-right': '+',
-    'ladder-x-left': '-',
-
-    'elevator-y': 'x',
-    'elevator-x': 'y',
-
-    'level-change': '0',
-    'end-game': 'F'
-}
-prefix_object = ''
-for key in dict_object.keys():
-    prefix_object += dict_object[key]
 print( f'"{prefix_object}"')
-'''
-'.': [None, None], 
-'#': [None, None],
-'|': ['limit', None],
-
-'j': ['icon', None],
-
-'p': ['stone', None],
-'P': ['stone', 2 ],
-'+': ['stone', None ],
-'-': ['stone', None ],
-
-'H': ['ladder', None ],
-'_': ['trampoline', None ],
-
-'^': ['spike', None],
-'A': ['spike', 2 ],
-'!': ['spike', None],
-'\\': ['spike', None ],
-
-'*': ['star-pointed', None],
-'Y': ['star-pointed', None],
-'X': ['star-pointed', None ],
-
-'x': ['elevator', None],
-'y': ['elevator', None],
-
-'s': ['coin', None],
-
-'0': ['level_change', None],
-'F': ['level_change', None],
-'''
 
 
 
@@ -344,7 +293,9 @@ class object_grid( pygame.sprite.Sprite ):
 
 
 # Funcion para crear un mapa default
-def save_map( size_xy=[int,int], with_limit=True ):
+def generate_map( size_xy=[int,int], with_limit=True, path='custom', name='custumTumTum' ):
+    preset_type = 'cf_map_'
+    preset_file = '.txt'
     text = ''
     if isinstance( size_xy[0], int) and isinstance( size_xy[1], int):
         if size_xy[1] >= 4 and size_xy[0] >= 4:
@@ -361,9 +312,15 @@ def save_map( size_xy=[int,int], with_limit=True ):
 
                     text += dict_object[obj]
                 text += '\n'
+            text += (
+                f'$${path}:{name}\n'+
+                f'$$default\n'+
+                f'$$'
+            )
 
-            text_to_save = os.path.join(dir_maps, 'custom', 'cf_map_custumTumTum.txt')
+            text_to_save = os.path.join(dir_maps, path, f'{preset_type}{name}{preset_file}')
             if not os.path.isfile(text_to_save):
+            #if True == True:
                 with open(
                     text_to_save, 
                     'w', encoding="utf-8"
@@ -377,7 +334,7 @@ def save_map( size_xy=[int,int], with_limit=True ):
             print( 'ERROR: The game min-size is 4x4')
     else:
         print( 'ERROR: Only int values' )
-print( save_map( [60, 34] ) )
+print( generate_map( [60, 34] ) )
     
 
 
@@ -385,6 +342,10 @@ print( save_map( [60, 34] ) )
 # Generador de cuadritos para hacer el mapa / Renderizado del mapa
 current_map = Map
 read_Map( current_map, level=data_CF.current_level )
+print( 
+    current_map.path, current_map.next_level, 
+    current_map.climate, current_map.message_start
+)
 #read_Map( current_map, level='./resources/maps/cf_map_default.txt' )
 #read_Map( current_map, level='./resources/maps/cf_map.txt' )
 
@@ -406,38 +367,6 @@ for line in current_map.list_map:
         "p" = Floor
         ""
         '''
-        dict_preset = {
-            '.': [None, None], 
-            '#': [None, None],
-            '|': ['limit', None],
-
-            'j': ['icon', None],
-
-            'p': ['stone', None],
-            'P': ['stone', 2 ],
-            '+': ['stone', None ],
-            '-': ['stone', None ],
-
-            'H': ['ladder', None ],
-            '_': ['trampoline', None ],
-
-            '^': ['spike', None],
-            'A': ['spike', 2 ],
-            '!': ['spike', None],
-            '\\': ['spike', None ],
-
-            '*': ['star-pointed', None],
-            'Y': ['star-pointed', None],
-            'X': ['star-pointed', None ],
-
-            'x': ['elevator', None],
-            'y': ['elevator', None],
-
-            's': ['coin', None],
-
-            '0': ['level_change', None],
-            'F': ['level_change', None],
-        }
         for key in dict_object.keys():
             preset = dict_object[key]
             if character == preset:
@@ -448,53 +377,24 @@ for line in current_map.list_map:
                 if preset == 'j':
                     player_spawn_xy[0] = position[0]
                     player_spawn_xy[1] = position[1]
-                '''
-                # Agregar imagen si es que tiene
-                if type(dict_preset[preset][0]) == str:
-                    if dict_preset[preset][1] is None:
-                        # Establecer objeto tipo imagen
-                        size = [data_CF.pixel_space, data_CF.pixel_space]
-                        object_grid(
-                            position=position, size=size, image=dict_preset[preset][0] 
-                        )
-
-                        # Establecer coordenadas xy spawn de jugador
-                        if dict_preset[preset][0] == 'icon':
-                            if player_spawn_xy[0] == 0:
-                                player_spawn_xy[0] = position[0]
-                            if player_spawn_xy[1] == 0:
-                                player_spawn_xy[1] = position[1]
-                    else:
-                        # Establecer nuevo tamaño
-                        size = [
-                            data_CF.pixel_space*dict_preset[preset][1], 
-                            data_CF.pixel_space*dict_preset[preset][1]
-                        ]   
-                            
-                        # Establecer objeto
-                        object_grid(
-                            position=position, size=size, image=dict_preset[preset][0]
-                        )
-                else:
-                    object_grid( position=position )
-                '''
+        '''
         if character == '#':
             # Agregar espacio y cuadrito
             xy[0] += 1
             
             object_grid( position=position )
+        '''
 
 
 
-
-
-def return_map( Map ):
-    save_this_text = ''
-    for line in Map.list_map:
-        for char in line:
-            save_this_text += char
-        save_this_text += '\n'
-    return save_this_text[:-1]
+# Clima
+def get_climate( Map ):
+    if Map.climate in dict_climate.keys():
+        return dict_climate[Map.climate]
+    else:
+        return dict_climate['default']
+    #return generic_colors('green')
+climate_color = get_climate( current_map )
 
 
 
@@ -661,7 +561,7 @@ while exec_game:
     
     # Limpiar pantalla (agregar esta línea)
     display.fill( generic_colors('black') )
-    display_edit.fill( generic_colors('green') )
+    display_edit.fill( climate_color )
     
     
     
@@ -746,8 +646,12 @@ while exec_game:
                     button_text = button.text
                     print( button.text )
                     if button.text == 'save':
-                        with open( data_CF.current_level, 'w', encoding='utf-8') as file_text:
-                            file_text.write( return_map( current_map ) )
+                        save_Map( current_map, data_CF.current_level )
+                    else:
+                        if button.text in dict_climate.keys():
+                            current_map.climate = button.text
+                            climate_color = get_climate( current_map )
+                                
         if button_change_object == True:
             # Establecer tipo de objeto
             if not current_object_selected == None:
