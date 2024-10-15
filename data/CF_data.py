@@ -8,9 +8,7 @@ from logic.Modulo_Files import(
 )
 from logic.Modulo_Text import(
     Text_Read,
-    Ignore_Comment,
-    Text_Separe,
-    Only_Comment
+    Ignore_Comment, Text_Separe, Only_Comment, ignore_text_filter
 )
 from data.Modulo_Language import get_text
 from entities import CF, Map
@@ -493,6 +491,49 @@ def save_CF( CF ) -> bool:
 
 
 
+# Tipos de objetos
+dict_object = {
+    'space': '.',
+    'space-alternative': '#',
+    'limit': '|',
+
+    'player': 'j',
+
+    'stone': 'p',
+    'stone-big': 'P',
+    'coin': 's',
+
+    'spike': '^',
+    'spike-big': 'A',
+    'spike-anim': '\\',
+    'spike-instakill': '!',
+
+    'star-pointed': 'Y',
+    'star-pointed-anim': '*',
+    'star-pointed-instakill': 'X',
+
+    'ladder-y': 'H',
+    'trampoline': '_',
+
+    'ladder-x-right': '+',
+    'ladder-x-left': '-',
+
+    'elevator-y': 'x',
+    'elevator-x': 'y',
+
+    'level-change': '0',
+    'end-game': 'F'
+}
+prefix_object = ''
+for key in dict_object.keys():
+    prefix_object += dict_object[key]
+dict_climate = {
+    'default': [108,150,255],
+    'rain': [155,168,187],
+    'sunny': [240,202,134],
+    'alien': [68,38,136],
+    'black': [47,47,47]
+}
 def read_Map( Map, level=str ) -> bool:
     '''Leer el archivo map y establecer sus parametros'''
     # Leer archivo
@@ -524,13 +565,56 @@ def read_Map( Map, level=str ) -> bool:
         Map.climate = info[1]
     
     if number_info >= 3:
-        Map.message_start = info[2]
+        if not info[2].replace( ' ', '') == '':
+            Map.message_start = info[2]
     
     
     # Obtener información del mapa
     map_level = Ignore_Comment(text=text_level, comment='//')
-    map_level = Ignore_Comment(text=text_level, comment='$$')
+    map_level = Ignore_Comment(text=map_level, comment='$$')
     
-    Map.list_map = map_level.split('\n')
-    for index in range( 0, len(Map.list_map) ):
-        Map.list_map[index] = list(Map.list_map[index])
+    Map.list_map = []
+    for line in map_level.split('\n'):
+        text = ignore_text_filter( line, prefix_object )
+        if not text == None:
+            Map.list_map.append( list(text) )
+
+
+def return_map( Map ):
+    save_this_text = ''
+    for line in Map.list_map:
+        for char in line:
+            save_this_text += char
+        save_this_text += '\n'
+    return save_this_text[:-1]
+    
+def save_Map( Map, file=None ):
+    with open( file, 'w', encoding='utf-8') as file_text:
+        text = return_map( Map )
+
+        text += '\n'
+        preset = '$$'
+
+        # Path y level
+        if isinstance(Map.path, str):
+            text += f'{preset}{Map.path}:'
+            if isinstance(Map.next_level, str):
+                text += f'{Map.next_level}'
+            text += '\n'
+        else:
+            text +=  f'{preset}\n'
+        
+        # Clima
+        if isinstance(Map.climate, str):
+            text += f'{preset}{Map.climate}\n'
+        else:
+            text += f'{preset}\n'
+            
+        # Mensaje
+        if isinstance(Map.message_start, str):
+            text += f'$${Map.message_start}'
+        else:
+            text += f'{preset}'
+        
+        # Escribir datos / guardar mapa
+        file_text.write( text )
