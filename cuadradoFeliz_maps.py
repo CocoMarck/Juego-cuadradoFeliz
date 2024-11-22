@@ -216,6 +216,7 @@ class object_grid( pygame.sprite.Sprite ):
         if not (self.type_object == '.' or self.type_object == '#'):
             # Parametros necesarios
             image = 'stone'
+            color = None
             multipler_size_xy = [1,1]
             position_reduction_xy = [0,0]
             frame_number = 0
@@ -248,7 +249,21 @@ class object_grid( pygame.sprite.Sprite ):
                 image = 'elevator'
 
             elif self.type_object == '0' or self.type_object == 'F':
-                image = 'level_change'
+                image = 'level_change'            
+            
+            # Establecer color
+            if (
+                self.type_object == '!' or self.type_object == '\\' or 
+                self.type_object == '*' or self.type_object == 'X'
+            ):
+                color = [71, 0, 0]
+            elif (
+                self.type_object == '^' or self.type_object == 'A' or 
+                self.type_object == 'Y'
+            ):
+                color = [0, 0, 71]
+            elif self.type_object == 'F':
+                color = [0, 47, 0]
 
             # Cambiar tamaño y pos
             if self.type_object == 'P' or self.type_object == 'A':
@@ -282,6 +297,9 @@ class object_grid( pygame.sprite.Sprite ):
                     image=image, number=frame_number,
                     size=[self.rect.width*multipler_size_xy[0], self.rect.height*multipler_size_xy[1]]
                 )
+                # Establecer color
+                if not color == None:
+                    self.image.surf.fill( color, special_flags=pygame.BLEND_ADD )
             self.image.rect = self.image.surf.get_rect( 
                 topleft=(self.rect.x -position_reduction_xy[0], self.rect.y -position_reduction_xy[1]) 
             )
@@ -326,22 +344,26 @@ def generate_map( size_xy=[int,int], with_limit=True, path='custom', name='custu
                     'w', encoding="utf-8"
                 ) as text_file:
                     text_file.write(text)
-            data_CF.current_level=text_to_save
-            save_CF( data_CF )
+            #data_CF.current_level=text_to_save
+            #save_CF( data_CF )
+            print(text)
 
-            return text
+            return text_to_save
         else:
             print( 'ERROR: The game min-size is 4x4')
+            return data_CF.current_level
     else:
         print( 'ERROR: Only int values' )
-print( generate_map( [60, 34] ) )
+        return data_CF.current_level
+file_current_map = generate_map( [60, 34] )
+print( file_current_map )
     
 
 
 
 # Generador de cuadritos para hacer el mapa / Renderizado del mapa
 current_map = Map
-read_Map( current_map, level=data_CF.current_level )
+read_Map( current_map, level=file_current_map )
 print( 
     current_map.path, current_map.next_level, 
     current_map.climate, current_map.message_start
@@ -486,6 +508,7 @@ current_object_selected = None
 
 
 # Loop del juego
+run_game = False
 exec_game = True
 while exec_game:
     click_left = False
@@ -555,6 +578,10 @@ while exec_game:
                 move_left = False
             if event.key == player_key['right']:
                 move_right = False
+    
+    # Ejecutar juego
+    if run_game == True:
+        exec_game = False
     
     
     
@@ -647,6 +674,8 @@ while exec_game:
                     print( button.text )
                     if button.text == 'save':
                         save_Map( current_map, data_CF.current_level )
+                    elif button.text == 'play':
+                        run_game = True
                     else:
                         if button.text in dict_climate.keys():
                             current_map.climate = button.text
@@ -803,6 +832,10 @@ while exec_game:
     # Fin
     pygame.display.update()
     clock.tick( data_CF.fps )
+if run_game == True:
+    data_CF.current_level = file_current_map
+    save_CF( data_CF )
+    import cuadradoFeliz
 pygame.quit()
 
 print( return_map( current_map ) )
