@@ -563,3 +563,18 @@ def obj_detect_collision(obj_main, obj_collide):
         collision_direction = 'collide_right'
     
     return collision_direction
+
+
+
+
+# Funciones multiplos
+def calculate_multiplier( number_start=1, number_fin=24 ):
+    '''
+    Obtener el multiplicador por el cual un numero llega a otro.
+
+    Operación muy sencilla, dividir el numero desado por llegar por el numero de incio.
+    '''
+    if number_start == 0:
+        raise ValueError('number_start no puede ser cero')
+
+    return number_fin / number_start

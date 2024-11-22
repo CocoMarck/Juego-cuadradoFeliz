@@ -5,12 +5,14 @@ from data.CF_info import *
 from data.CF_data import *
 from logic.Modulo_Text import *
 from logic.pygame.Modulo_pygame import *
+from logic.Modulo_Files import *
 import pygame, os, random
 
 
 
 
 # Sonidos
+sound_type = '.ogg'
 all_sounds = {
     'steps':
     [
@@ -39,13 +41,25 @@ all_sounds = {
         pygame.mixer.Sound( os.path.join(dir_audio, 'effects/items/score-3.ogg' ) )
     ]
 }
+# Sonido | Establecer Volumen
 for key in all_sounds.keys():
     sound_or_sounds = all_sounds[key]
-    if type( sound_or_sounds ) == list:
+    if isinstance( sound_or_sounds, list):
         for sound in sound_or_sounds:
             sound.set_volume( data_CF.volume )
     else:
         sound_or_sounds.set_volume( data_CF.volume )
+        
+        
+# Sonido | Musica
+all_music = {}
+dir_music = os.path.join(dir_audio, 'music/')
+for music in Files_List( files=f'*{sound_type}', path=dir_music ):
+    name = music.replace(dir_music, '').replace(sound_type, '')
+    all_music.update( {name: music} )
+for key in all_music.keys():
+    print(key)
+    print(all_music[key])
 
 
 
@@ -126,7 +140,7 @@ all_images = {
     ( os.path.join(dir_sprites, 'spikes/spike.png')),
     
     'star-pointed':
-    ['anim', ( os.path.join(dir_sprites, 'spikes/star-pointed.png') ) ],
+    ( os.path.join(dir_sprites, 'spikes/star-pointed.png') ),
     
     'rain':
     ( os.path.join(dir_sprites, 'climate/rain.png' ) ),
@@ -134,55 +148,83 @@ all_images = {
     'coin':
     ( os.path.join(dir_sprites, 'items/coin.png') ),
     
-    'clouds':
-    [
-        ( os.path.join(dir_sprites, f'climate/clouds/cloud-1.png') ),
-        ( os.path.join(dir_sprites, f'climate/clouds/cloud-2.png') ),
-        ( os.path.join(dir_sprites, f'climate/clouds/cloud-3.png') )
-    ],
+
+    'cloud-1':
+    ( os.path.join(dir_sprites, f'climate/clouds/cloud-1.png') ),
     
+    'cloud-2':
+    ( os.path.join(dir_sprites, f'climate/clouds/cloud-2.png') ),
+    
+    'cloud-3':
+    ( os.path.join(dir_sprites, f'climate/clouds/cloud-3.png') ),
+    
+
     'player_not-move':
-    ['anim', ( os.path.join(dir_sprites, 'player/player_not-move.png') ) ],
+    ( os.path.join(dir_sprites, 'player/player_not-move.png') ) ,
     
     'player_move':
-    ['anim', ( os.path.join(dir_sprites, 'player/player_move.png') ) ],
+    ( os.path.join(dir_sprites, 'player/player_move.png') ) ,
 }
 
 
 
 
-def get_image( image=str, number=int, size=[int, int] ):
+def get_image( 
+    image=str, number=int, size=[int, int], color=[int,int,int], transparency=int, 
+    return_method='auto', flip_x=False, flip_y=False, colored_method='normal', 
+    ):
     go = False
     for key in all_images.keys():
         if key == image:
             go = True
 
     if go == True:
-        image = all_images[image]
+        image = pygame.image.load( all_images[image] ).convert_alpha()
+        if flip_x == True or flip_y == True:
+            image = pygame.transform.flip(image, flip_x, flip_y)
+        
+        list_mode = False
+        if return_method == 'auto':
+            rect = image.get_rect()
+            if rect.width != rect.height:
+                list_mode = True
+        elif return_method == 'anim':
+            list_mode = True
+        
+        # Cambiar color o no
+        if isinstance(color, list) or isinstance(color, tuple):
+            if len(color) == 3:
+                good_values = True
+                for value in color:
+                    if isinstance(value, int):
+                        if not value >= 0 and value <= 255:
+                            good_values = False
+                    else:
+                        good_values = False
+            if good_values == True:
+                if colored_method == 'surface':
+                    colorImage = pygame.Surface( image.get_size()).convert_alpha()
+                    colorImage.fill( color )
+                    image.blit(colorImage, (0,0), special_flags = pygame.BLEND_MULT)
+                else:
+                    image.fill( color, special_flags=pygame.BLEND_ADD)
+        
+        # Cambiar transparencia o no
+        if isinstance(transparency, int):
+            if transparency <= 255 or transparency >= 0:
+                image.set_alpha( transparency )
         
         # Reescalar o no
         resize = False
-        if type(size) == list:
+        if type(size) == list or type(size) == tuple:
             if len(size) == 2:
                 if type(size[0]) == int and type(size[1]) == int:
                     resize = True
         
         # Si la imagen es una animacion o no
-        list_mode = False
-        if type(image) == list:
-            list_mode = True
+        if list_mode == True:
             # Cargar imagenes
-            if image[0] == 'anim':
-                image = Anim_sprite_set( sprite_sheet=pygame.image.load( image[1] ).convert_alpha() )
-            else:
-                list_images = []
-                for frame in range(0, len(image) ):
-                    list_images.append( pygame.image.load( image[frame] ).convert_alpha() )
-                image = list_images
-
-        else:
-            # Cargar imagen
-            image = pygame.image.load( image )
+            image = Anim_sprite_set( sprite_sheet=image )
 
         
         # Redimensionar imagenes, dependiendo si es animacion o imagen
@@ -198,10 +240,11 @@ def get_image( image=str, number=int, size=[int, int] ):
                 
         # Etablecer frame o no
         if list_mode == True:
-            if number <= len(image)-1 and number >= 0:
-                image = image[number]
-            else:
-                image = rendom.choice( image )
+            if isinstance( number, int):
+                if number <= len(image)-1 and number >= 0:
+                    image = image[number]
+                else:
+                    image = random.choice( image )
         
         
         # Devolver imagen o lista de imagenes/animacion
@@ -325,3 +368,117 @@ def detect_camera_limit(
     
     # Devolver el mover el scroll en x o en y.
     return not_scroll_xy
+
+
+
+
+
+def get_coordinate_multipler( multipler=int, pixel_space=int, position=[int,int] ):
+    new_size = (pixel_space*multipler, pixel_space*multipler )
+    aditional_pos = ( (pixel_space*multipler)-( (pixel_space*multipler) /2) )-pixel_space//2
+    new_position=[ 
+        position[0] +aditional_pos,  position[1] +aditional_pos
+    ]
+    return [new_size, new_position]
+
+
+
+
+# Funcion del clima
+def divider_color_rgb(color=[255,255,255], divider=2):
+    '''
+    Dividir un color rgb, en varios colores rgb.
+    color = [int, int, int] (min 0, max 255)
+    divider = int or float (recomend int)
+    '''
+    # Detectar que el color rgb sea una lita aceptable, para cada valor en la lista
+    number = 0
+    for c in color:
+        if c < 0 or c > 255:
+            color[index] = 255
+        number += 1
+
+    if number < 0 or number > 3:
+        color = [255, 255, 255]
+    
+    # Detectar que divisor sea un valor aceptable, para cada valor en el rgb
+    for c in color:
+        if divider < 0 or divider> c:
+            divider = 1
+        else:
+            pass
+    
+    # Dividir valores | Lista de colores rgb
+    color_list = []
+
+    multipler = 0
+    for x in range(0, divider):
+        multipler += 1
+
+        # Agregar nuevo color rgb a la lista de colores final.
+        new_color = []
+        for c in color:
+            new_color.append( (c/divider)*multipler )
+        color_list.append( new_color )
+    
+    # Devuelve la lista de colores rgb final
+    return color_list
+
+
+class GradiantColor():
+    def __init__(
+        self, color=[155, 168, 187], transparency=255, divider=2, start_with_max_power=False, time=0
+    ):
+        '''
+        Divide un color rgb y con la funcion update, actualiza el color a uno de la lista, dependiendo si se ánade mas color, o se disminulle el color. Esto esta pensado para utilizarse en un bucle.
+        
+        color = [int, int, int] (min 0, max 255)
+        divider = int or float (recomend int)
+        start_with_max_power = bool
+        time = int
+        '''
+        super().__init__()
+        
+        # Listar colores | Obtener color de inico y color de fin
+        self.__color_list = divider_color_rgb( color=color, divider=divider )
+        if transparency <= 255 and transparency >= 0:
+            for color in self.__color_list:
+                color.append(transparency)
+        self.__number_list = len(self.__color_list)-1
+        self.start_color = self.__color_list[0]
+        self.end_color = self.__color_list[self.__number_list]
+        
+        # Reducir colores
+        if start_with_max_power == True:
+            self.__color_number = self.__number_list
+            self.__reduce_color = True
+        else:
+            self.__color_number = 0
+            self.___reduce_color = False
+        self.current_color = self.__color_list[ self.__color_number ]
+        
+        # Tiempo de ejecución
+        self.__current_time = 0
+
+        self.__time = calculate_multiplier( number_start=divider, number_fin=time )
+    
+    def update(self):
+        # Tiempo de ejecución
+        self.__current_time += 1
+        if self.__current_time >= self.__time:
+            self.__current_time = 0
+            
+            # Cambiar color
+            self.current_color = self.__color_list[self.__color_number]
+            
+            # Aumentar color
+            if self.__reduce_color == False:
+                self.__color_number += 1
+                if self.__color_number >= self.__number_list:
+                    self.__reduce_color = True
+
+            # Disminuir color
+            elif self.__reduce_color == True:
+                self.__color_number -= 1
+                if self.__color_number <= 0:
+                    self.__reduce_color = False
