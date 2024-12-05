@@ -50,6 +50,12 @@ class Start_Map( ):
     def __init__(self, Map):
         super().__init__()
         
+        # Mensaje de inicio
+        self.message_start = current_map.message_start
+        if isinstance(self.message_start,str):
+            if self.message_start.startswith('stock_'):
+                self.message_start = Lang.get_text(self.message_start)
+        
         # Atributos necesarios
         self.player_spawn = [0,0]
 
@@ -212,20 +218,37 @@ class Start_Map( ):
 
 
         # Sección generación de clima
-        if Map.climate == 'rain':
+        '''
+        Si la cantidad de objetos en el eje "x" es mayor que cero, entonces se procedera a generar la lluvia.
+
+        rain_multipler; Es para multiplicar la cantidad de lluvia.
+        
+        El primer ciclo for; con un rango del 0 al rain_multipler, es para generar la lluvia.
+        
+        more_distance_xy; es para adicionar en la posicion de generación de lluvia mas espacio, ya sea en el eje x o en el y.
+        
+        Ciclo for con un:
+        Rango de more_distance_x a ultimo objeto en eje "x", mas la mitad del ultimo objeto en eje y mas la more_distance_x.
+        
+        Cada valor obtenido de este ciclo, generara una lluvia, en la posición x. Que sera el valor actual obtenido del ciclo. Y en el eje "y" en un rango -pixel_space a -pixel_space*16
+        '''
+        if Map.climate == 'rain' and xy[0] > 0:
             print(xy)
             rain_multipler = 2
             for generate_number in range(0, rain_multipler):
-                if xy[0] > 0:
-                    more_distance_xy = [4, 0]
-                    for x in range( more_distance_xy[0], xy[0]+(xy[1]//2)+more_distance_xy[0] ):
-                        Climate_rain(
-                            position=(
-                                random.randint( x*data_CF.pixel_space, x*(data_CF.pixel_space*4) ),
-                                -( random.randint( data_CF.pixel_space, data_CF.pixel_space*16) )
-                            ),
-                            show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite
-                        )
+                more_distance_xy = [8, 0]
+                for x in range( more_distance_xy[0], xy[0]+(xy[1]//2)+more_distance_xy[0] ):
+                    print(x)
+                    Climate_rain(
+                        position=(
+                            #random.randint(
+                            #    x*data_CF.pixel_space, (x*data_CF.pixel_space) + data_CF.pixel_space*1
+                            #),
+                            x*data_CF.pixel_space,
+                            -( random.randint( data_CF.pixel_space, data_CF.pixel_space*16) )
+                        ),
+                        show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite
+                    )
  
 current_map = Map
 read_Map( Map=current_map, level=data_CF.current_level )
@@ -236,6 +259,7 @@ player = Player(
 )
 player_spawn_hp = player.hp
 player_anim_dead = None
+message_skip = False
 
 
 
@@ -270,11 +294,16 @@ pygame.mixer.music.set_endevent(end_of_track_event)
 
 # Nota: Tienen que ser directorios de archivo, no objetos Sound
 class Play_background_music():
-    def __init__(self, music=data_CF.music, climate=f'climate_{Map.climate}' ):
+    def __init__(self, climate_sound=data_CF.climate_sound, music=data_CF.music,  climate='default' ):
         self.climate = climate
         self.music = music
+        self.climate_sound = climate_sound
+        self.play_music = False
         self.list_music = []
         self.update_list_music()
+        self.count_played = 0
+        self.current_music = None
+        self.limit = 0
 
 
     def update_list_music(self):
@@ -284,99 +313,47 @@ class Play_background_music():
                     self.list_music.append( all_music[key])
 
     def play(self):
-        current_music = None
+        print(self.count_played)
         if self.music == True:
-            # Reproducir musica y clima
-            self.update_list_music()
-            if isinstance(self.list_music, list):
-                current_music = random.choice( self.list_music )
-                self.list_music.remove(current_music)
+            if self.climate_sound == True:
+                self.play_music = random.choice( [True, False, False] )
             else:
-                self.list_music = all_music['music']
-        else:
-            # Solo reproducir el clima
-            for key in all_music.keys():
-                if self.climate == key:
-                    current_music = all_music[self.climate]
+                self.play_music = True
+        if self.count_played == 0:
+            # Seleccionar una musica aleatoria | Seleccionar modo clima o modo musica
+            if self.music == True and self.play_music == True:
+                # Reproducir musica y clima
+                self.update_list_music()
+                if isinstance(self.list_music, list):
+                    self.current_music = random.choice( self.list_music )
+                    self.list_music.remove(self.current_music)
+                #else:
+                #    self.list_music = all_music['music']
+                self.limit = 0
+                    
+            else:
+                # Solo reproducir el clima
+                for key in all_music.keys():
+                    if self.climate == key:
+                        self.current_music = all_music[self.climate]
+                self.limit = 4
+        elif self.count_played == self.limit:
+            # Llego al limite, reproducir otra musica aletoria.
+            self.count_played = -1
         
         # Cagar y reproducir cancion
-        if isinstance(current_music, str):
-            pygame.mixer.music.load( current_music )
+        if isinstance(self.current_music, str):
+            pygame.mixer.music.load( self.current_music )
             pygame.mixer.music.set_volume( data_CF.volume )
             pygame.mixer.music.play()
-play_background_music = Play_background_music( music=data_CF.music, climate=f'climate_{Map.climate}' )
+
+            # Contador de veces reporducidas (Solo contara cuando el limite de contado sea mayor que cero)
+            if self.limit > 0:
+                self.count_played += 1
+play_background_music = Play_background_music( 
+    music=data_CF.music, climate=f'climate_{get_climate( current_map )}' 
+)
 play_background_music.play()
-
-
-class Play_Music():
-    def __init__(self, music=data_CF.music, climate=None, climate_sound=data_CF.climate_sound ):
-        # Para reproducir musica en el juegito
-        self.list_music = [
-            [os.path.join(dir_audio, 'music/default-music.ogg'), 4],
-            [os.path.join(dir_audio, 'music/music-party.ogg'), 8],
-            #[os.path.join(dir_audio, 'music/music-cover.ogg'), 1],
-
-            [os.path.join(dir_audio, 'music/music-test1.ogg'), 1],
-            [os.path.join(dir_audio, 'music/music-test2.ogg'), 2],
-            [os.path.join(dir_audio, 'music/music-test3.ogg'), 2],
-            [os.path.join(dir_audio, 'music/music-test4.ogg'), 2],
-            [os.path.join(dir_audio, 'music/music-test5.ogg'), 1]
-        ]
-
-        self.climate_sound = climate_sound
-        self.__go = False
-        self.music = music
-        self.climate = climate
-        self.limit_music = 0
-        self.__limit_music_climate = 8
-        self.play()
-        
-    def set_climate(self):
-        if self.climate == 'rain':
-            return os.path.join(dir_audio, 'music/climate_rain.ogg')
-        if self.climate == 'alien':
-            return os.path.join(dir_audio, 'music/climate_alien.ogg')
-        if self.climate == 'sunny':
-            return os.path.join(dir_audio, 'music/climate_sunny.ogg')
-        if self.climate == 'black':
-            return os.path.join(dir_audio, 'music/climate_black.ogg')
-        else:
-            return os.path.join(dir_audio, 'music/climate_default.ogg')
-    
-    def play(self):
-        # Reproducir musica o sonido del silencio/ambiente.
-        if self.climate_sound == True:
-            self.__go = random.choice( [True, 2, 3] )
-        else:
-            if self.music == True:
-                self.__go = True
-            else:
-                self.__go = False
-        
-        # Reproducir musica o no
-        if self.__go == True and self.music == True:
-            # Cuando se puede reproducir musica.
-            music_ready = random.choice(self.list_music)
-            music = music_ready[0]
-            self.limit_music = music_ready[1]
-        else:
-            # Sonido del silencio/ambiente
-            music = self.set_climate()
-            self.limit_music = self.__limit_music_climate
-        pygame.mixer.music.load( music )
-        pygame.mixer.music.set_volume( data_CF.volume )
-        pygame.mixer.music.play()
-        
-        return self.limit_music
-        
-    def change_climate(self, climate=None):
-        self.climate = climate
-        if not self.__go == True:
-            music = self.set_climate()
-            pygame.mixer.music.load( music )
-            pygame.mixer.music.set_volume( data_CF.volume )
-            pygame.mixer.music.play()
-            self.limit_music = self.__limit_music_climate
 
 
 # Función nubes de fondo
@@ -447,6 +424,8 @@ credits = False
 credits_fps = data_CF.fps*4
 credits_count = 0
 
+go_credits = False
+
 
 
 
@@ -508,9 +487,13 @@ while exec_game:
                 # Si se preciona la tecla para saltar.
                 # El jugador salta si no hay mensajes
                 player.jump()
+                if isinstance(render_map.message_start, str):
+                    render_map.message_start = None
+                    if go_credits == True:
+                        go_credits = 'endgame'
             elif event.key == pygame.K_r:
                 # Por si se bugea el juego, poder matar al jugador y por consecuensia reiniciar el nivel
-                if not player.hp <= 0:
+                if player.hp > 0 and not isinstance(render_map.message_start, str):
                     player.hp = -1
         if event.type == pygame.QUIT:
             exec_game = False
@@ -537,17 +520,16 @@ while exec_game:
 
     # Función camara / Scroll
     player_pos = [player.rect.x, player.rect.y]
-    '''
-    # Forzar que la camara este en buena posición
-    scroll_int = [int(scroll_float[0]), int(scroll_float[1])]  
-    if player_pos[0]-scroll_int[0] > ( (data_CF.disp[0]/2)-data_CF.pixel_space ):
-        scroll_float[0] += 8
-    if player_pos[0]-scroll_int[0] < ( (data_CF.disp[0]/2)-data_CF.pixel_space ):
-        scroll_float[0] -= 8
-    '''
+
     scroll_int = [int(scroll_float[0]), int(scroll_float[1])]
     diference = data_CF.pixel_space
     for index in range(0, 2):
+        '''
+        Para que funcine la camara solo se necesita de esto:
+        scroll_float[index] += (player_pos[index] -scroll_float[index] -data_CF.disp[index]/2)/4
+        
+        Lo demas esta relacionado con evitar que se mueva la camara, cuando se llega a un cierto limite.
+        '''
         # en los "((data_CF.disp[index]/2) )" antes tenia "((data_CF.disp[index]/2) -data_CF.pixel_space)
         if not (
             ( player_pos[index] + ((data_CF.disp[index]/2) ) > limit_xy[index] ) or
@@ -599,47 +581,58 @@ while exec_game:
     
     
     # Función | Player | Limite del mapa
-    if player.rect.x > limit_xy[0]:
+    if player.rect.x > limit_xy[0] +data_CF.pixel_space or player.rect.x < -data_CF.pixel_space:
         player.hp = -1
-    elif player.rect.y > limit_xy[1]:
+    elif player.rect.y > limit_xy[1] +data_CF.pixel_space or player.rect.y < -data_CF.pixel_space:
         player.hp = -1
     
     
-    # Función | Level | Cambiar de nivel
+    # Función | Level | Cambiar de nivel | Acabar juego
     for sprite in level_objects:
         sprite.update()
         level = sprite.level
         if not sprite.level == None:
-            print(level)
-            # Establecer nivel actual
-            data_CF.current_level = level
-            save_CF( data_CF )
+            # El juego ha sido completado porque el jugador a llegado el checkpoint.
+            if sprite.gamecomplete == True:
+                gamecomplete = True
 
-            # Eliminar sprites
-            for other_sprite in layer_all_sprites.sprites():
-                other_sprite.kill()
+            if gamecomplete == False:
+                print(level)
+                # Establecer nivel actual
+                data_CF.current_level = level
+                save_CF( data_CF )
 
-            # Renderizar mapa                
-            read_Map( Map=current_map, level=data_CF.current_level )
-            render_map = Start_Map(current_map)
-            player = Player(
-                position=render_map.player_spawn,
-                show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite 
-            )
-            player_spawn_hp = player.hp
-            player_anim_dead = None
-            
-            # Clima | Color de fondo
-            if not loop_allday.climate == get_climate( current_map ):
-                loop_allday = Loop_allday( current_map )
-            
-            # Posicionar camara y establecer limites de camara.
-            limit_xy = get_limit_xy()
-            scroll_float = [0,0]
-            scroll_float = start_scroll(
-                pos_xy=[player.rect.x, player.rect.y], display_xy=data_CF.disp, limit_xy=limit_xy,
-                difference_xy=[data_CF.pixel_space*2, data_CF.pixel_space*3]
-            )
+                # Eliminar sprites
+                for other_sprite in layer_all_sprites.sprites():
+                    other_sprite.kill()
+
+                # Renderizar mapa                
+                read_Map( Map=current_map, level=data_CF.current_level )
+                render_map = Start_Map(current_map)
+                player = Player(
+                    position=render_map.player_spawn,
+                    show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite 
+                )
+                player_spawn_hp = player.hp
+                player_anim_dead = None
+                
+                # Clima | Color de fondo
+                if not loop_allday.climate == get_climate( current_map ):
+                    loop_allday = Loop_allday( current_map )
+                    
+                # Clima | Sonido de fondo
+                play_background_music.climate=f'climate_{get_climate( current_map )}'
+                if play_background_music.play_music == False:
+                    # Forzar el cambiado de music si no se esta reproduciondo el sonido del clima como musica.
+                    play_background_music.play()
+                
+                # Posicionar camara y establecer limites de camara.
+                limit_xy = get_limit_xy()
+                scroll_float = [0,0]
+                scroll_float = start_scroll(
+                    pos_xy=[player.rect.x, player.rect.y], display_xy=data_CF.disp, limit_xy=limit_xy,
+                    difference_xy=[data_CF.pixel_space*2, data_CF.pixel_space*3]
+                )
 
 
 
@@ -687,6 +680,58 @@ while exec_game:
                 )
                 
                 player_anim_dead = None
+                
+                
+
+
+    # Mostrar mensaje de fin de juego y creaditos, y Cerrar el juego.        
+    if gamecomplete == True:
+        print('Fin')
+        #exec_game = False
+        #surf_black_background = pygame.Surface( (data_CF.disp[0], data_CF.disp[1]) )
+        #surf_black_background.fill( generic_colors('black') )
+        #display.blit( surf_black_background, (0,0) )
+        pygame.draw.rect(
+            display, generic_colors('black'), 
+            (
+                0, 0, data_CF.disp[0], data_CF.disp[1]
+            )
+        )
+        
+        # Lo que pasa cuando el juego es completado
+        text_gamecomplete = font_big.render(
+            Lang.get_text('gamecomplete'), True, generic_colors('yellow')
+        )
+        position = [
+            (data_CF.disp[0]//2)-(text_gamecomplete.get_rect().width//2),
+            (data_CF.disp[1]//2)-(size_font_big//2)
+        ]
+        
+        rect_text = text_gamecomplete.get_rect()
+        pygame.draw.rect(
+            display, generic_colors('black'), 
+            (
+                position[0], position[1],
+                rect_text.width, rect_text.height
+            )
+        )
+
+        display.blit(
+            text_gamecomplete, (
+                position[0],
+                position[1]
+            )
+        )
+        
+        #
+        if go_credits == False:
+            render_map.message_start = Lang.get_text('gamecomplete')
+            go_credits = True
+        
+        # Cerrar juego
+        #if credits_count == credits_fps:
+        #    exec_game = False
+        #credits_count += 1
     
     
     
@@ -702,9 +747,68 @@ while exec_game:
     text_score = font_normal.render( str(score), True, generic_colors('yellow') )
     display.blit(
         text_score, ( (data_CF.disp[0])-(size_font_normal*3), size_font_normal*2 )
-    )    
+    )
+    
+    # Función | Mensaje de inicio
+    if isinstance(render_map.message_start, str):
+        # No moverse player mientras se ve el mensaje
+        if player.not_move == False:
+            player.not_move = True
+
+        # Mensaje
+        text_message = font_normal.render(
+            render_map.message_start, True, generic_colors('white')
+        )
+        position = [
+            (data_CF.disp[0]//2)-(text_message.get_rect().width//2),
+            size_font_normal
+        ]
+
+        rect_text = text_message.get_rect()
+        pygame.draw.rect(
+            display, generic_colors('black'), 
+            (
+                position[0], position[1],
+                rect_text.width, rect_text.height
+            )
+        )
+
+        display.blit(
+            text_message, (
+                position[0],
+                position[1]
+            )
+        )
+        
+        # Iformación acerca de como cuntinuar tras el mensaje
+        text_continue = font_normal.render(
+            f"{Lang.get_text('continue_jump')}...", True, generic_colors('white')
+        )
+        position = [size_font_normal, data_CF.disp[1]-(size_font_normal*2)]
+        
+        rect_text = text_continue.get_rect()
+        pygame.draw.rect(
+            display, generic_colors('black'), 
+            (
+                position[0], position[1],
+                rect_text.width, rect_text.height
+            )
+        )
+
+        display.blit(
+            text_continue, (
+                position[0],
+                position[1]
+            )
+        )
+           
     
     
+    # Juego completado:
+    if go_credits == 'endgame':
+        if credits_count == credits_fps:
+            exec_game = False
+        credits_count += 1
     
     
     # Fin
