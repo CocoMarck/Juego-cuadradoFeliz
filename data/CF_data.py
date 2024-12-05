@@ -441,10 +441,10 @@ def credits(share=True, jump_lines=False):
 
 
 
-
+display_width_divisor = 60
 def read_CF( CF ) -> bool:
     CF.disp = get_disp()
-    CF.pixel_space = CF.disp[0]//60
+    CF.pixel_space = CF.disp[0]//display_width_divisor
 
     CF.volume = get_volume()
     CF.fps = get_fps()
@@ -467,7 +467,7 @@ def read_CF( CF ) -> bool:
 def save_CF( CF ) -> bool:
     try:
         set_disp( CF.disp[0], CF.disp[1] )
-        CF.pixel_space = CF.disp[0]//60
+        CF.pixel_space = CF.disp[0]//display_width_divisor
 
         set_volume( CF.volume )
         set_fps( CF.fps )
@@ -563,10 +563,14 @@ def read_Map( Map, level=str ) -> bool:
             
     if number_info >= 2:
         Map.climate = info[1]
+    else:
+        Map.climate = None
     
+    Map.message_start = None
     if number_info >= 3:
         if not info[2].replace( ' ', '') == '':
             Map.message_start = info[2]
+
     
     
     # Obtener información del mapa
