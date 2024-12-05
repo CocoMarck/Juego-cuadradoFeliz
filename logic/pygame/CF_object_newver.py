@@ -609,11 +609,17 @@ class Player_part(pygame.sprite.Sprite):
                 self.gravity = False
         
         for damage_object in damage_objects:
+            '''
             collide = obj_collision_sides_rebound(
                 obj_main=self, obj_collide=damage_object
             )
             if not collide == None:
                 self.gravity = False
+                ( random.choice(sounds_hit) ).play()
+            '''
+            if self.rect.colliderect(damage_object.rect):
+                self.move_positive_x = random.choice( [False, True] )
+                self.move_positive_y = random.choice( [False, True] )
                 ( random.choice(sounds_hit) ).play()
         
         # Gravedad / Salto / Movimiento y
