@@ -1319,7 +1319,7 @@ class Climate_rain(pygame.sprite.Sprite):
             self.rect.x -= self.speed_x
         
         # Esta variable permite establecer si se quiere parar el movimiento de la lluvia o no.
-        self.not_move = False
+        #self.not_move = False
 
         # Eventos | Si traspasa la pantalla
         '''
