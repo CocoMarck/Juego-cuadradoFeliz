@@ -21,7 +21,7 @@ clock = pygame.time.Clock()
 pygame.display.set_caption(game_title)
 
 # Audio | Musica de fondo
-#...
+# Estan en el modulo CF_function
 
 # Fuentes de texto
 size_font_big = int(data_CF.pixel_space*4)
@@ -50,6 +50,8 @@ class Start_Map( ):
     def __init__(self, Map):
         super().__init__()
         
+        print(f'pixel space: {data_CF.pixel_space}px' )# Mostrar pixel space
+        
         # Mensaje de inicio
         self.message_start = current_map.message_start
         if isinstance(self.message_start,str):
@@ -62,6 +64,8 @@ class Start_Map( ):
         # Renderizar mapa
         xy = [0,0]
         for line in Map.list_map:
+            print_line = '' # Mostrar mapa en caracteres
+        
             xy[0] = 0
             position = [ xy[0], xy[1]*data_CF.pixel_space ]
             xy[1] += 1
@@ -214,6 +218,9 @@ class Start_Map( ):
                         show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite
                     )
         
+                print_line += character
+        
+            print(print_line) # Mostrar mapa en caracteres
 
 
 
@@ -233,12 +240,11 @@ class Start_Map( ):
         Cada valor obtenido de este ciclo, generara una lluvia, en la posición x. Que sera el valor actual obtenido del ciclo. Y en el eje "y" en un rango -pixel_space a -pixel_space*16
         '''
         if Map.climate == 'rain' and xy[0] > 0:
-            print(xy)
             rain_multipler = 2
             for generate_number in range(0, rain_multipler):
                 more_distance_xy = [8, 0]
                 for x in range( more_distance_xy[0], xy[0]+(xy[1]//2)+more_distance_xy[0] ):
-                    print(x)
+                    #print(x)
                     Climate_rain(
                         position=(
                             #random.randint(
@@ -249,6 +255,10 @@ class Start_Map( ):
                         ),
                         show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite
                     )
+            print( 
+                f'rain multipler: {rain_multipler}\n' 
+                f'raindrops: {x}'
+            )
  
 current_map = Map
 read_Map( Map=current_map, level=data_CF.current_level )
@@ -277,6 +287,11 @@ def Loop_allday( Map ):
         color=dict_climate[climate], transparency=127, divider=16, start_with_max_power=True, time=data_CF.fps*120
     )
     gradiant_color.climate=climate
+    
+    print( 
+        f'climate start color: {gradiant_color.start_color}\n'
+        f'climate end color: {gradiant_color.end_color}'
+    )
     return gradiant_color
 
 loop_allday = Loop_allday( current_map )
@@ -313,7 +328,7 @@ class Play_background_music():
                     self.list_music.append( all_music[key])
 
     def play(self):
-        print(self.count_played)
+        #print(self.count_played)
         if self.music == True:
             if self.climate_sound == True:
                 self.play_music = random.choice( [True, False, False] )
@@ -357,29 +372,30 @@ play_background_music.play()
 
 
 # Función nubes de fondo
+# rehacer
 def create_clouds(c_number = 15):
     '''
     Imagenes de fondo | Nubes de fondo
     # Si hay demasiadas nubes se dejaran de crear.
     # Se creara una nube de forma random, con posibilidades 1-6
     '''
-    c_sizex = data_CF.disp[0]//c_number
-    c_sizey = data_CF.disp[1]//c_number
-    c_size = (c_sizex, c_sizey)
+    c_size = [data_CF.disp[0]//c_number, data_CF.disp[1]//c_number]
 
+    pos = [0, 0]
     clouds = 0
     for y in range(0, c_number):
-        posy = c_sizey*(y)
+        pos[1] = c_size[1]*(y)
         for x in range(0, c_number):
-            posx = c_sizex*(x)
+            pos[0] = c_size[0]*(x)
 
             create = random.choice( [True, 2, 3, 4, 5, 6] )
             if create == True:
                 clouds += 1
                 Cloud(
-                    size=c_size, position=(posx, posy),
+                    size=c_size, position=pos,
                     show_collide=data_CF.show_collide
                 )
+    print( f'cloud_number: {x}' )
 
 
 
@@ -388,26 +404,6 @@ def create_clouds(c_number = 15):
 # Funcion nubes
 if data_CF.show_clouds == True:
     create_clouds()
-
-# Funcion | Dia y noche
-'''
-loop_allday = Loop_allday(climate=start_map.climate)
-count_fps_day = loop_allday.count_fps_day
-color_day = loop_allday.color_day
-color_day_red = loop_allday.color_day_red
-color_day_green = loop_allday.color_day_green
-color_day_blue = loop_allday.color_day_blue
-color_change = loop_allday.color_change
-changes_day = loop_allday.changes_day
-is_night = loop_allday.is_night
-'''
-
-# Funcion musica
-'''
-play_music = Play_Music( climate=start_map.climate )
-count_playmusic = 0
-limit_playmusic = play_music.limit_music
-'''
 
 
 # Funcion del mapa
@@ -420,7 +416,6 @@ for plat in solid_objects:
 gamecomplete = False
 
 # Función cretidos
-credits = False
 credits_fps = data_CF.fps*4
 credits_count = 0
 
@@ -440,7 +435,10 @@ def get_limit_xy():
     for sprite in limit_objects:
         pos_x.append(sprite.rect.x)
         pos_y.append(sprite.rect.y)
-    return [ max(pos_x), max(pos_y)]
+    
+    xy_return = [ max(pos_x), max(pos_y)]
+    print(f'limit_xy: {xy_return}')
+    return xy_return
 limit_xy = get_limit_xy()
 
 
@@ -465,7 +463,9 @@ def start_scroll( pos_xy=[0,0], display_xy=[0,0], limit_xy=[0,0], difference_xy=
     # Posicionar camara
     scroll_float = [ (xy[0] -display_xy[0]/2), (xy[1] -display_xy[1]/2) ]
     
-    return [int(scroll_float[0]), int(scroll_float[1])]
+    xy_return = [int(scroll_float[0]), int(scroll_float[1])]
+    print(f'start scroll: {xy_return}')
+    return xy_return
 scroll_float = [0,0]
 scroll_float = start_scroll(
     pos_xy=[player.rect.x, player.rect.y], display_xy=data_CF.disp, limit_xy=limit_xy,
@@ -525,7 +525,7 @@ while exec_game:
     diference = data_CF.pixel_space
     for index in range(0, 2):
         '''
-        Para que funcine la camara solo se necesita de esto:
+        Para que funcione la camara solo se necesita de esto:
         scroll_float[index] += (player_pos[index] -scroll_float[index] -data_CF.disp[index]/2)/4
         
         Lo demas esta relacionado con evitar que se mueva la camara, cuando se llega a un cierto limite.
@@ -594,10 +594,17 @@ while exec_game:
         if not sprite.level == None:
             # El juego ha sido completado porque el jugador a llegado el checkpoint.
             if sprite.gamecomplete == True:
+                print('Gamecomplete Saved')
                 gamecomplete = True
+                sprite.kill()
+                save_gamecomplete(level=data_CF.current_level, score=score)
+                
+                print('Change the level')
+                data_CF.current_level = level
+                save_CF( data_CF )
 
             if gamecomplete == False:
-                print(level)
+                print('Game saved and change the level')
                 # Establecer nivel actual
                 data_CF.current_level = level
                 save_CF( data_CF )
@@ -636,6 +643,10 @@ while exec_game:
 
 
 
+
+    # Objetos / Mostrar / Los sprites de atras, que no puede mover la camara.
+    for sprite in nocamera_back_sprites:
+        display.blit(sprite.surf, sprite.rect)
 
     # Función renderizado de sprites / Mostrar / Todos los sprites / Layer Capas
     for sprite in layer_all_sprites.sprites():
@@ -684,6 +695,16 @@ while exec_game:
                 
 
 
+    if go_credits == 'endgame':
+        # Fondo negro
+        pygame.draw.rect(
+            display, generic_colors('black'), 
+            (
+                0, 0, data_CF.disp[0], data_CF.disp[1]
+            )
+        )
+
+
     # Mostrar mensaje de fin de juego y creaditos, y Cerrar el juego.        
     if gamecomplete == True:
         print('Fin')
@@ -691,14 +712,9 @@ while exec_game:
         #surf_black_background = pygame.Surface( (data_CF.disp[0], data_CF.disp[1]) )
         #surf_black_background.fill( generic_colors('black') )
         #display.blit( surf_black_background, (0,0) )
-        pygame.draw.rect(
-            display, generic_colors('black'), 
-            (
-                0, 0, data_CF.disp[0], data_CF.disp[1]
-            )
-        )
         
         # Lo que pasa cuando el juego es completado
+        '''
         text_gamecomplete = font_big.render(
             Lang.get_text('gamecomplete'), True, generic_colors('yellow')
         )
@@ -706,6 +722,13 @@ while exec_game:
             (data_CF.disp[0]//2)-(text_gamecomplete.get_rect().width//2),
             (data_CF.disp[1]//2)-(size_font_big//2)
         ]
+        
+        display.blit(
+            text_gamecomplete, (
+                position[0],
+                position[1]
+            )
+        )
         
         rect_text = text_gamecomplete.get_rect()
         pygame.draw.rect(
@@ -715,23 +738,13 @@ while exec_game:
                 rect_text.width, rect_text.height
             )
         )
+        '''
 
-        display.blit(
-            text_gamecomplete, (
-                position[0],
-                position[1]
-            )
-        )
         
         #
         if go_credits == False:
             render_map.message_start = Lang.get_text('gamecomplete')
             go_credits = True
-        
-        # Cerrar juego
-        #if credits_count == credits_fps:
-        #    exec_game = False
-        #credits_count += 1
     
     
     
@@ -808,7 +821,36 @@ while exec_game:
     if go_credits == 'endgame':
         if credits_count == credits_fps:
             exec_game = False
-        credits_count += 1
+        else:
+            credits_count += 1
+        
+            # Texto creditos
+            text_credits = font_normal.render(
+                Lang.get_text('credits'), True, generic_colors('yellow')
+            )
+            position = [(data_CF.disp[0]//2)-(text_credits.get_rect().width//2), (size_font_normal//2)]
+        
+            display.blit(
+                text_credits, (
+                    position[0],
+                    position[1]
+                )
+            )
+        
+            # Texto nombre del creador 
+            text_by = font_normal.render(
+                credits(), True, generic_colors('green')
+            )
+            position = [
+                (data_CF.disp[0]//2)-(text_by.get_rect().width//2), (data_CF.disp[1]//2)-(size_font_normal//2)
+            ]
+        
+            display.blit(
+                text_by, (
+                    position[0],
+                    position[1]
+                )
+            )
     
     
     # Fin
