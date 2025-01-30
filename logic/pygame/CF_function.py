@@ -57,9 +57,9 @@ dir_music = os.path.join(dir_audio, 'music/')
 for music in Files_List( files=f'*{sound_type}', path=dir_music ):
     name = music.replace(dir_music, '').replace(sound_type, '')
     all_music.update( {name: music} )
-for key in all_music.keys():
-    print(key)
-    print(all_music[key])
+#for key in all_music.keys():
+#    print(key)
+#    print(all_music[key])
 
 
 
@@ -81,9 +81,8 @@ def get_sound( sound=None, number=None ) -> pygame.mixer.Sound:
             if sound == key:
                 if sound_good == False:
                     sound_good = True
-            
-            if sound_good == False:
-                error = True
+        if sound_good == False:
+            error = True
     
     # Detectar que parametro number este correcto
     if not number == None and error == False:
@@ -179,7 +178,10 @@ def get_image(
             go = True
 
     if go == True:
-        image = pygame.image.load( all_images[image] ).convert_alpha()
+        try:
+            image = pygame.image.load( all_images[image] ).convert_alpha()
+        except:
+            image = pygame.image.load( all_images[image] )
         if flip_x == True or flip_y == True:
             image = pygame.transform.flip(image, flip_x, flip_y)
         
@@ -193,6 +195,7 @@ def get_image(
         
         # Cambiar color o no
         if isinstance(color, list) or isinstance(color, tuple):
+            good_values = False
             if len(color) == 3:
                 good_values = True
                 for value in color:
@@ -482,3 +485,81 @@ class GradiantColor():
                 self.__color_number -= 1
                 if self.__color_number <= 0:
                     self.__reduce_color = False
+
+
+
+
+def collide_and_move( obj=None, obj_movement=[0,0], solid_objects=None):
+    '''
+    Esta función collisiona y mueve un objeto tipo "pygame.sprite.Sprite()"
+    
+    Para esta función se necesita del siguiente objeto, con estos atributos:
+    Objeto tipo "pygame.sprite.Sprite"
+    self.rect
+    Este objeto lo utilizaremos para el parametro:
+    obj=objeto
+
+    Tambien se necesita una lista de dos valores, que haran la función de movimiento del jugador.
+    obj_movement = [0, 0]
+    El primer valor de la lista seria el movimiento "x" y el segundo valor de la lista el movimiento "y"
+    
+    solid_objects, es una lista de objetos que teinen los siguientes atributos:
+    Objetos tipo pygame.sprite.Sprite()
+    self.rect
+    solid_objects = lista_de_objetos
+    
+
+
+    Cuando "obj" colisione con algun "solid_objects", dependiendo de la dirección de su colision, el "obj" se posicionara de forma inversa a la dirección de colisión.
+    Primero obj se mueve en dirección "x" si obj_movement[0] es menor o meyor a cero.
+    Y se determina lo siguiente:
+    - Si obj colisiona del lado derecho del solid_object, este se movera a su lado izquierdo.
+    - Si obj colisiona del lado izquiedo del solid_object, este se movera a su lado derecho.
+    
+    Despues obj se mueve en dirección "y" si obj_movement[1] es menor o meyor a cero, y se determina lo siguiente:
+    Y se determina lo siguiente:
+    - Si obj colisiona del lado inferior del solid_object, este se movera a su lado superior.
+    - Si obj colisiona del lado superior del solid_object, este se movera a su lado inferior.
+    '''
+    collided_side = None
+    solid_collide_x = None # Esto es para Forzar posicion arriba
+
+    # Colisiones en eje x
+    obj.rect.x += obj_movement[0]
+    for solid in solid_objects:
+        if (
+            obj.rect.height <= solid.rect.height and # Para solidos mas pequños que el obj
+            obj.rect.colliderect( solid.rect )
+        ):
+            if obj_movement[0] > 0:
+                obj.rect.right = solid.rect.left
+                collided_side = 'right'
+            elif obj_movement[0] < 0:
+                obj.rect.left = solid.rect.right
+                collided_side = 'left'
+            
+            # Esto es para Forzar posicion arriba
+            if isinstance(collided_side, str):
+                solid_collide_x = solid
+    
+    # Colisiones en eje y
+    obj.rect.y += obj_movement[1]
+    for solid in solid_objects:
+        if obj.rect.colliderect( solid.rect ):
+            if obj_movement[1] > 0:
+                obj.rect.bottom = solid.rect.top
+                collided_side = 'bottom'
+            elif (
+                obj.rect.height <= solid.rect.height and # Para solidos mas pequeños que el obj
+                obj_movement[1] < 0
+            ):
+                obj.rect.top = solid.rect.bottom
+                collided_side = 'top'
+    
+    # Forzar posicion arriba | Sirve para establecer en el piso al obj, si el obj esta lo suficientemente arriba como para forzar estarlo arriba.
+    if not solid_collide_x == None:
+        if obj.rect.y < solid_collide_x.rect.y -(obj.rect.height*0.5):
+            obj.rect.bottom = solid_collide_x.rect.top
+            collided_side = 'bottom'
+    
+    return collided_side

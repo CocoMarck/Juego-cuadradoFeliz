@@ -120,7 +120,7 @@ for index in range(0, len(dict_climate.keys()) ):
 
 
 # Tipos de objetos
-print( f'"{prefix_object}"')
+print( f'prefix objects: "{prefix_object}"')
 
 
 
@@ -312,6 +312,9 @@ class object_grid( pygame.sprite.Sprite ):
 
 # Funcion para crear un mapa default
 def generate_map( size_xy=[int,int], with_limit=True, path='custom', name='custumTumTum' ):
+    '''
+    Te genera un archivo de texto, que sirve como un mapa para el juego.
+    '''
     preset_type = 'cf_map_'
     preset_file = '.txt'
     text = ''
@@ -356,7 +359,7 @@ def generate_map( size_xy=[int,int], with_limit=True, path='custom', name='custu
         print( 'ERROR: Only int values' )
         return data_CF.current_level
 file_current_map = generate_map( [60, 34] )
-print( file_current_map )
+print( f'map file: {file_current_map}' )
     
 
 
@@ -365,8 +368,10 @@ print( file_current_map )
 current_map = Map
 read_Map( current_map, level=file_current_map )
 print( 
-    current_map.path, current_map.next_level, 
-    current_map.climate, current_map.message_start
+    f'map path: {current_map.path}\n'
+    f'map next level: {current_map.next_level}\n'
+    f'map climate: {current_map.climate}\n'
+    f'map message start: {current_map.message_start}'
 )
 #read_Map( current_map, level='./resources/maps/cf_map_default.txt' )
 #read_Map( current_map, level='./resources/maps/cf_map.txt' )
@@ -411,10 +416,15 @@ for line in current_map.list_map:
 
 # Clima
 def get_climate( Map ):
+    climate = None
     if Map.climate in dict_climate.keys():
-        return dict_climate[Map.climate]
+        climate = Map.climate
     else:
-        return dict_climate['default']
+        climate = 'default'
+    
+    if climate != None:
+        print(f'climate {climate}: {dict_climate[climate]}')
+        return dict_climate[climate]
     #return generic_colors('green')
 climate_color = get_climate( current_map )
 
@@ -445,7 +455,10 @@ def get_limit_xy():
     for sprite in grid_objects:
         pos_x.append(sprite.rect.x)
         pos_y.append(sprite.rect.y)
-    return [ max(pos_x), max(pos_y)]
+        
+    xy = [ max(pos_x), max(pos_y) ]
+    print(f'limit xy: {xy}')
+    return xy
 limit_xy = get_limit_xy()
 #input(get_limit_xy())
 
@@ -453,9 +466,8 @@ limit_xy = get_limit_xy()
 
 
 # Posición de camara en donde esta el jugador
-print(size_display_edit, 'display edit')
-print(limit_xy, 'limit of map')
-print(player_spawn_xy, 'camera spawn')
+print(f'display edit: {size_display_edit}')
+print(f'player spawn: {player_spawn_xy}' )
 print( player_spawn_xy[0] - (size_display_edit[0]/2) )
 #input()
 def start_camera( pos_xy=[0,0], display_xy=[0,0], limit_xy=[0,0], difference_xy=[0,0] ) ->[int, int]:
@@ -475,6 +487,8 @@ def start_camera( pos_xy=[0,0], display_xy=[0,0], limit_xy=[0,0], difference_xy=
     else:
         # Jugador arriba
         xy[1] = pos_xy[1] +(display_xy[1]/2) -difference_xy[1]
+    
+    print(f'start camera: {xy}')
     return xy
 camera_xy = start_camera(
     pos_xy=player_spawn_xy, display_xy=size_display_edit, limit_xy=limit_xy,
@@ -497,7 +511,9 @@ def start_scroll( pos_xy=[0,0] ):
     scroll_float[0] += (pos_xy[0] -size_display_edit[0]/2)
     scroll_float[1] += (pos_xy[1] -size_display_edit[1]/2)
     
-    return [int(scroll_float[0]), int(scroll_float[1])]
+    xy = [int(scroll_float[0]), int(scroll_float[1])]
+    print(f'start scroll: {xy}')
+    return xy
                         
 scroll_float = start_scroll( camera_xy )
 scroll_int = [0,0]
@@ -673,6 +689,8 @@ while exec_game:
                     button_text = button.text
                     print( button.text )
                     if button.text == 'save':
+                        data_CF.current_level = file_current_map
+                        save_CF( data_CF )
                         save_Map( current_map, data_CF.current_level )
                     elif button.text == 'play':
                         run_game = True

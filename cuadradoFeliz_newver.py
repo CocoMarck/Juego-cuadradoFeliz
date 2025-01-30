@@ -38,6 +38,16 @@ else:
     image_background.fill( (63, 63, 63) )
 color_background = pygame.Surface( (data_CF.disp[0], data_CF.disp[1]), pygame.SRCALPHA )
 
+# Transparencia
+if data_CF.show_collide == True:
+    transparency_collide = 255
+    transparency_sprite = 0
+    transparency_sprite_rain = 0
+else:
+    transparency_collide = 0
+    transparency_sprite = 255
+    transparency_sprite_rain = 127
+
 
 
 
@@ -88,7 +98,7 @@ class Start_Map( ):
                     Floor(
                         size=(data_CF.pixel_space, data_CF.pixel_space),
                         position=position, climate=Map.climate,
-                        show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                 elif character == 'P':
                     # Posicionar de forma adecuada
@@ -100,67 +110,67 @@ class Start_Map( ):
                     # Objeto plataforma Piso Floor
                     Floor(
                         size=new_size_pos[0], position=new_size_pos[1], climate=Map.climate,
-                        show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                 
                 elif character == 's':
                     Score( 
                         size=data_CF.pixel_space, position=position, 
-                        show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                     
                 elif character == '+':
                     Stair(
-                        size=data_CF.pixel_space, position=position, invert=False,
-                        climate=Map.climate, show_collide=data_CF.show_collide
+                        size=data_CF.pixel_space, position=position, invert=False, climate=Map.climate, 
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                     
                 elif character == '-':
                     Stair(
-                        size=data_CF.pixel_space, position=position, invert=True,
-                        climate=Map.climate, show_collide=data_CF.show_collide
+                        size=data_CF.pixel_space, position=position, invert=True, climate=Map.climate,      
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
 
                 elif character == 'H':
                     Ladder(
                         size=data_CF.pixel_space, position=position,
-                        show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                     
                 elif character == '_':
                     Trampoline(
                         size=data_CF.pixel_space, position=position,
-                        show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                     
                 elif character == 'x':
                     Elevator(
                         size=data_CF.pixel_space, position=position, move_dimension=1,
-                        show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                     
                 elif character == 'y':
                     Elevator(
                         size=data_CF.pixel_space, position=position, move_dimension=2,
-                        show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                     
                 elif character == '~':
                     Climate_rain(
                         position=position,
-                        show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite_rain
                     )
 
                 elif character == '0':
                     level = Level_change(
                         dir_level=Map.path, level=Map.next_level, position=position, 
-                        show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                     
                 elif character == 'F':
                     Level_change(
                         dir_level=Map.path, level=Map.next_level, position=position, gamecomplete=True,
-                        show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                 
                 
@@ -169,7 +179,7 @@ class Start_Map( ):
                 # Limite del mapa
                 elif character == '|':
                     Limit_indicator(
-                        position=position, show_collide=data_CF.show_collide
+                        position=position, transparency_collide=transparency_collide
                     )
                 
                 
@@ -178,44 +188,44 @@ class Start_Map( ):
                 elif character == '^':
                     spike = Spike( 
                         position=position,
-                        show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                     
                 elif character == 'A':
                     # Objeto pico
                     Spike(
                         size=data_CF.pixel_space*2, position=position,
-                        show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                     
                 elif character == '\\':
                     Spike( 
                         position=position, moving=True, instakill=True,
-                        show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
 
                 elif character == '!':
                     Spike( 
                         position=position, instakill=True,
-                        show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                     
                 elif character == 'Y':
                     Star_pointed(
                         position=position,
-                        show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
 
                 elif character == '*':
                     Star_pointed(
                         position=position, moving=True, instakill=True,
-                        show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
 
                 elif character == 'X':
                     Star_pointed(
                         position=position, instakill=True,
-                        show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
         
                 print_line += character
@@ -253,7 +263,7 @@ class Start_Map( ):
                             x*data_CF.pixel_space,
                             -( random.randint( data_CF.pixel_space, data_CF.pixel_space*16) )
                         ),
-                        show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite_rain
                     )
             print( 
                 f'rain multipler: {rain_multipler}\n' 
@@ -265,7 +275,7 @@ read_Map( Map=current_map, level=data_CF.current_level )
 render_map = Start_Map(current_map)
 player = Player(
     position=render_map.player_spawn,
-    show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite 
+    transparency_collide=transparency_collide, transparency_sprite=transparency_sprite,
 )
 player_spawn_hp = player.hp
 player_anim_dead = None
@@ -389,11 +399,13 @@ def create_clouds(c_number = 15):
             pos[0] = c_size[0]*(x)
 
             create = random.choice( [True, 2, 3, 4, 5, 6] )
+            if data_CF.show_collide == False: transparency_sprite_collide=random.choice([8,16,32])
+            else: transparency_sprite_collide=0
             if create == True:
                 clouds += 1
                 Cloud(
                     size=c_size, position=pos,
-                    show_collide=data_CF.show_collide
+                    transparency_collide=transparency_collide, transparency_sprite=transparency_sprite_collide
                 )
     print( f'cloud_number: {x}' )
 
@@ -508,12 +520,12 @@ while exec_game:
     display.blit( background_surf, (0,0) )
     loop_allday.update()
 
-
+    
 
 
     # Jugador
     player.move()
-    player.update()
+    player.update(False)
     
 
 
@@ -618,7 +630,7 @@ while exec_game:
                 render_map = Start_Map(current_map)
                 player = Player(
                     position=render_map.player_spawn,
-                    show_collide=data_CF.show_collide, show_sprite=data_CF.show_sprite 
+                    transparency_collide=transparency_collide, transparency_sprite=transparency_sprite,
                 )
                 player_spawn_hp = player.hp
                 player_anim_dead = None
@@ -670,18 +682,22 @@ while exec_game:
         if player_anim_dead == None:
             # Iniciar animacion
             player_anim_dead = Anim_player_dead(
-                position=(
+                position=[
                     player.rect.x -player.rect.width//2, player.rect.y
-                ),
-                show_collide=data_CF.show_collide
+                ],
+                transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
             )
-            player.show_sprite = False
+            #if data_CF.show_sprite == True: player.transparency_sprite = 0
+            #player.show_sprite = False
+            player.transparency_sprite = 0
             ( random.choice(sounds_dead) ).play()
         else:
             if player_anim_dead.anim_fin == True:
                 # Finalizar animacion y spawnear al jugador
+                player.transparency_sprite = transparency_sprite
                 player.hp = player_spawn_hp
-                player.show_sprite = data_CF.show_sprite
+                #if data_CF.show_sprite == True: player.transparency_sprite = 255
+                #player.show_sprite = data_CF.show_sprite
                 player.rect.topleft = render_map.player_spawn
                 player.rect.x += (data_CF.pixel_space -player.rect.width)//2
 

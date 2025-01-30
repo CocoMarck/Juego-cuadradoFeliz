@@ -15,6 +15,7 @@ from data.CF_info import (
     
     data_CF
 )
+from logic.pygame.CF_function import *
 
 import pygame, sys, os, random
 from pygame.locals import *
@@ -123,44 +124,20 @@ class Player(pygame.sprite.Sprite):
         self.sprite = None
         
         # Sprite / Imagenes de sprite
-        image_notmove = pygame.image.load(
-            os.path.join(dir_sprites, 'player/player_not-move.png')
-        )
-        image_notmove = pygame.transform.scale(
-            image_notmove, 
-            ( ((data_CF.pixel_space*2)*3), data_CF.pixel_space*2 )
-        )
-
-        image_move = pygame.image.load( 
-            os.path.join(dir_sprites, 'player/player_move.png')
-        )
-        image_move = pygame.transform.scale(
-            image_move, 
-            ( ((data_CF.pixel_space*2)*8), data_CF.pixel_space*2 )
-        )
-
-        # Sprite / Cambiar color al de imagenes de sprite
-        if not color_sprite == None:
-            # Color sprite default = (153, 252, 152)
-            colorImage = pygame.Surface(image_notmove.get_size()).convert_alpha()
-            colorImage.fill( color_sprite )
-            image_notmove.blit(colorImage, (0,0), special_flags = pygame.BLEND_MULT)
-            
-            colorImage = pygame.Surface(image_move.get_size()).convert_alpha()
-            colorImage.fill( color_sprite )
-            image_move.blit(colorImage, (0,0), special_flags = pygame.BLEND_MULT)
-        
+        # Sprite / Cambiar color al de imagenes de sprite    
         # Sprite / Dividir fotogramas de los sprites animados        
-        self.sprite_notmove = Anim_sprite_set(
-            sprite_sheet=image_notmove
+        self.sprite_notmove = get_image(
+            'player_not-move', size=[data_CF.pixel_space*2, data_CF.pixel_space*2], color=color_sprite,
+            colored_method='surface'
         )
-        self.sprite_move = Anim_sprite_set(
-            sprite_sheet=image_move
+        self.sprite_move = get_image(
+            'player_move', size=[data_CF.pixel_space*2, data_CF.pixel_space*2], color=color_sprite,
+            colored_method='surface'
         )
 
-        image_move = pygame.transform.flip(image_move, True, False)
-        self.sprite_move_invert = Anim_sprite_set(
-            sprite_sheet=image_move
+        self.sprite_move_invert = get_image(
+            'player_move', size=[data_CF.pixel_space*2, data_CF.pixel_space*2], color=color_sprite,
+            flip_x=True, colored_method='surface'
         )
         self.count_fps = 0
         self.count_fps_invert = len(self.sprite_move_invert)
@@ -582,19 +559,10 @@ class Player_part(pygame.sprite.Sprite):
         self.size = size
         if not sprite == None:
             # Sprite / Imagen y cambiar su color
-            img = pygame.transform.scale(
-                pygame.image.load( os.path.join(dir_sprites, 'player/player_not-move.png') ),
-                ( data_CF.pixel_space*6, data_CF.pixel_space*2)
-            )
-            if not color_sprite == None:
-                colorImage = pygame.Surface(img.get_size()).convert_alpha()
-                colorImage.fill( color_sprite )
-                img.blit(colorImage, (0,0), special_flags = pygame.BLEND_MULT)
-
             # Sprite / Dividir el sprite y establecer su parte indicada
-            img = Anim_sprite_set(
-                sprite_sheet=img,
-                current_frame=0
+            img = get_image( 
+                'player_not-move', number=0, size=[data_CF.pixel_space*2, data_CF.pixel_space*2],
+                colored_method='surface', color=color_sprite
             )
             img = Split_sprite(sprite_sheet=img, parts=8)
             if sprite == 1:
@@ -693,9 +661,7 @@ class Floor(pygame.sprite.Sprite):
             self.transparency = 0
             
         if show_sprite == True:
-            self.surf = pygame.transform.scale(
-                pygame.image.load(os.path.join(dir_sprites, 'floor/stone.png')), size
-            )
+            self.surf = get_image('stone', size=size)
             
             # Coloriar sprite
             # Solo si hay sprite y el clima no esta en None
@@ -791,9 +757,7 @@ class Ladder(pygame.sprite.Sprite):
         # Sprite
         if show_sprite == True:
             sprite = pygame.sprite.Sprite()
-            sprite.surf = pygame.transform.scale(
-                pygame.image.load(os.path.join(dir_sprites, 'floor/ladder.png')), (size, size)
-            )
+            sprite.surf = get_image('ladder', size=[size, size])
             sprite.rect = sprite.surf.get_rect( center=position )
             layer_all_sprites.add(sprite, layer=1)
 
@@ -819,9 +783,7 @@ class Trampoline(pygame.sprite.Sprite):
         # Sprite
         if show_sprite == True:
             sprite = pygame.sprite.Sprite()
-            sprite.surf = pygame.transform.scale(
-                pygame.image.load(os.path.join(dir_sprites, 'floor/trampoline.png')), (size, size)
-            )
+            sprite.surf = get_image( 'trampoline', size=(size, size) )
             sprite.rect = sprite.surf.get_rect( center=position )
             layer_all_sprites.add( sprite, layer=1 )
 
@@ -852,9 +814,7 @@ class Elevator(pygame.sprite.Sprite):
         # Sprite
         if show_sprite == True:
             self.sprite = pygame.sprite.Sprite()
-            self.sprite.surf = pygame.transform.scale(
-                pygame.image.load(os.path.join(dir_sprites, 'floor/elevator.png')), size_ready
-            )
+            self.sprite.surf = get_image('elevator', size=size_ready)
             self.sprite.rect = self.sprite.surf.get_rect( topleft=(self.rect.x, self.rect.y) )
             layer_all_sprites.add(self.sprite, layer=1)
         else:
@@ -951,7 +911,7 @@ class Spike(pygame.sprite.Sprite):
         damage_objects.add(self)
         
         # Sprite
-        self.image = pygame.image.load(os.path.join(dir_sprites, 'spikes/spike.png'))
+        self.image = get_image( 'spike' )
         if show_sprite == True:
             self.sprite = pygame.sprite.Sprite()
             self.sprite.surf = pygame.transform.scale(
@@ -1071,17 +1031,15 @@ class Star_pointed(pygame.sprite.Sprite):
         self.show_sprite = show_sprite
         self.__size = size
         if self.show_sprite == True:
-            image = pygame.image.load(
-                 os.path.join(dir_sprites, 'spikes/star-pointed.png') 
-            )
-            image = pygame.transform.scale(image, (self.__size*7, self.__size) )
             if self.instakill == True:
-                image.fill( (95, 0, 0), special_flags=pygame.BLEND_ADD )
+                color = [95, 0, 0]
             else:
-                image.fill( (0, 0, 127), special_flags=pygame.BLEND_ADD )
+                color = [0, 0, 127]
 
             self.sprite = Anim_sprite(
-                sprite_sheet=image
+                sprite_sheet=get_image(
+                    'star-pointed', size=[self.__size*7, self.__size], return_method='image', color=color
+                )
             )
             self.sprite.rect.topleft = (
                 self.rect.x-(self.__size//4),
@@ -1339,15 +1297,7 @@ class Climate_rain(pygame.sprite.Sprite):
         self.size = size
         self.size_difference = (size//4)*3
         if show_sprite == True:
-            sprite_sheet=pygame.transform.scale(
-                pygame.image.load( os.path.join(dir_sprites, 'climate/rain.png' ) ),
-                (size*2, size)
-            )
-            sprite_sheet.fill( (0,0,127), special_flags=pygame.BLEND_ADD)
-            sprite_sheet.set_alpha( 127 )
-            self.__image = Anim_sprite_set(
-                sprite_sheet=sprite_sheet
-            )
+            self.__image = get_image( 'rain', size=[size,size], color=[0,0,127], transparency=127 )
 
             self.sprite = pygame.sprite.Sprite()
             self.sprite.surf = self.__image[0]
@@ -1485,16 +1435,11 @@ class Level_change(pygame.sprite.Sprite):
         # Sprite
         if show_sprite == True:
             sprite = pygame.sprite.Sprite()
-            sprite.surf = pygame.transform.scale(
-                pygame.image.load(
-                    os.path.join(dir_sprites, 'floor/level_change.png') 
-                ), size
-            )
             
             if gamecomplete == True:
-                sprite.surf.fill( (0, 48, 0), special_flags=pygame.BLEND_ADD )
+                sprite.surf = get_image( 'level_change', size=size, color=[0, 48, 0] )
             else:
-                sprite.surf.fill( (39, 28, 18), special_flags=pygame.BLEND_ADD )
+                sprite.surf = get_image( 'level_change', size=size, color=[39, 28, 18] )
 
             sprite.rect = sprite.surf.get_rect( center=position )
             layer_all_sprites.add(sprite, layer=1)
@@ -1527,10 +1472,7 @@ class Score(pygame.sprite.Sprite):
         # Sprite
         if show_sprite == True:
             self.sprite = pygame.sprite.Sprite()
-            self.sprite.surf = pygame.transform.scale(
-                pygame.image.load( os.path.join(dir_sprites, 'items/coin.png') ),
-                (size, size)
-            )
+            self.sprite.surf = get_image( 'coin', size=[size, size] )
             self.sprite.rect = self.sprite.surf.get_rect(
                 center=position
             )
@@ -1562,11 +1504,9 @@ class Cloud(pygame.sprite.Sprite):
         transparency = random.choice( [8, 16, 32] )
         
         if show_collide == False:
-            self.surf = pygame.transform.scale(
-                pygame.image.load( os.path.join(dir_sprites, f'climate/clouds/cloud-{image_set}.png') ),
-                size
+            self.surf = get_image(
+                f'cloud-{image_set}', size=size, transparency=transparency, return_method='image'
             )
-            self.surf.set_alpha( transparency )
         else:
             self.surf = pygame.Surface( size, pygame.SRCALPHA )
             self.surf.fill( (191,191,191, transparency) )
