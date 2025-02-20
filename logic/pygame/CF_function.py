@@ -550,7 +550,7 @@ def collide_and_move( obj=None, obj_movement=[0,0], solid_objects=None):
                 obj.rect.bottom = solid.rect.top
                 collided_side = 'bottom'
             elif (
-                obj.rect.height <= solid.rect.height and # Para solidos mas pequeños que el obj
+                obj.rect.height <= solid.rect.height and # Para solidos mas pequeños que el obj, esto hace que no se colisione abajo
                 obj_movement[1] < 0
             ):
                 obj.rect.top = solid.rect.bottom
@@ -563,3 +563,61 @@ def collide_and_move( obj=None, obj_movement=[0,0], solid_objects=None):
             collided_side = 'bottom'
     
     return collided_side
+
+
+
+
+
+def segment_value( full_value, max_value  ) -> list:
+    '''
+    Partir un numero "full_value" que es mayor que "max_value"
+    
+    full_value = int, float
+    max_value = int, float
+    '''
+    # Determinar diviciones si full_value es mayor que max_value
+    if full_value > max_value:
+        parts_value = [max_value]
+
+        while full_value > 0:
+            full_value -= max_value
+
+            # Agregar valores partes
+            if full_value > 0:
+                if full_value >= max_value:
+                    parts_value.append( max_value )
+                else:
+                    parts_value.append( full_value )
+
+        return parts_value
+    else:
+        return []
+        #raise ValueError("full_value tiene que ser mayor que max_value.")
+
+
+
+
+def surf_limit_width( surf, limit_widht ) -> list:
+    '''
+    Limitar el ancho de un surf, y dividirlo en partes no mas grandes que el limite del ancho.
+    Depende de la funcion "segment_value"
+    
+    surf = pygame.Surface(), pygame.image.load(), pygame.font()
+    limit_widht = int
+    '''
+    # Mensaje tiene surf rect y anchura de mansaje
+    rect = surf.get_rect()
+    full_widht = rect.width
+
+    # Determinar diviciones de surf si sobrepasa la pantalla. En base al limit_width
+    parts_size = []
+
+    list_size = segment_value( full_widht, limit_widht )    
+    for x in range( len(list_size) ):
+        parts_size.append( 
+            surf.subsurface(
+                ( x*limit_widht, 0, list_size[x], rect.height ) 
+            )
+        )
+    
+    return parts_size

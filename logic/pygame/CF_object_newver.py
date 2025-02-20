@@ -68,13 +68,13 @@ for score in sounds_score:
 
 
 # Objetos / Clases
-# Contador jugador en el aire, basado en la resolucion del juego. Se usa "pixel space", y esta basado en la resolución, este es el tamaño de cada rejilla disponible en el juego.
+# Contador jugador en el aire, basado en la resolucion del juego. Se usa "data_CF". Esta basado en la resolución maxima 1920x1080
 # Valores usados: 0.1875, 0.3125
-air_count_based_on_resolution = round(data_CF.pixel_space*0.3125)
+air_count_based_on_resolution = round( 1920 / ( data_CF.disp[0] * 0.4) ) #round(data_CF.pixel_space*0.3125) 
 if air_count_based_on_resolution < 0:
     air_count_based_on_resolution = 0
-elif air_count_based_on_resolution > 10:
-    air_count_based_on_resolution = 10
+elif air_count_based_on_resolution > 5:
+    air_count_based_on_resolution = 5
 
 
 class Player(pygame.sprite.Sprite):
@@ -124,8 +124,10 @@ class Player(pygame.sprite.Sprite):
         self.speed = size[1]*0.5
         self.collision_solid = None
         
-        self.gravity_power = size[1]*0.05#size[1]*0.025
-        self.gravity_limit = size[1]//4#size[1]*0.35
+        # Valores de porcentaje para poder gravedad usados 0.05 0.025 0.028125
+        # Valores de porcentaje para limite gravedad usados 0.25 0.35 0.3125 0.03 0.30625
+        self.gravity_power = size[1]*0.028125
+        self.gravity_limit = size[1]*0.3
         self.gravity_current = -self.gravity_power # Para que empieze en 0 poder de gravedad
         self.air_count = 8 # Para que inicie en caida
         
@@ -153,6 +155,9 @@ class Player(pygame.sprite.Sprite):
 
     def get_speed( self, multipler=1 ):
         return self.speed*multipler
+    
+    def get_max_hp( self, multipler=1 ):
+        return int(100*multipler)
     
     
     def move(self):
@@ -353,8 +358,8 @@ class Player(pygame.sprite.Sprite):
             self.jump_count = self.jump_max_height
             self.gravity_current = 0
         else:
-            self.not_move = False
             self.dead = False
+            if self.hp > self.get_max_hp(multipler=1): self.hp = self.get_max_hp(multipler=1)
 
         # Dejar de moverse
         if self.not_move == True or self.damage_effect == True:
@@ -388,6 +393,7 @@ class Player(pygame.sprite.Sprite):
         
         # Determinar velocidad del jugador
         if self.walking == True:
+            # valores usados: 0.25 0.5 0.625
             speed_multipler = 0.5
         else:
             speed_multipler = 1
@@ -1208,7 +1214,7 @@ class Stair(pygame.sprite.Sprite):
 class Climate_rain(pygame.sprite.Sprite):
     def __init__(
         self, size=data_CF.pixel_space, position=(data_CF.disp[0]//2, data_CF.disp[1]//2),
-        transparency_collide=255, transparency_sprite=255
+        transparency_collide=255, transparency_sprite=255, damage=False
     ):
         super().__init__()
         
@@ -1218,7 +1224,6 @@ class Climate_rain(pygame.sprite.Sprite):
         
         # Sección de collider
         self.surf = pygame.Surface( (size//4, size//4), pygame.SRCALPHA )
-        self.surf.fill( generic_colors('sky_blue', self.transparency_collide) )
         self.rect = self.surf.get_rect( topleft=position )
         self.speed_y = random.choice(
             [  
@@ -1234,6 +1239,16 @@ class Climate_rain(pygame.sprite.Sprite):
         
         layer_all_sprites.add(self, layer=1)
         climate_objects.add(self)
+        # Establecer que es objeto dañino, con color y grupo de objetos
+        if damage == True: 
+            self.surf.fill( generic_colors('red', self.transparency_collide) )
+            color_sprite = [0,255,0]
+            self.damage = 1
+            damage_objects.add(self)
+        else: 
+            self.surf.fill( generic_colors('sky_blue', self.transparency_collide) )
+            self.damage = damage
+            color_sprite = [0,0,127]
         
         # Sección de sprite
         self.fps = data_CF.fps//4
@@ -1244,12 +1259,15 @@ class Climate_rain(pygame.sprite.Sprite):
         self.size_difference = (size//4)*3
 
         self.__image = get_image( 
-            'rain', size=[size,size], color=[0,0,127], transparency=self.transparency_sprite
+            'rain', size=[size,size], color=color_sprite, transparency=self.transparency_sprite
         )
         self.sprite = pygame.sprite.Sprite()
         self.sprite.surf = self.__image[0]
         self.sprite.rect = self.surf.get_rect( topleft=(self.rect.x,self.rect.y-self.size_difference) )
         layer_all_sprites.add(self.sprite, layer=3)
+        
+        # Tiempo
+        self.time_respawn = 0 # Esta variable se usa en el loop del juego
         
     def update(self):            
         # Mover al jugador si el collider esta en false
@@ -1283,11 +1301,13 @@ class Climate_rain(pygame.sprite.Sprite):
         for solid_object in solid_objects:
             if self.rect.colliderect(solid_object.rect):
                 self.collide = True
+                self.time_respawn = 1
 
         # Eventos | Si colisiona con el player        
         for player in player_objects:
             if self.rect.colliderect(player.rect):
                 self.collide = True
+                if self.damage == False: self.time_respawn = 1
         
         # Sección para mover sprite correctamente
         if not self.sprite == None:

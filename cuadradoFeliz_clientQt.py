@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import(
 )
 from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import Qt
+from functools import partial
 
 
 # Detectar si el juego esta completado
@@ -128,6 +129,13 @@ class Window_Main(QWidget):
         
             self.button_bool_show_collide.clicked.connect( self.evt_set_show_collide )
             vbox_main.addWidget( self.button_bool_show_collide )
+            
+            self.button_bool_show_sprite = QPushButton()
+            self.button_bool_show_sprite.setCheckable(True)
+            self.evt_set_show_sprite( checked=data_CF.show_sprite )
+            self.button_bool_show_sprite.clicked.connect( self.evt_set_show_sprite )
+            vbox_main.addWidget( self.button_bool_show_sprite )
+            
         
         
         # Seccion Vertical - Label - Nivel
@@ -210,7 +218,7 @@ class Window_Main(QWidget):
     def evt_start_game(self):
         # Cerrar cliente, y abrir videojuego
         self.close()
-        import cuadradoFeliz
+        import cuadradoFeliz_newver
 
     def evt_get_controls(self):
         # Mostrar los controles
@@ -269,6 +277,15 @@ class Window_Main(QWidget):
         else:
             self.button_bool_show_collide.setText( f'{Lang("off")} | {Lang("show_collide")}' )
         data_CF.show_collide=checked
+        save_CF( data_CF )
+    
+    def evt_set_show_sprite(self, checked):
+        self.button_bool_show_sprite.setChecked( checked )
+        if checked == True:
+            self.button_bool_show_sprite.setText( f'{Lang("on")} | {Lang("show_sprite")}' )
+        else:
+            self.button_bool_show_sprite.setText( f'{Lang("off")} | {Lang("show_sprite")}' )
+        data_CF.show_sprite=checked
         save_CF( data_CF )
     
     def evt_set_disp(self):

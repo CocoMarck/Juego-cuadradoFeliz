@@ -390,6 +390,36 @@ def set_show_collide(show_collide=True):
 
 
 
+def get_show_sprite():
+    '''
+    Para saber si se desea o ver colliders o no
+    Devuelve un boleano, True or False
+    '''
+    data = get_data()
+    if data['show_sprite'] == "True":
+        return True
+    else:
+        return False
+
+def set_show_sprite(show_sprite=True):
+    '''
+    Para establecer si se desea ver colliders o no
+    '''
+    data = get_data(mode_dict=False)
+    text_ready = ''
+    for line in data.split('\n'):
+        if line.startswith('show_sprite='):
+            line = f'show_sprite={show_sprite}'
+        else:
+            pass
+        text_ready += line + '\n'
+    
+    with open(dir_game_data, 'w') as data_text:
+        data_text.write(text_ready[:-1])
+
+
+
+
 def get_show_clouds():
     '''
     Para saber si se mostraran las nubes o no.
@@ -454,10 +484,7 @@ def read_CF( CF ) -> bool:
     CF.show_clouds = get_show_clouds()
 
     CF.show_collide = get_show_collide()
-    if CF.show_collide == True:
-        CF.show_sprite = False
-    else:
-        CF.show_sprite = True
+    CF.show_sprite = get_show_sprite()
     
     CF.current_level = get_level()
 
@@ -477,10 +504,7 @@ def save_CF( CF ) -> bool:
         set_climate_sound( CF.climate_sound )
 
         set_show_collide( CF.show_collide )
-        if CF.show_collide == True:
-            CF.show_sprite = False
-        else:
-            CF.show_sprite = True
+        set_show_sprite( CF.show_sprite )
     
         set_level( CF.current_level )
         

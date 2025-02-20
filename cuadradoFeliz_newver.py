@@ -39,14 +39,18 @@ else:
 color_background = pygame.Surface( (data_CF.disp[0], data_CF.disp[1]), pygame.SRCALPHA )
 
 # Transparencia
-if data_CF.show_collide == True:
-    transparency_collide = 255
-    transparency_sprite = 0
-    transparency_sprite_rain = 0
-else:
-    transparency_collide = 0
+if data_CF.show_collide == True: transparency_collide = 255
+else: transparency_collide = 0
+
+if data_CF.show_sprite == True:
     transparency_sprite = 255
     transparency_sprite_rain = 127
+else:
+    transparency_sprite = 0
+    transparency_sprite_rain = 0
+if data_CF.show_collide == False and data_CF.show_sprite == False:
+    transparency_collide, transparency_sprite, transparency_sprite_rain, = 127, 127, 127
+    
 
 
 
@@ -341,7 +345,7 @@ class Play_background_music():
         #print(self.count_played)
         if self.music == True:
             if self.climate_sound == True:
-                self.play_music = random.choice( [True, False, False] )
+                self.play_music = random.choice( [True, True, False, False, False] )
             else:
                 self.play_music = True
         if self.count_played == 0:
@@ -497,13 +501,19 @@ while exec_game:
         if event.type == pygame.KEYDOWN:
             if event.key == player.pressed_jump:
                 # Si se preciona la tecla para saltar.
-                # El jugador salta si no hay mensajes
-                player.jump()
                 if isinstance(render_map.message_start, str):
+                    # Evitar mensaje
                     render_map.message_start = None
-                    if go_credits == True:
-                        go_credits = 'endgame'
-            elif event.key == pygame.K_r:
+                    player.not_move=False
+                else:
+                    # El jugador salta si no hay mensajes
+                    player.jump()
+                    
+                if credits_count == credits_fps:
+                    # Cerrar juegito si estamos en el mensaje para saltar los credito
+                    exec_game = False
+
+            elif event.key == pygame.K_r and go_credits == False:
                 # Por si se bugea el juego, poder matar al jugador y por consecuensia reiniciar el nivel
                 if player.hp > 0 and not isinstance(render_map.message_start, str):
                     player.hp = -1
@@ -585,11 +595,20 @@ while exec_game:
     
     # Función clima
     for climate in climate_objects:
+        '''
+        Actualizar el objeto tipo clima
+        Respawn cuendo el objeto colisione y cuando el tiempo para respawn pase. Reinciar tiempo de respawn al spawnear.
+        '''
         climate.update()
-        if climate.rect.y > limit_xy[1] or climate.collide == True:
+
+        if (climate.rect.y > limit_xy[1]) or climate.time_respawn >= 1:
             # Regrasar la gota de lluvia al spawn
             climate.rect.x = climate.spawn_xy[0]
             climate.rect.y = climate.spawn_xy[1]
+            climate.time_respawn = 0
+        elif (climate.collide == True):
+            # Sumar al time_respawn para que respawne el clima
+            climate.time_respawn += 1
     
     
     # Función | Player | Limite del mapa
@@ -609,7 +628,7 @@ while exec_game:
                 print('Gamecomplete Saved')
                 gamecomplete = True
                 sprite.kill()
-                save_gamecomplete(level=data_CF.current_level, score=score)
+                #save_gamecomplete(level=data_CF.current_level.replace(dir_maps, '') , score=score)
                 
                 print('Change the level')
                 data_CF.current_level = level
@@ -694,6 +713,7 @@ while exec_game:
         else:
             if player_anim_dead.anim_fin == True:
                 # Finalizar animacion y spawnear al jugador
+                player.not_move=False
                 player.transparency_sprite = transparency_sprite
                 player.hp = player_spawn_hp
                 #if data_CF.show_sprite == True: player.transparency_sprite = 255
@@ -710,15 +730,6 @@ while exec_game:
                 
                 
 
-
-    if go_credits == 'endgame':
-        # Fondo negro
-        pygame.draw.rect(
-            display, generic_colors('black'), 
-            (
-                0, 0, data_CF.disp[0], data_CF.disp[1]
-            )
-        )
 
 
     # Mostrar mensaje de fin de juego y creaditos, y Cerrar el juego.        
@@ -759,7 +770,7 @@ while exec_game:
         
         #
         if go_credits == False:
-            render_map.message_start = Lang.get_text('gamecomplete')
+            #render_map.message_start = Lang.get_text('gamecomplete')
             go_credits = True
     
     
@@ -772,42 +783,90 @@ while exec_game:
         text_hp, ( (data_CF.disp[0])-(size_font_normal*3), size_font_normal )
     )
     
+    # Fondo negro | Ocultar todo
+    if credits_count == credits_fps:
+        pygame.draw.rect(
+            display, generic_colors('black'), 
+            (
+                0, 0, data_CF.disp[0], data_CF.disp[1]
+            )
+        )
+    
     # Mostrar Puntaje
     text_score = font_normal.render( str(score), True, generic_colors('yellow') )
     display.blit(
         text_score, ( (data_CF.disp[0])-(size_font_normal*3), size_font_normal*2 )
     )
     
+    
+    
+    
     # Función | Mensaje de inicio
-    if isinstance(render_map.message_start, str):
+    if isinstance(render_map.message_start, str) or credits_count == credits_fps:
         # No moverse player mientras se ve el mensaje
-        if player.not_move == False:
-            player.not_move = True
+        player.not_move = True
 
-        # Mensaje
+        # Para cerrar el juego
+        if credits_count == credits_fps:
+            message = ''
+        else:
+            message = render_map.message_start
+            #message = "Desde los años noventa se dice que el texto es texto. Y tambien ahora es texto esta es una prueba de mucho texto, escribir mucho texto en pantalla, es bueno para la salud mental. Perros locos, loquitas. Bueno eso es todo amigos hasta la proxima."
+
+        # Mensaje tiene surf rect y anchura de mansaje
         text_message = font_normal.render(
-            render_map.message_start, True, generic_colors('white')
+            message, True, generic_colors('white')
         )
-        position = [
-            (data_CF.disp[0]//2)-(text_message.get_rect().width//2),
-            size_font_normal
-        ]
-
         rect_text = text_message.get_rect()
-        pygame.draw.rect(
-            display, generic_colors('black'), 
-            (
-                position[0], position[1],
-                rect_text.width, rect_text.height
-            )
-        )
+        width_message = rect_text.width
 
-        display.blit(
-            text_message, (
-                position[0],
-                position[1]
+        # Determinar diviciones de texto si sobrepasa la pantalla. En base al limit_of_text
+        limit_of_text = data_CF.disp[0]
+
+        text_parts = surf_limit_width( text_message, limit_of_text )
+
+
+        if len(text_parts) > 0:
+            for x in range( len(text_parts) ):
+                # Parte
+                message_part = text_parts[x]
+            
+                # Mostrar parte de mensaje
+                rect_text = message_part.get_rect()
+                position = [
+                    (data_CF.disp[0]//2)-(rect_text.width//2),
+                    size_font_normal * (x+1)
+                ]
+
+                pygame.draw.rect(
+                    display, generic_colors('black'), (
+                        position[0], position[1],
+                        rect_text.width, rect_text.height
+                    )
+                )
+
+                display.blit(
+                    message_part, position
+                )
+            
+            
+        else:
+            # Mostrar todo el mensaje sin dividirlo.
+            position = [
+                (data_CF.disp[0]//2)-(rect_text.width//2),
+                size_font_normal
+            ]
+
+            pygame.draw.rect(
+                display, generic_colors('black'), (
+                    position[0], position[1],
+                    rect_text.width, rect_text.height
+                )
             )
-        )
+
+            display.blit(
+                text_message, position
+            )
         
         # Iformación acerca de como cuntinuar tras el mensaje
         text_continue = font_normal.render(
@@ -834,12 +893,9 @@ while exec_game:
     
     
     # Juego completado:
-    if go_credits == 'endgame':
+    if go_credits == True:
+        player.not_move = True
         if credits_count == credits_fps:
-            exec_game = False
-        else:
-            credits_count += 1
-        
             # Texto creditos
             text_credits = font_normal.render(
                 Lang.get_text('credits'), True, generic_colors('yellow')
@@ -867,6 +923,11 @@ while exec_game:
                     position[1]
                 )
             )
+
+        else:
+            credits_count += 1
+    
+
     
     
     # Fin

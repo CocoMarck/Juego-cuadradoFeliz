@@ -130,6 +130,16 @@ class Window_Main(Gtk.Window):
             switch.set_active( data_CF.show_collide )
             hbox.pack_end( switch, False, False, 0 )
             
+            # Mostrar sprite
+            hbox = Gtk.Box(spacing=0)
+            vbox_main.pack_start(hbox, True, False, 0 )
+            label = Gtk.Label( label=Lang('show_sprite') )
+            hbox.pack_start(label, False, False, 0)
+            switch = Gtk.Switch()
+            switch.connect('notify::active', self.evt_set_show_sprite)
+            switch.set_active( data_CF.show_sprite )
+            hbox.pack_end(switch, False, False, 0)
+            
 
         # Sección vertical - Label - Ver Nivel
         hbox = Gtk.Box(spacing=0)
@@ -270,6 +280,11 @@ class Window_Main(Gtk.Window):
     def evt_set_show_collide(self, switch, gparam):
         # Establecer el mostrar collider o no
         data_CF.show_collide=switch.get_active()
+        save_CF( data_CF )
+
+    def evt_set_show_sprite(self, switch, gparam):
+        # Establecer el mostrar sprite o no
+        data_CF.show_sprite=switch.get_active()
         save_CF( data_CF )
     
     
