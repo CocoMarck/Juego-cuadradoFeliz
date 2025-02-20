@@ -7,5 +7,6 @@ climate_sound=True
 
 show_clouds=True
 show_collide=False
+show_sprite=True
 
 current_level=./resources/maps/part1/cf_map_part1-level1.txt
