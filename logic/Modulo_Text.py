@@ -240,10 +240,11 @@ def ignore_text_filter(text=None, filter=None) -> str:
 
 
 
-
+prefix_abc = 'abcdefghijklmnñopqrstuvwxyzABCDEFGHIJKLMNÑOPQRSTUVWXYZ'
+prefix_number = '1234567890'
 def abc_list(list=None):
     # Ordenar cada letra del abecedario en un dicionario
-    abc = 'abcdefghijklmnñopqrstuvwxyz'
+    abc = prefix_abc
     dict_abc = {}
     number = 0
     for character in abc:

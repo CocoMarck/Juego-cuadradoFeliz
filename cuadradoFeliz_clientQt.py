@@ -218,7 +218,7 @@ class Window_Main(QWidget):
     def evt_start_game(self):
         # Cerrar cliente, y abrir videojuego
         self.close()
-        import cuadradoFeliz_newver
+        import cuadradoFeliz
 
     def evt_get_controls(self):
         # Mostrar los controles

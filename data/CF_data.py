@@ -544,6 +544,8 @@ dict_object = {
 
     'elevator-y': 'x',
     'elevator-x': 'y',
+    
+    'climate-rain': '~',
 
     'level-change': '0',
     'end-game': 'F'

@@ -1,70 +1,10 @@
-from logic.Modulo_Text import (
-    Text_Read, Ignore_Comment, Only_Comment
-)
+from logic.Modulo_Text import (Text_Read, Ignore_Comment, Only_Comment)
 from data import Modulo_Language as Lang
-from logic.pygame.Modulo_pygame import (
-    generic_colors, obj_collision_sides_solid, obj_coordinate_multiplier,
-    player_camera_prepare, player_camera_move,
-    obj_collision_sides_rebound, obj_not_see,
-    Anim_sprite, Anim_sprite_set, Split_sprite
-)
-from data.CF_info import (
-    game_title,
-
-    dir_game,
-    dir_data,
-    dir_sprites,
-    dir_maps,
-    dir_audio,
-    
-    data_CF
-)
-from data.CF_data import (
-    save_CF,
-    read_CF,
-    save_gamecomplete,
-    credits as CF_data_credits
-)
-from logic.pygame.CF_object import(
-    Player,
-
-    Floor,
-    Ladder,
-
-    Spike,
-    Star_pointed,
-    Climate_rain,
-    Anim_player_dead,
-    Player_part,
-    Limit_indicator,
-    Level_change,
-    Stair,
-    Score,
-    Cloud,
-    Trampoline,
-    Elevator,
-    
-    layer_all_sprites,
-    nocamera_back_sprites,
-
-    solid_objects,
-    ladder_objects,
-    jumping_objects,
-    moving_objects,
-
-    damage_objects,
-    limit_objects,
-    level_objects,
-    anim_sprites,
-    climate_objects,
-    player_objects,
-    score_objects,
-    
-    sounds_hit,
-    sounds_step,
-    sounds_dead,
-    sound_jump
-)
+from logic.pygame.Modulo_pygame import *
+from data.CF_info import *
+from data.CF_data import *
+from entities import Map, CF
+from logic.pygame.CF_object import *
 
 import time
 import pygame, sys, os, random
@@ -81,7 +21,7 @@ clock = pygame.time.Clock()
 pygame.display.set_caption(game_title)
 
 # Audio | Musica de fondo
-#...
+# Estan en el modulo CF_function
 
 # Fuentes de texto
 size_font_big = int(data_CF.pixel_space*4)
@@ -92,393 +32,294 @@ font_big = pygame.font.SysFont(font_str, size_font_big)
 
 # Fondo
 if data_CF.show_sprite == True:
-    image_background = pygame.transform.scale(
-        pygame.image.load( os.path.join( dir_sprites, 'background.png' ) ),
-        (data_CF.disp[0], data_CF.disp[1])
-    ).convert()
+    image_background = get_image('background', size=data_CF.disp, return_method='normal')
 else:
     image_background = pygame.Surface( (data_CF.disp[0], data_CF.disp[1]) )
     image_background.fill( (63, 63, 63) )
 color_background = pygame.Surface( (data_CF.disp[0], data_CF.disp[1]), pygame.SRCALPHA )
 
+# Transparencia
+if data_CF.show_collide == True: transparency_collide = 255
+else: transparency_collide = 0
 
-'''
-for x in range(0, 10):
-    floor = Floor(
-        size=(int(data_CF.pixel_space*2), data_CF.disp[1]//60),
-        position=(
-            random.randint(data_CF.pixel_space, data_CF.disp[0]-data_CF.pixel_space),
-            random.randint(data_CF.pixel_space, data_CF.disp[1]-data_CF.pixel_space)            
-        ),
-        limit=False,
-        show_collide=False
-    )
-'''
-
-
-
-# Funciones
-class Start_Map():
-    def __init__(self,
-        x_column = 0,
-        y_column = 0,
-        level = data_CF.current_level,
-    ):
-        #cf_map_default.txt
-        #cf_map.txt
-        #cf_map_level-test.txt
-        #cf_map_level-test1.txt
-        '''
-        Funcion que permite crear niveles de una forma visual y sencilla.
-        "." para un espacio de el "ancho sobre 60" del juego
-        "p" para una plataforma con un espacio del "ancho sobre 60" del juego
-        "|" para establecer el limite de la camara, con un espacio del ancho sobre el juego"
-        
-        "x, y" column son para establecer el pixel de inicio basado en la resolucion del juego. Por defecto inician en 0, 0.
-        '''
-        # Establecer archivo y información del level
-        next_level = None
-        self.level = level.replace(dir_maps, '')
-
-        self.climate = None
-        self.message_start = None
-        map_level = Text_Read(level, 'ModeText')
-        map_info = Only_Comment(
-            text=map_level,
-            comment='$$'
-        )
-        number_info = 0
-        info = None
-        if not map_info == None:
-            info = []
-            for line in map_info.split('\n'):
-                info.append(line)
-                number_info += 1
-            if not info[0] == '':
-                next_level = info[0].split(':')
-            else:
-                next_level = [None, None]
-        if number_info >= 2:
-            self.climate = info[1]
-
-        if number_info >= 3:
-            if info[2].startswith('stock_'):
-                self.message_start = Lang.get_text(info[2])
-            else:
-                self.message_start = info[2]
-        map_level = Ignore_Comment(text=map_level, comment='//')
-        map_level = Ignore_Comment(text=map_level, comment='$$')
-                
-        # Establecer variables de inicio de juego, de posición y tamaño de objetos.
-        self.player_spawn = None
-        plat_number = 0
-        pixel_space = data_CF.pixel_space
-
-        # Establecer objetos en su posición indicada
-        test = ''
-        for column in map_level.split('\n'):
-            if column == '':
-                pass
-            else:
-                y_column += 1
+if data_CF.show_sprite == True:
+    transparency_sprite = 255
+    transparency_sprite_rain = 127
+else:
+    transparency_sprite = 0
+    transparency_sprite_rain = 0
+if data_CF.show_collide == False and data_CF.show_sprite == False:
+    transparency_collide, transparency_sprite, transparency_sprite_rain, = 127, 127, 127
     
-            x_space = x_column
-            for space in column:
-                position=( (x_space*pixel_space), (y_column*pixel_space) )
-                if space == '.' or space == '#':
-                    x_space += 1
 
-                elif space == 'p':
-                    x_space += 1
-                    plat = Floor(
-                        size=(pixel_space, pixel_space),
-                        position=position,
-                        climate=self.climate,
-                        show_collide=data_CF.show_collide,
-                        show_sprite=data_CF.show_sprite
+
+
+
+# Map
+'''
+Nota:
+Los objetos en vez de posicionar el rect con "lefttop", se hace con "center", lo cual no es lo adecuado, seria bueno cambiarlo (probablemente se tararia un poco menos el renderizado y seria mas facil el manejo de este).
+'''
+class Start_Map( ):
+    def __init__(self, Map):
+        super().__init__()
+        
+        print(f'pixel space: {data_CF.pixel_space}px' )# Mostrar pixel space
+        
+        # Mensaje de inicio
+        self.message_start = current_map.message_start
+        if isinstance(self.message_start,str):
+            if self.message_start.startswith('stock_'):
+                self.message_start = Lang.get_text(self.message_start)
+        
+        # Atributos necesarios
+        self.player_spawn = [0,0]
+
+        # Renderizar mapa
+        xy = [0,0]
+        for line in Map.list_map:
+            print_line = '' # Mostrar mapa en caracteres
+        
+            xy[0] = 0
+            position = [ xy[0], xy[1]*data_CF.pixel_space ]
+            xy[1] += 1
+            
+            for character in line:
+                position[0] = xy[0]*data_CF.pixel_space
+                
+                xy[0] += 1
+
+                # Jugador
+                if character == 'j':
+                    self.player_spawn = [ position[0], position[1] ]
+                
+                
+                
+                
+                # Objetos solidos/saltarines/monedas/checkpoint, no dañinos
+                elif character == 'p':
+                    # Objeto plataforma Piso Floor
+                    Floor(
+                        size=(data_CF.pixel_space, data_CF.pixel_space),
+                        position=position, climate=Map.climate,
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
+                    )
+                elif character == 'P':
+                    # Posicionar de forma adecuada
+                    new_size_pos = get_coordinate_multipler( 
+                        multipler=2, pixel_space=data_CF.pixel_space, position=position 
+                    )
+                    new_size_pos[1] = position
+                
+                    # Objeto plataforma Piso Floor
+                    Floor(
+                        size=new_size_pos[0], position=new_size_pos[1], climate=Map.climate,
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                 
-                elif space == 'P':
-                    x_space += 1
-
-                    # Para acomodar los objetos de forma adecuada.
-                    multipler = obj_coordinate_multiplier(
-                        multipler=2,
-                        pixel=pixel_space,
-                        x=x_space,
-                        y=y_column
-                    )
-                    size=multipler[0]
-                    position=multipler[1]
-
-                    plat = Floor(
-                        size=size,
-                        position=position,
-                        climate=self.climate,
-                        show_collide=data_CF.show_collide,
-                        show_sprite=data_CF.show_sprite
+                elif character == 's':
+                    Score( 
+                        size=data_CF.pixel_space, position=position, 
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                     
-                elif space == 'H':
-                    x_space += 1
+                elif character == '+':
+                    Stair(
+                        size=data_CF.pixel_space, position=position, invert=False, climate=Map.climate, 
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
+                    )
+                    
+                elif character == '-':
+                    Stair(
+                        size=data_CF.pixel_space, position=position, invert=True, climate=Map.climate,      
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
+                    )
+
+                elif character == 'H':
                     Ladder(
-                        size=pixel_space,
-                        position=position,
-                        show_collide=data_CF.show_collide,
-                        show_sprite=data_CF.show_sprite
+                        size=data_CF.pixel_space, position=position,
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                     
-                elif space == '_':
-                    x_space += 1
+                elif character == '_':
                     Trampoline(
-                        size=pixel_space,
-                        position=position,
-                        show_collide=data_CF.show_collide,
-                        show_sprite=data_CF.show_sprite
+                        size=data_CF.pixel_space, position=position,
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
-
-                elif space == 'x':
-                    x_space += 1
+                    
+                elif character == 'x':
                     Elevator(
-                        size=pixel_space,
-                        position=position, move_dimension=1,
-                        show_collide=data_CF.show_collide,
-                        show_sprite=data_CF.show_sprite
+                        size=data_CF.pixel_space, position=position, move_dimension=1,
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                     
-                elif space == 'y':
-                    x_space += 1
+                elif character == 'y':
                     Elevator(
-                        size=pixel_space,
-                        position=position, move_dimension=2,
-                        show_collide=data_CF.show_collide,
-                        show_sprite=data_CF.show_sprite
-                    )
-
-                elif space == '|':
-                    x_space += 1
-                    limit = Limit_indicator(
-                        position=position,
-                        show_collide=data_CF.show_collide
-                    )
-
-                elif space == 'j':
-                    x_space += 1
-                    self.player_spawn = position
-
-                elif space == '^':
-                    x_space += 1
-                    spike = Spike( 
-                        position=position,
-                        show_collide=data_CF.show_collide,
-                        show_sprite=data_CF.show_sprite
-                    )
-
-                elif space == '!':
-                    x_space += 1
-                    spike = Spike( 
-                        position=position, instakill=True,
-                        show_collide=data_CF.show_collide,
-                        show_sprite=data_CF.show_sprite
+                        size=data_CF.pixel_space, position=position, move_dimension=2,
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                     
-                elif space == 'A':
-                    x_space += 1
-
-                    # Para acomodar los objetos de forma adecuada.
-                    multipler = obj_coordinate_multiplier(
-                        multipler=2,
-                        pixel=pixel_space,
-                        x=x_space,
-                        y=y_column
-                    )
-                    for x in multipler[0]:
-                        size = x
-                    position=multipler[1]
-
-                    spike = Spike(
-                        size=size,
-                        position=position,
-                        show_collide=data_CF.show_collide,
-                        show_sprite=data_CF.show_sprite
-                    )
-                    
-                elif space == '\\':
-                    x_space += 1
-                    spike = Spike( 
-                        position=position, moving=True, instakill=True,
-                        show_collide=data_CF.show_collide,
-                        show_sprite=data_CF.show_sprite
-                    )
-                
-                elif space == 'Y':
-                    x_space += 1
-                    Star_pointed(
-                        position=position,
-                        show_collide=data_CF.show_collide,
-                        show_sprite=data_CF.show_sprite
-                    )
-
-                elif space == 'X':
-                    x_space += 1
-                    Star_pointed(
-                        position=position, instakill=True,
-                        show_collide=data_CF.show_collide,
-                        show_sprite=data_CF.show_sprite
-                    )
-                    
-                elif space == '*':
-                    x_space += 1
-                    Star_pointed(
-                        position=position, moving=True, instakill=True,
-                        show_collide=data_CF.show_collide,
-                        show_sprite=data_CF.show_sprite
-                    )
-
-                elif space == '+':
-                    x_space += 1
-                    Stair(
-                        size=pixel_space,
-                        position=position,
-                        invert=False,
-                        climate=self.climate,
-                        show_collide=data_CF.show_collide
-                    )
-                    
-                elif space == '-':
-                    x_space += 1
-                    Stair(
-                        size=pixel_space,
-                        position=position,
-                        invert=True,
-                        climate=self.climate,
-                        show_collide=data_CF.show_collide
-                    )
-
-                elif space == 's':
-                    x_space += 1
-                    Score(
-                        size=pixel_space,
-                        position=position,
-                        show_collide=data_CF.show_collide,
-                        show_sprite=data_CF.show_sprite
-                    )
-
-                elif space == '~':
-                    x_space += 1
-
+                elif character == '~':
                     Climate_rain(
                         position=position,
-                        show_collide=data_CF.show_collide,
-                        show_sprite=data_CF.show_sprite
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite_rain
                     )
 
-                elif space == '0':
-                    x_space += 1
-
+                elif character == '0':
                     level = Level_change(
-                        dir_level=next_level[0],
-                        level=next_level[1],
-                        position=position,
-                        show_collide=data_CF.show_collide,
-                        show_sprite=data_CF.show_sprite
+                        dir_level=Map.path, level=Map.next_level, position=position, 
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                     
-                elif space == 'F':
-                    x_space += 1
-
+                elif character == 'F':
                     Level_change(
-                        dir_level=next_level[0],
-                        level=next_level[1],
+                        dir_level=Map.path, level=Map.next_level, position=position, gamecomplete=True,
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
+                    )
+                
+                
+                
+                
+                # Limite del mapa
+                elif character == '|':
+                    Limit_indicator(
+                        position=position, transparency_collide=transparency_collide
+                    )
+                
+                
+                
+                # Objetos dañinos
+                elif character == '^':
+                    spike = Spike( 
                         position=position,
-                        gamecomplete=True,
-                        show_collide=data_CF.show_collide,
-                        show_sprite=data_CF.show_sprite
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
+                    )
+                    
+                elif character == 'A':
+                    # Objeto pico
+                    Spike(
+                        size=data_CF.pixel_space*2, position=position,
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
+                    )
+                    
+                elif character == '\\':
+                    Spike( 
+                        position=position, moving=True, instakill=True,
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
+                    )
+
+                elif character == '!':
+                    Spike( 
+                        position=position, instakill=True,
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
+                    )
+                    
+                elif character == 'Y':
+                    Star_pointed(
+                        position=position,
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
+                    )
+
+                elif character == '*':
+                    Star_pointed(
+                        position=position, moving=True, instakill=True,
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
+                    )
+
+                elif character == 'X':
+                    Star_pointed(
+                        position=position, instakill=True,
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
         
-        # Sección de genración de clima:
-        if self.climate == 'rain':
-            rain_space_x = 0
-            for space in map_level.split('\n')[0]:
-                if (
-                    space == '.' or
-                    space == '|' or
-                    space == '~'
-                ):
-                    rain_space_x += 1
-            rain_pixels_x = rain_space_x*pixel_space
-            rain_pixels_y = y_column*pixel_space
-            # Esto funciona bien, los bugs que sucedan, deberian ser por otras funciones
-            # pixel_space = 16
-            # pixel_space*16 = 256
-            # pixel_space*4 = 64
-            difference_x = pixel_space*16
-            difference_y = rain_pixels_y//(pixel_space*4)
-            if rain_space_x > 0:
-                for x in range(0, rain_space_x):
-                    Climate_rain( 
-                        position=( 
-                            random.randint( difference_x, rain_pixels_x+(difference_x) ),
-                            random.randint( (difference_y)-(difference_x//2),  difference_y )
-                        ),
-                        show_collide=data_CF.show_collide,
-                        show_sprite=data_CF.show_sprite
-                    )
+                print_line += character
+        
+            print(print_line) # Mostrar mapa en caracteres
 
-
-# Loop dia y noche
-class Loop_allday():
-    def __init__ (self, climate=None, minutes=5, fps=data_CF.fps):
-        self.count_fps_day = 0
-        if climate == 'rain':
-            self.color_day_red = 155
-            self.color_day_green = 168
-            self.color_day_blue = 187
-        elif climate == 'sunny':
-            self.color_day_red = 240
-            self.color_day_green = 202
-            self.color_day_blue = 134
-        elif climate == 'alien':
-            self.color_day_red = 68
-            self.color_day_green = 38
-            self.color_day_blue = 136
-        elif climate == 'black':
-            self.color_day_red = 47
-            self.color_day_green = 47
-            self.color_day_blue = 47
+        # Establecer Limite del mapa
+        if xy[0] > 0 and xy[1] > 0:
+            reduce = 1
         else:
-            # climate == None
-            self.color_day_red = 108
-            self.color_day_green = 150
-            self.color_day_blue = 255
-        self.color_day = [self.color_day_red, self.color_day_green, self.color_day_blue]
-        self.is_night = False
+            reduce = 0
+        self.limit_xy = [ (xy[0]-reduce) *data_CF.pixel_space, (xy[1]-reduce) *data_CF.pixel_space ]
 
-        # Cambio de dia a noche, y de noche a dia, entre mas bajo, mas cambios. Y mas oscura la noche
-        # Como minimo, reductor tiene que ser dos, o si no falla el programa
-        # Minutos de duración
-        #minutes = minutes
 
-        reducer = 4
-        self.changes_day = []
-        for value in self.color_day:
-            if value > (reducer-1):
-                self.changes_day.append( value//reducer )
-            else:
-                self.changes_day.append( 0 )
 
-        reducer = (reducer-1)
+        # Sección generación de clima
+        '''
+        Si la cantidad de objetos en el eje "x" es mayor que cero, entonces se procedera a generar la lluvia.
 
-        # fps = 30
-        # Si son 30 cambios maximos, entonces cada segundo secedera un cambio. (fps/1)
-        # Si son 60 cambios maximos, entonces cada medio segundo secedera un cambio. (fps/2)
-        # Si son 90 cambios maximos, entonces cada 1/3 segundo secedera un cambio. (fps/3)
-        # Esto con el fin de que cada dia/noche, duren aproximadamente medio minuto, de esa manera cada dia completo dura 1 minuto
-        self.color_change = (
-            ( fps//( ( max(self.changes_day) )/fps ) )//(reducer)
-        )*minutes
-        if self.color_change < 1:
-            self.color_change = 1
+        rain_multipler; Es para multiplicar la cantidad de lluvia.
+        
+        El primer ciclo for; con un rango del 0 al rain_multipler, es para generar la lluvia.
+        
+        more_distance_xy; es para adicionar en la posicion de generación de lluvia mas espacio, ya sea en el eje x o en el y.
+        
+        Ciclo for con un:
+        Rango de more_distance_x a ultimo objeto en eje "x", mas la mitad del ultimo objeto en eje y mas la more_distance_x.
+        
+        Cada valor obtenido de este ciclo, generara una lluvia, en la posición x. Que sera el valor actual obtenido del ciclo. Y en el eje "y" en un rango -pixel_space a -pixel_space*16
+        '''
+        if Map.climate == 'rain' and xy[0] > 0:
+            rain_multipler = 2
+            for generate_number in range(0, rain_multipler):
+                more_distance_xy = [8, 0]
+                for x in range( more_distance_xy[0], xy[0]+(xy[1]//2)+more_distance_xy[0] ):
+                    #print(x)
+                    Climate_rain(
+                        position=(
+                            #random.randint(
+                            #    x*data_CF.pixel_space, (x*data_CF.pixel_space) + data_CF.pixel_space*1
+                            #),
+                            x*data_CF.pixel_space,
+                            -( random.randint( data_CF.pixel_space, data_CF.pixel_space*16) )
+                        ),
+                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite_rain,
+                        damage=False
+                    )
+            print( 
+                f'rain multipler: {rain_multipler}\n' 
+                f'raindrops: {x}'
+            )
+ 
+current_map = Map
+read_Map( Map=current_map, level=data_CF.current_level )
+render_map = Start_Map(current_map)
+player = Player(
+    position=render_map.player_spawn,
+    transparency_collide=transparency_collide, transparency_sprite=transparency_sprite,
+)
+player_spawn_hp = player.hp
+player_anim_dead = None
+message_skip = False
+
+
+
+
+# Loop dia y noche | Fondo de color de clima
+def get_climate( Map ):
+    if Map.climate in dict_climate.keys():
+        return Map.climate
+    else:
+        return 'default'
+
+def Loop_allday( Map ):
+    climate = get_climate( Map )
+    gradiant_color = GradiantColor( 
+        color=dict_climate[climate], transparency=127, divider=16, start_with_max_power=True, time=data_CF.fps*120
+    )
+    gradiant_color.climate=climate
+    
+    print( 
+        f'climate start color: {gradiant_color.start_color}\n'
+        f'climate end color: {gradiant_color.end_color}'
+    )
+    return gradiant_color
+
+loop_allday = Loop_allday( current_map )
+
+background_surf = pygame.Surface( data_CF.disp, pygame.SRCALPHA )
+background_surf.fill( loop_allday.current_color )
 
 
 
@@ -487,101 +328,98 @@ class Loop_allday():
 end_of_track_event = pygame.USEREVENT + 1
 pygame.mixer.music.set_endevent(end_of_track_event)
 
-class Play_Music():
-    def __init__(self, music=data_CF.music, climate=None, climate_sound=data_CF.climate_sound ):
-        # Para reproducir musica en el juegito
-        self.list_music = [
-            [os.path.join(dir_audio, 'music/default-music.ogg'), 4],
-            [os.path.join(dir_audio, 'music/music-party.ogg'), 8],
-            #[os.path.join(dir_audio, 'music/music-cover.ogg'), 1],
 
-            [os.path.join(dir_audio, 'music/music-test1.ogg'), 1],
-            [os.path.join(dir_audio, 'music/music-test2.ogg'), 2],
-            [os.path.join(dir_audio, 'music/music-test3.ogg'), 2],
-            [os.path.join(dir_audio, 'music/music-test4.ogg'), 2],
-            [os.path.join(dir_audio, 'music/music-test5.ogg'), 1]
-        ]
-
-        self.climate_sound = climate_sound
-        self.__go = False
+# Nota: Tienen que ser directorios de archivo, no objetos Sound
+class Play_background_music():
+    def __init__(self, climate_sound=data_CF.climate_sound, music=data_CF.music,  climate='default' ):
+        self.climate = climate
         self.music = music
-        self.climate = climate
-        self.limit_music = 0
-        self.__limit_music_climate = 8
-        self.play()
-        
-    def set_climate(self):
-        if self.climate == 'rain':
-            return os.path.join(dir_audio, 'music/climate_rain.ogg')
-        if self.climate == 'alien':
-            return os.path.join(dir_audio, 'music/climate_alien.ogg')
-        if self.climate == 'sunny':
-            return os.path.join(dir_audio, 'music/climate_sunny.ogg')
-        if self.climate == 'black':
-            return os.path.join(dir_audio, 'music/climate_black.ogg')
-        else:
-            return os.path.join(dir_audio, 'music/climate_default.ogg')
-    
+        self.climate_sound = climate_sound
+        self.play_music = False
+        self.list_music = []
+        self.update_list_music()
+        self.count_played = 0
+        self.current_music = None
+        self.limit = 0
+
+
+    def update_list_music(self):
+        if self.list_music == []:
+            for key in all_music.keys():
+                if not key.startswith('climate_'):
+                    self.list_music.append( all_music[key])
+
     def play(self):
-        # Reproducir musica o sonido del silencio/ambiente.
-        if self.climate_sound == True:
-            self.__go = random.choice( [True, 2, 3] )
-        else:
-            if self.music == True:
-                self.__go = True
+        #print(self.count_played)
+        if self.music == True:
+            if self.climate_sound == True:
+                self.play_music = random.choice( [True, True, False, False, False] )
             else:
-                self.__go = False
+                self.play_music = True
+        if self.count_played == 0:
+            # Seleccionar una musica aleatoria | Seleccionar modo clima o modo musica
+            if self.music == True and self.play_music == True:
+                # Reproducir musica y clima
+                self.update_list_music()
+                if isinstance(self.list_music, list):
+                    self.current_music = random.choice( self.list_music )
+                    self.list_music.remove(self.current_music)
+                #else:
+                #    self.list_music = all_music['music']
+                self.limit = 0
+                    
+            else:
+                # Solo reproducir el clima
+                for key in all_music.keys():
+                    if self.climate == key:
+                        self.current_music = all_music[self.climate]
+                self.limit = 4
+        elif self.count_played == self.limit:
+            # Llego al limite, reproducir otra musica aletoria.
+            self.count_played = -1
         
-        # Reproducir musica o no
-        if self.__go == True and self.music == True:
-            # Cuando se puede reproducir musica.
-            music_ready = random.choice(self.list_music)
-            music = music_ready[0]
-            self.limit_music = music_ready[1]
-        else:
-            # Sonido del silencio/ambiente
-            music = self.set_climate()
-            self.limit_music = self.__limit_music_climate
-        pygame.mixer.music.load( music )
-        pygame.mixer.music.set_volume( data_CF.volume )
-        pygame.mixer.music.play()
-        
-        return self.limit_music
-        
-    def change_climate(self, climate=None):
-        self.climate = climate
-        if not self.__go == True:
-            music = self.set_climate()
-            pygame.mixer.music.load( music )
+        # Cagar y reproducir cancion
+        if isinstance(self.current_music, str):
+            pygame.mixer.music.load( self.current_music )
             pygame.mixer.music.set_volume( data_CF.volume )
             pygame.mixer.music.play()
-            self.limit_music = self.__limit_music_climate
+
+            # Contador de veces reporducidas (Solo contara cuando el limite de contado sea mayor que cero)
+            if self.limit > 0:
+                self.count_played += 1
+play_background_music = Play_background_music( 
+    music=data_CF.music, climate=f'climate_{get_climate( current_map )}' 
+)
+play_background_music.play()
 
 
 # Función nubes de fondo
-def create_clouds(c_number = 15):
+# rehacer
+def create_clouds(c_number = int( (data_CF.disp[0]//3.75)//data_CF.pixel_space) ): #16 nubes por defecto
     '''
     Imagenes de fondo | Nubes de fondo
     # Si hay demasiadas nubes se dejaran de crear.
     # Se creara una nube de forma random, con posibilidades 1-6
     '''
-    c_sizex = data_CF.disp[0]//c_number
-    c_sizey = data_CF.disp[1]//c_number
-    c_size = (c_sizex, c_sizey)
+    c_size = [data_CF.disp[0]//c_number, data_CF.disp[1]//c_number]
 
+    pos = [0, 0]
     clouds = 0
     for y in range(0, c_number):
-        posy = c_sizey*(y)
+        pos[1] = c_size[1]*(y)
         for x in range(0, c_number):
-            posx = c_sizex*(x)
+            pos[0] = c_size[0]*(x)
 
             create = random.choice( [True, 2, 3, 4, 5, 6] )
+            if data_CF.show_collide == False: transparency_sprite_collide=random.choice([8,16,32])
+            else: transparency_sprite_collide=0
             if create == True:
                 clouds += 1
                 Cloud(
-                    size=c_size, position=(posx, posy),
-                    show_collide=data_CF.show_collide
+                    size=c_size, position=pos,
+                    transparency_collide=transparency_collide, transparency_sprite=transparency_sprite_collide
                 )
+    print( f'cloud_number: {x}' )
 
 
 
@@ -594,504 +432,553 @@ if data_CF.show_clouds == True:
 
 # Funcion del mapa
 score = 0
-start_map = Start_Map(0, 0)
 
 for plat in solid_objects:
     plat.limit_collision()
-
-player = Player( 
-    position=start_map.player_spawn,
-    show_collide=data_CF.show_collide,
-    show_sprite=data_CF.show_sprite
-)
-
-player_spawn_hp = player.hp
-player_spawn_xy = player_camera_prepare(
-    disp_width=data_CF.disp[0], disp_height=data_CF.disp[1], more_pixels=int(data_CF.pixel_space*2),
-    all_sprites=layer_all_sprites.sprites(), player=player, show_coordenades=True
-)
-player_show_sprite = player.show_sprite
-player_anim_dead = None
-
-camera_x = 0
-camera_y = 0
-
-climate_number = 0
-dict_climate = {}
-for climate in climate_objects:
-    climate_number += 1
-    dict_climate.update( {climate_number : [climate.rect.x, climate.rect.y]} )
-    
-
-message_start = start_map.message_start
-
-
-# Funcion | Dia y noche
-loop_allday = Loop_allday(
-    climate=start_map.climate
-)
-count_fps_day = loop_allday.count_fps_day
-color_day = loop_allday.color_day
-color_day_red = loop_allday.color_day_red
-color_day_green = loop_allday.color_day_green
-color_day_blue = loop_allday.color_day_blue
-color_change = loop_allday.color_change
-changes_day = loop_allday.changes_day
-is_night = loop_allday.is_night
-
-# Funcion musica
-play_music = Play_Music( climate=start_map.climate )
-count_playmusic = 0
-limit_playmusic = play_music.limit_music
-
 
 # Funcion juego completado
 gamecomplete = False
 
 # Función cretidos
-credits = False
 credits_fps = data_CF.fps*4
 credits_count = 0
+
+go_credits = False
+
+
+
+
+# Función camara / Scroll
+def get_limit_xy():
+    '''
+    Limite del mapa
+    '''
+    pos_x = []
+    pos_y = []
+    #for sprite in layer_all_sprites.sprites():
+    for sprite in limit_objects:
+        pos_x.append(sprite.rect.x)
+        pos_y.append(sprite.rect.y)
     
+    xy_return = [ max(pos_x), max(pos_y)]
+    print(f'limit_xy: {xy_return}')
+    return xy_return
+limit_xy = render_map.limit_xy#get_limit_xy()
+
+
+
+
+def start_scroll( pos_xy=[0,0], display_xy=[0,0], limit_xy=[0,0], difference_xy=[0,0] ) ->[int, int]:
+    xy = [0,0]
+    
+    # Posicionar camara, con el jugador a la der o izq, arriba o abajo
+    if (pos_xy[0] + difference_xy[0] + (display_xy[0]/2)) > limit_xy[0]:
+        # Jugador en la izq
+        xy[0] = pos_xy[0] -(display_xy[0]/2) +difference_xy[0]
+    else:
+        # Jugador en la der
+        xy[0] = pos_xy[0] +(display_xy[0]/2) -difference_xy[0]
+    
+    if (pos_xy[1] +difference_xy[1] + (display_xy[1]/2)) > limit_xy[1]:
+        # Jugador abajo
+        xy[1] = pos_xy[1] -(display_xy[1]/2) +difference_xy[1]
+    else:
+        # Jugador arriba
+        xy[1] = pos_xy[1] +(display_xy[1]/2) -difference_xy[1]
+
+    # Posicionar camara
+    scroll_float = [ (xy[0] -display_xy[0]/2), (xy[1] -display_xy[1]/2) ]
+    
+    xy_return = [int(scroll_float[0]), int(scroll_float[1])]
+    print(f'start scroll: {xy_return}')
+    return xy_return
+scroll_float = [0,0]
+scroll_float = start_scroll(
+    pos_xy=[player.rect.x, player.rect.y], display_xy=data_CF.disp, limit_xy=limit_xy,
+    difference_xy=[data_CF.pixel_space*2, data_CF.pixel_space*3]
+)
+
+
+
+
+# Sol solecito
+size_sun = [data_CF.pixel_space, data_CF.pixel_space] 
+color_sun = generic_colors('yellow')
+
+surf_sun = pygame.Surface( size_sun )
+surf_sun.fill( color_sun )
+
+
+sprite_sun = pygame.sprite.Sprite()
+sprite_sun.surf = surf_sun
+position_sun = [data_CF.pixel_space*4, data_CF.pixel_space*1]
+sprite_sun.rect = sprite_sun.surf.get_rect( topleft=position_sun )
+nocamera_back_sprites.add(sprite_sun)
+
+surf_sun_bloom = surface_bloom(
+    size=size_sun, alpha_range=[127, 0], color=generic_colors('yellow'), middle_color=False
+)
+sprite_sun_grad = pygame.sprite.Sprite()
+sprite_sun_grad.surf = surf_sun_bloom
+sprite_sun_grad.rect = sprite_sun_grad.surf.get_rect( 
+    topleft=( position_sun[0]-size_sun[0], position_sun[1]-size_sun[1] )
+)
+nocamera_back_sprites.add(sprite_sun_grad)
+
+
 
 
 # Bucle del juego
 exec_game = True
 while exec_game:
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            exec_game = False
+        if event.type == end_of_track_event:
+            play_background_music.play()
         if event.type == pygame.KEYDOWN:
             if event.key == player.pressed_jump:
                 # Si se preciona la tecla para saltar.
-                # Mensajes
-                if type(message_start) is str:
-                    # El mensaje se cierra
-                    message_start = None
+                if isinstance(render_map.message_start, str):
+                    # Evitar mensaje
+                    render_map.message_start = None
+                    player.not_move=False
                 else:
                     # El jugador salta si no hay mensajes
                     player.jump()
                     
-                # Creditos
-                if credits == True:
-                    if credits_count >= credits_fps:
-                        exec_game = False
-                    
-                # Juego completado
-                elif gamecomplete == True:
-                    # Si el juego esta completado
-                    save_gamecomplete(level=start_map.level, score=score)
-                    read_CF( data_CF )
-                    if credits == False:
-                        for sprite in layer_all_sprites.sprites():
-                            if not sprite == player:
-                                sprite.kill()
-                        credits = True
+                if credits_count == credits_fps*2:
+                    # Cerrar juegito si estamos en el mensaje para saltar los credito
+                    exec_game = False
 
-            elif event.key == pygame.K_r:
+            elif event.key == pygame.K_r and go_credits == False:
                 # Por si se bugea el juego, poder matar al jugador y por consecuensia reiniciar el nivel
-                if not player.hp <= 0:
-                    if gamecomplete == False:
-                        player.hp = -1
-        if event.type == end_of_track_event:
-            # Cuando se acaba la musica
-            count_playmusic += 1
-            #print(count_playmusic)
-            if count_playmusic == limit_playmusic:
-                count_playmusic = 0
-                limit_playmusic = play_music.play()
-            else:
-                pygame.mixer.music.play()
-
+                if player.hp > 0 and not isinstance(render_map.message_start, str):
+                    player.hp = -1
+        if event.type == pygame.QUIT:
+            exec_game = False
     
-    # Fondo | Ciclo dia y noche
+    
+    
+    
+    # Fondo
+    background_surf.fill( loop_allday.current_color )
+    display.fill( generic_colors('green') )
     display.blit( image_background, (0,0) )
+    display.blit( background_surf, (0,0) )
+    loop_allday.update()
 
-    color_background.fill( ( color_day[0],color_day[1],color_day[2], 143 ) )
-    display.blit( color_background, (0,0) )
-
-
-    if count_fps_day == color_change:
-        count_fps_day = 0
-        if is_night == False:
-            values = [False, False, False]
-            if not color_day[0] == changes_day[0]:
-                color_day[0] -= 1
-            else:
-                values[0] = True
-
-            if not color_day[1] == changes_day[1]:
-                color_day[1] -= 1
-            else:
-                values[1] = True
-            
-            if not color_day[2] == changes_day[2]:
-                color_day[2] -= 1
-            else:
-                values[2] = True
-            
-            if (
-                values[0] == True and
-                values[1] == True and
-                values[2] == True
-            ):
-                is_night = True
-
-        elif is_night == True:
-            values = [False, False, False]
-            if not color_day[0] == color_day_red:
-                color_day[0] += 1
-            else:
-                values[0] = True
-
-            if not color_day[1] == color_day_green:
-                color_day[1] += 1
-            else:
-                values[1] = True
-
-            if not color_day[2] == color_day_blue:
-                color_day[2] += 1
-            else:
-                values[2] = True
-                
-            if (
-                values[0] == True and
-                values[1] == True and
-                values[2] == True
-            ):
-                is_night = False
-                
-    count_fps_day += 1
     
-    # Objetos / Funciones / Para cambiar de nivel
-    for sprite in level_objects:
-        sprite.update()
 
-        level = sprite.level
-        if (sprite.gamecomplete == True) and (gamecomplete == False):
-            gamecomplete = True
-            data_CF.current_level=level
-            save_CF( data_CF )
 
-        if (not sprite.level == None) and (sprite.gamecomplete == False):
-            for other_sprite in layer_all_sprites.sprites():
-                other_sprite.kill()
+    # Jugador
+    player.move()
+    player.update(False)
+    
 
-            start_map = Start_Map(
-                 0, 0,
-                 level = level
-            )
 
-            for plat in solid_objects:
-                plat.limit_collision()
 
-            player = Player( 
-                position=start_map.player_spawn,
-                show_collide=data_CF.show_collide,
-                show_sprite=data_CF.show_sprite
-            )
-            player.hp = player_spawn_hp
+    # Función camara / Scroll
+    player_pos = [player.rect.x, player.rect.y]
 
-            #player_spawn_hp = player_spawn_hp
-            player_spawn_xy = player_camera_prepare(
-                disp_width=data_CF.disp[0], disp_height=data_CF.disp[1], more_pixels=int(data_CF.pixel_space*2),
-                all_sprites=layer_all_sprites.sprites(), player=player, show_coordenades=True
-            )
-            #player_show_sprite = player_show_sprite
-            player_anim_dead = None
-
-            camera_x = 0
-            camera_y = 0
-
-            climate_number = 0
-            dict_climate = {}
-            for climate in climate_objects:
-                climate_number += 1
-                dict_climate.update( {climate_number : [climate.rect.x, climate.rect.y]} )
-            
-            message_start = start_map.message_start
+    scroll_int = [int(scroll_float[0]), int(scroll_float[1])]
+    diference = data_CF.pixel_space
+    for index in range(0, 2):
+        '''
+        Para que funcione la camara solo se necesita de esto:
+        scroll_float[index] += (player_pos[index] -scroll_float[index] -data_CF.disp[index]/2)/4
+        
+        Lo demas esta relacionado con evitar que se mueva la camara, cuando se llega a un cierto limite.
+        '''
+        # en los "((data_CF.disp[index]/2) )" antes tenia "((data_CF.disp[index]/2) -data_CF.pixel_space)
+        if not (
+            ( player_pos[index] + ((data_CF.disp[index]/2) ) > limit_xy[index] ) or
+            ( player_pos[index] - ((data_CF.disp[index]/2) ) < 0)
+        ):
+            # Mover scroll
+            scroll_float[index] += (player_pos[index] -scroll_float[index] -data_CF.disp[index]/2)/4
+        else:
+            # Detectados limites de mapa/scroll | Evitar movimiento de scroll/camera
+            # Nota: El limite positivo debe estar un bloque/grid/cuadricula de mas
+            # more_pixels, sirve para añadir mas pixeles en el lado pistivo "x" o "y".
+            #print( 'posicion jugador: ', player_pos[index])
+            #print( 'posicion jugador en patalla: ', player_pos[index]-scroll_int[index])
+            #print( 'scroll: ', scroll_int[index])
+            #print( 'limite: ', limit_xy[index])
+            #print( 'pantalla', data_CF.disp[index])
+            more_pixels = data_CF.pixel_space
+            if player_pos[index]-scroll_float[index] > data_CF.disp[index]/2 + more_pixels:
+                aditional = limit_xy[index] -(scroll_float[index] + data_CF.disp[index])
+                #if scroll_float[index] < limit_xy[index]-scroll_float[index]:
+                scroll_float[index] += aditional + more_pixels
+                # limite - (scroll + pantalla)
+            elif player_pos[index]-scroll_float[index] < data_CF.disp[index]/2 -more_pixels:
+                scroll_float[index] -= scroll_float[index]
                 
-            # Funcion de dia y noche
-            loop_allday = Loop_allday(
-                climate=start_map.climate
-            )
-            if not (
-                color_day_red == loop_allday.color_day_red or
-                color_day_green == loop_allday.color_day_green or
-                color_day_blue == loop_allday.color_day_blue
-            ):
-                count_fps_day = loop_allday.count_fps_day
-                color_day = loop_allday.color_day
-                color_day_red = loop_allday.color_day_red
-                color_day_green = loop_allday.color_day_green
-                color_day_blue = loop_allday.color_day_blue
-                color_change = loop_allday.color_change
-                changes_day = loop_allday.changes_day
-                is_night = loop_allday.is_night
-            
-            # Función musica
-            play_music.change_climate(climate=start_map.climate)
-            
-            # Establecer nivel actual
-            data_CF.current_level = level
-            save_CF( data_CF )
+    scroll_int = [int(scroll_float[0]), int(scroll_float[1])]  
+    
 
 
-    # Objetos / Funciones / Puntos
+    # Funciones / Objetos / Puntos
     for obj in score_objects:
         if obj.point == True:
             obj.remove_point()
             score += 1
-    
-    # Objetos / Funciones / Player
-    player.move()
-    player.update()
-    
-    # Objetos / Funciones / Animaciones
+
+            
+    # Función actualizar animacion de sprites.
     for sprite in anim_sprites:
         sprite.anim()
-        
-    # Objetos / Funciones / Clima Colision
-    number = 0
+    
+    
+    # Función clima
     for climate in climate_objects:
-        number += 1
+        '''
+        Actualizar el objeto tipo clima
+        Respawn cuendo el objeto colisione y cuando el tiempo para respawn pase. Reinciar tiempo de respawn al spawnear.
+        '''
         climate.update()
-        if climate.collide == True:
-            climate.rect.center = (
-                camera_x + dict_climate.get(number)[0], camera_y + dict_climate.get(number)[1]
-            )
+
+        if (climate.rect.y > limit_xy[1]) or climate.time_respawn >= 1:
+            # Regrasar la gota de lluvia al spawn
+            climate.rect.x = climate.spawn_xy[0]
+            climate.rect.y = climate.spawn_xy[1]
+            climate.time_respawn = 0
+        elif (climate.collide == True):
+            # Sumar al time_respawn para que respawne el clima
+            climate.time_respawn += 1
+    
+    
+    # Función | Player | Limite del mapa
+    if player.rect.x > limit_xy[0] +data_CF.pixel_space or player.rect.x < 0:
+        player.hp = -1
+    elif player.rect.y > limit_xy[1] +data_CF.pixel_space or player.rect.y < 0:
+        player.hp = -1
+    
+    
+    # Función | Level | Cambiar de nivel | Acabar juego
+    for sprite in level_objects:
+        sprite.update()
+        level = sprite.level
+        if not sprite.level == None:
+            # El juego ha sido completado porque el jugador a llegado el checkpoint.
+            if sprite.gamecomplete == True:
+                print('Gamecomplete Saved')
+                gamecomplete = True
+                sprite.kill()
+                save_gamecomplete(level=data_CF.current_level.replace(dir_maps, '') , score=score)
+                
+                print('Change the level')
+                data_CF.current_level = level
+                save_CF( data_CF )
+
+            if gamecomplete == False:
+                print('Game saved and change the level')
+                # Establecer nivel actual
+                data_CF.current_level = level
+                save_CF( data_CF )
+
+                # Eliminar sprites
+                for other_sprite in layer_all_sprites.sprites():
+                    other_sprite.kill()
+
+                # Renderizar mapa                
+                read_Map( Map=current_map, level=data_CF.current_level )
+                render_map = Start_Map(current_map)
+                player = Player(
+                    position=render_map.player_spawn,
+                    transparency_collide=transparency_collide, transparency_sprite=transparency_sprite,
+                )
+                player_spawn_hp = player.hp
+                player_anim_dead = None
+                
+                # Clima | Color de fondo
+                if not loop_allday.climate == get_climate( current_map ):
+                    loop_allday = Loop_allday( current_map )
+                    
+                # Clima | Sonido de fondo
+                play_background_music.climate=f'climate_{get_climate( current_map )}'
+                if play_background_music.play_music == False:
+                    # Forzar el cambiado de music si no se esta reproduciondo el sonido del clima como musica.
+                    play_background_music.play()
+                
+                # Posicionar camara y establecer limites de camara.
+                limit_xy = render_map.limit_xy #get_limit_xy()
+                scroll_float = [0,0]
+                scroll_float = start_scroll(
+                    pos_xy=[player.rect.x, player.rect.y], display_xy=data_CF.disp, limit_xy=limit_xy,
+                    difference_xy=[data_CF.pixel_space*2, data_CF.pixel_space*3]
+                )
+
+
+
+
     # Objetos / Mostrar / Los sprites de atras, que no puede mover la camara.
     for sprite in nocamera_back_sprites:
         display.blit(sprite.surf, sprite.rect)
-            
-    # Objetos / Mostrar / Todos los sprites, solo si se ven en la pantalla
+
+    # Función renderizado de sprites / Mostrar / Todos los sprites / Layer Capas
     for sprite in layer_all_sprites.sprites():
-        if obj_not_see(
-            disp_width=data_CF.disp[0], disp_height=data_CF.disp[1], obj=sprite, difference=data_CF.pixel_space
-        ) == None:
-            display.blit(sprite.surf, sprite.rect)
+        # Detectar que el sprite no sebrepase la pantalla
+        display_collision = scroll_display_collision(
+            [sprite.rect.x, sprite.rect.y], scroll_int, data_CF.disp, [data_CF.pixel_space, 0]
+        )
 
-
-    # Camara
-    camera = player_camera_move(
-        disp_width=data_CF.disp[0], disp_height=data_CF.disp[1],
-        camera_x=camera_x, camera_y=camera_y, 
-        all_sprites=layer_all_sprites.sprites(),
-        limit_objects=limit_objects,
-        player=player,
-    )
-    camera_x=camera[0]
-    camera_y=camera[1]
-    dead = camera[2]
-    if dead == True:
-        if player_anim_dead == None:
-            player_anim_dead = Anim_player_dead(
-                position=(
-                    (player.rect.x +(player.rect.width/2)),
-                    player.rect.y+(player.rect.height//2)
-                ),
-                show_collide=data_CF.show_collide
+        # Si el esprite esta en pantalla, mostrarlo.
+        if display_collision == None:
+            display.blit(
+                sprite.surf, 
+                ( sprite.rect.x -scroll_int[0], sprite.rect.y -scroll_int[1] )
             )
-            player.show_sprite = False
+            
+            if True == True:
+                if sprite.surf.get_alpha() > 0:
+                    # [255, 169]
+                    shadow = create_mask_gradient( 
+                        sprite.surf, alpha_range=[127, 0], color=generic_colors('black'),
+                        dimension=0, positive=True
+                    )
+                    display.blit(
+                        shadow, 
+                        ( sprite.rect.x -scroll_int[0], sprite.rect.y -scroll_int[1] )
+                    )
+    
+    
+    # Funcion | Player Muerto/Dead
+    if player.hp <= 0:
+        if player_anim_dead == None:
+            # Iniciar animacion
+            player_anim_dead = Anim_player_dead(
+                position=[
+                    player.rect.x -player.rect.width//2, player.rect.y
+                ],
+                transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
+            )
+            #if data_CF.show_sprite == True: player.transparency_sprite = 0
+            #player.show_sprite = False
+            player.transparency_sprite = 0
             ( random.choice(sounds_dead) ).play()
         else:
             if player_anim_dead.anim_fin == True:
-                player_anim_dead = None
-                # Establecer todos los objetos como al inicio del juego
-                # Con base al valor xy actual de la camara, sus valores xy se invierten y se suman a las coordenadas actuales de los sprites.
-                # Recuerda que esto es posible: "x+ -x = 0"
-                for sprite in layer_all_sprites.sprites():
-                    sprite.rect.x += (camera_x*-1)
-                    sprite.rect.y += (camera_y*-1)
-            
-                # Establecer camara en la posición inicial
-                camera_x = 0
-                camera_y = 0
-            
-                # Establecer player como al inicio del juego
-                player.rect.x = player_spawn_xy[0]
-                player.rect.y = player_spawn_xy[1]
+                # Finalizar animacion y spawnear al jugador
+                player.not_move=False
+                player.transparency_sprite = transparency_sprite
                 player.hp = player_spawn_hp
-                player.show_sprite = player_show_sprite
+                #if data_CF.show_sprite == True: player.transparency_sprite = 255
+                #player.show_sprite = data_CF.show_sprite
+                player.rect.topleft = render_map.player_spawn
+                player.rect.x += (data_CF.pixel_space -player.rect.width)//2
+
+                scroll_float = start_scroll(
+                    pos_xy=[player.rect.x, player.rect.y], display_xy=data_CF.disp, limit_xy=limit_xy,
+                    difference_xy=[data_CF.pixel_space*2, data_CF.pixel_space*3]
+                )
+                
+                player_anim_dead = None
+                
+                
+
+
+
+    # Mostrar mensaje de fin de juego y creaditos, y Cerrar el juego.        
+    if gamecomplete == True:
+        print('Fin')
+        if go_credits == False:
+            #render_map.message_start = Lang.get_text('gamecomplete')
+            go_credits = True
     
     
-    # Sección del texto del juego (Interfaz/HUD)
-    if credits == False:
-        # Mostrar Vida de jugador
-        text_hp = font_normal.render(
-            str(player.hp), True, generic_colors('green')
-        )
-        display.blit(
-            text_hp, (
-                (data_CF.disp[0])-(size_font_normal*3),
-                size_font_normal
-            )
-        )
-        
-        # Mostrar Puntaje
-        text_score = font_normal.render(
-            str(score), True, generic_colors('yellow')
-        )
-        display.blit(
-            text_score, (
-                (data_CF.disp[0])-(size_font_normal*3),
-                size_font_normal*2
-            )
-        )
-        
-        
-        # Función juego completado
-        # Funciones | Mensajes
-        message_continue = False
-
-        # Función | Mensaje de inicio
-        if type(message_start) is str:
-            text_message = font_normal.render(
-                message_start, True, generic_colors('white')
-            )
-            position = [
-                (data_CF.disp[0]//2)-(text_message.get_rect().width//2),
-                size_font_normal
-            ]
-
-            rect_text = text_message.get_rect()
-            pygame.draw.rect(
-                display, generic_colors('black'), 
-                (
-                    position[0], position[1],
-                    rect_text.width, rect_text.height
-                )
-            )
-
-            display.blit(
-                text_message, (
-                    position[0],
-                    position[1]
-                )
-            )
-            message_continue = True
-        
-        # Función mensaje fin de juego
-        if gamecomplete == True and credits == False:
-            # Lo que pasa cuando el juego es completado
-            text_gamecomplete = font_big.render(
-                Lang.get_text('gamecomplete'), True, generic_colors('yellow')
-            )
-            position = [
-                (data_CF.disp[0]//2)-(text_gamecomplete.get_rect().width//2),
-                (data_CF.disp[1]//2)-(size_font_big//2)
-            ]
-            
-            rect_text = text_gamecomplete.get_rect()
-            pygame.draw.rect(
-                display, generic_colors('black'), 
-                (
-                    position[0], position[1],
-                    rect_text.width, rect_text.height
-                )
-            )
-
-            display.blit(
-                text_gamecomplete, (
-                    position[0],
-                    position[1]
-                )
-            )
-            message_continue = True
-        
-        # Función mensaje continuar
-        if message_continue == True:
-            # El mensaje continuar, mantiene al personaje inmovil
-            player.not_move = True
-            player.gravity = False
-            player.rect.y -= player.gravity_power
-
-            text_continue = font_normal.render(
-                f"{Lang.get_text('continue_jump')}...", True, generic_colors('white')
-            )
-            position = [size_font_normal, data_CF.disp[1]-(size_font_normal*2)]
-            
-            rect_text = text_continue.get_rect()
-            pygame.draw.rect(
-                display, generic_colors('black'), 
-                (
-                    position[0], position[1],
-                    rect_text.width, rect_text.height
-                )
-            )
-
-            display.blit(
-                text_continue, (
-                    position[0],
-                    position[1]
-                )
-            )
     
-    # Mostrar Creditos
-    else:
-        # Fondo negro
-        display.fill( generic_colors('black') )
-        
-        # Para que no se mueva el jugador
-        # Si, el jugador sige creado en los creditos... XD
+    
+    # Sección de HUD y texto del juego
+    # Mostrar Vida de jugador
+    text_hp = font_normal.render( str(player.hp), True, generic_colors('green') )
+    display.blit(
+        text_hp, ( (data_CF.disp[0])-(size_font_normal*3), size_font_normal )
+    )
+    
+    # Fondo negro | Ocultar todo
+    if credits_count >= credits_fps:
+        pygame.draw.rect(
+            display, generic_colors('black'), 
+            (
+                0, 0, data_CF.disp[0], data_CF.disp[1]
+            )
+        )
+    
+    # Mostrar Puntaje
+    text_score = font_normal.render( str(score), True, generic_colors('yellow') )
+    display.blit(
+        text_score, ( (data_CF.disp[0])-(size_font_normal*3), size_font_normal*2 )
+    )
+    
+    
+    
+    
+    # Función | Mensaje de inicio
+    if isinstance(render_map.message_start, str) or credits_count == credits_fps*2:
+        # No moverse player mientras se ve el mensaje
         player.not_move = True
-        player.gravity = False
-        player.rect.y -= player.gravity_power
-        
-        # Texto creditos
-        text_credits = font_normal.render(
-            Lang.get_text('credits'), True, generic_colors('yellow')
-        )
-        position = [(data_CF.disp[0]//2)-(text_credits.get_rect().width//2), (size_font_normal//2)]
-        
-        display.blit(
-            text_credits, (
-                position[0],
-                position[1]
-            )
-        )
-        
-        # Texto nombre del creador 
-        text_by = font_normal.render(
-            CF_data_credits(), True, generic_colors('green')
-        )
-        position = [(data_CF.disp[0]//2)-(text_by.get_rect().width//2), (data_CF.disp[1]//2)-(size_font_normal//2)]
-        
-        display.blit(
-            text_by, (
-                position[0],
-                position[1]
-            )
-        )
-        
-        # Mostrar Puntaje
-        text_score = font_normal.render(
-            f'{Lang.get_text("score")}: {score}', True, generic_colors('white')
-        )
-        display.blit(
-            text_score, (
-                size_font_normal,
-                size_font_normal*2
-            )
-        )
 
-        # Habilitar "Cerrar el juego"
-        if credits_count < credits_fps:
-            credits_count += 1
+        # Para cerrar el juego
+        if credits_count == credits_fps*2:
+            message = ''
         else:
-            # Texto continuar
-            text_continue = font_normal.render(
-                f"{Lang.get_text('continue_jump')}...", True, generic_colors('white')
+            message = render_map.message_start
+            #message = "Desde los años noventa se dice que el texto es texto. Y tambien ahora es texto esta es una prueba de mucho texto, escribir mucho texto en pantalla, es bueno para la salud mental. Perros locos, loquitas. Bueno eso es todo amigos hasta la proxima."
+
+        # Mensaje tiene surf rect y anchura de mansaje
+        text_message = font_normal.render(
+            message, True, generic_colors('white')
+        )
+        rect_text = text_message.get_rect()
+        width_message = rect_text.width
+
+        # Determinar diviciones de texto si sobrepasa la pantalla. En base al limit_of_text
+        limit_of_text = data_CF.disp[0]
+
+        text_parts = surf_limit_width( text_message, limit_of_text )
+
+
+        if len(text_parts) > 0:
+            for x in range( len(text_parts) ):
+                # Parte
+                message_part = text_parts[x]
+            
+                # Mostrar parte de mensaje
+                rect_text = message_part.get_rect()
+                position = [
+                    (data_CF.disp[0]//2)-(rect_text.width//2),
+                    size_font_normal * (x+1)
+                ]
+
+                pygame.draw.rect(
+                    display, generic_colors('black'), (
+                        position[0], position[1],
+                        rect_text.width, rect_text.height
+                    )
+                )
+
+                display.blit(
+                    message_part, position
+                )
+            
+            
+        else:
+            # Mostrar todo el mensaje sin dividirlo.
+            position = [
+                (data_CF.disp[0]//2)-(rect_text.width//2),
+                size_font_normal
+            ]
+
+            pygame.draw.rect(
+                display, generic_colors('black'), (
+                    position[0], position[1],
+                    rect_text.width, rect_text.height
+                )
             )
-            position = [size_font_normal, data_CF.disp[1]-(size_font_normal*2)]
 
             display.blit(
-                text_continue, (
+                text_message, position
+            )
+        
+        # Iformación acerca de como cuntinuar tras el mensaje
+        text_continue = font_normal.render(
+            f"{Lang.get_text('continue_jump')}...", True, generic_colors('white')
+        )
+        position = [size_font_normal, data_CF.disp[1]-(size_font_normal*2)]
+        
+        rect_text = text_continue.get_rect()
+        pygame.draw.rect(
+            display, generic_colors('black'), 
+            (
+                position[0], position[1],
+                rect_text.width, rect_text.height
+            )
+        )
+
+        display.blit(
+            text_continue, (
+                position[0],
+                position[1]
+            )
+        )
+           
+    
+    
+    # Juego completado:
+    if go_credits == True:
+        player.not_move = True
+        if credits_count >= credits_fps:
+            if credits_count < credits_fps*2:
+                credits_count += 1
+        
+            # Texto creditos
+            text_credits = font_normal.render(
+                Lang.get_text('credits'), True, generic_colors('yellow')
+            )
+            position = [(data_CF.disp[0]//2)-(text_credits.get_rect().width//2), (size_font_normal//2)]
+        
+            display.blit(
+                text_credits, (
+                    position[0],
+                    position[1]
+                )
+            )
+        
+            # Texto nombre del creador 
+            text_by = font_normal.render(
+                credits(), True, generic_colors('green')
+            )
+            position = [
+                (data_CF.disp[0]//2)-(text_by.get_rect().width//2), (data_CF.disp[1]//2)-(size_font_normal//2)
+            ]
+        
+            display.blit(
+                text_by, (
                     position[0],
                     position[1]
                 )
             )
 
+        else:
+            credits_count += 1
+
+            # Mensaje tiene surf rect y anchura de mansaje
+            text_message = font_normal.render(
+                Lang.get_text("gamecomplete"), True, generic_colors('white')
+            )
+            rect_text = text_message.get_rect()
+            width_message = rect_text.width
+
+            # Determinar diviciones de texto si sobrepasa la pantalla. En base al limit_of_text
+            text_parts = surf_limit_width( text_message, data_CF.disp[0] )
+            
+            if len(text_parts) == 0:
+                text_parts.append( text_message )
+
+            for x in range( len(text_parts) ):
+                # Parte
+                message_part = text_parts[x]
+            
+                # Mostrar parte de mensaje
+                rect_text = message_part.get_rect()
+                position = [
+                    (data_CF.disp[0]//2)-(rect_text.width//2),
+                    (data_CF.disp[1]//2)-(rect_text.height//2) + ( size_font_normal * (x) )
+                ]
+
+                pygame.draw.rect(
+                    display, generic_colors('black'), (
+                        position[0], position[1],
+                        rect_text.width, rect_text.height
+                    )
+                )
+
+                display.blit(
+                    message_part, position
+                )
+    
+
+    
     
     # Fin
     clock.tick(data_CF.fps)

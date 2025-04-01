@@ -18,3 +18,8 @@ nums_win_main = [
     get_display_number(multipler=0.275, based='width'),
     get_display_number(multipler=0.5, based='height')
 ]
+
+nums_win_dialog = [
+    get_display_number(multipler=0.25, based='width'),
+    get_display_number(multipler=0.15, based='height')
+]

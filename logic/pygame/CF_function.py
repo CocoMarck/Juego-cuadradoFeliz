@@ -277,7 +277,8 @@ player_key = {
     'up': pygame.K_UP,
     'down': pygame.K_DOWN,
     'left': pygame.K_LEFT,
-    'right': pygame.K_RIGHT
+    'right': pygame.K_RIGHT,
+    'walk': pygame.K_LSHIFT
 }
 
 
@@ -561,6 +562,7 @@ def collide_and_move( obj=None, obj_movement=[0,0], solid_objects=None):
         if obj.rect.y < solid_collide_x.rect.y -(obj.rect.height*0.5):
             obj.rect.bottom = solid_collide_x.rect.top
             collided_side = 'bottom'
+                    
     
     return collided_side
 
@@ -621,3 +623,325 @@ def surf_limit_width( surf, limit_widht ) -> list:
         )
     
     return parts_size
+
+
+
+
+
+
+def old_collision_sides_solid( obj, obj_movement, solid_objects):
+    '''
+    Depende de la funcion loca more_height
+    '''    
+
+    # Sumar    
+    obj.rect.x += obj_movement[0]
+    obj.rect.y += obj_movement[1]
+
+    direction = None
+
+    if obj_movement[0] < 0:
+        speed = obj_movement[0]*-1
+    else:
+        speed = obj_movement[0]
+    for solid in solid_objects:
+        # Si el obj, esta colisionando con el solid, seguira el codigo
+        if obj.rect.colliderect( solid.rect ):
+            # Para detectar que la altura el solido y la del jugador sean correctas.
+            more_height = old_more_height( obj, solid )
+            
+            # Deteccion de colision arriba/abajo
+            # Recuerda que no se puede colisionar dos veces, se eliguira una colision, y en este caso siempre tiene mas pioridad la colision arriba, debido a que esta arriba de la linea de colision de a abajo.
+            if obj.rect.y < solid.rect.y:
+                # El obj, se movera "el valor de coordenadas y del solid, menos el valor de la altura del obj_collide, mas un pixel", mueve al obj hacia arriba ( tendencia a ser valor negativo ).
+                # Unicamente en esta posición, el jugador podra moverse y saltar.
+                direction = 'bottom'
+                obj.rect.y = solid.rect.y - obj.rect.height+1
+            elif obj.rect.y > solid.rect.y + (more_height):
+                # El obj, se movera "el valor de coorenadas y de solid, mas el valor de la altura del solid, mueva al obj hacia abajo ( tendencia a ser valor positivo ).
+                # El obj, ya no tendra permitido saltar.
+                direction = 'top'
+                obj_movement[1] = 0
+                obj.rect.y = solid.rect.y + solid.rect.height
+                
+                # Si el obj tiene menos altura que el obj, el obj no podra moverse de izq/der
+                # Se forzara aleatoriamente el movimiento hacia la izquierda o derecha.
+                if more_height == 0:
+                    x_positive = random.randint(0, 1)
+                    if x_positive == 0:
+                        obj.rect.x -= speed
+                    elif x_positive == 1:
+                        obj.rect.x += speed
+                        
+
+            # Deteccion de colision izquierda/derecha
+            # Collisionar de izquierda/derecha solo cuando el obj no es mas pequeño en hight que del solid
+            # Si more_height esta en 0, el jugador no colisionara en lados izquierda/derecha.
+            elif not more_height == 0:
+                if obj.rect.x < solid.rect.x + (speed/8):
+                    direction = 'left'
+                    obj.rect.x = solid.rect.x -obj.rect.width -speed
+
+                elif obj.rect.x > solid.rect.x - (speed/8):
+                    direction = 'right'
+                    obj.rect.x = solid.rect.x + solid.rect.width +speed
+    print(direction)      
+
+    
+    # Retornar valores
+    return direction
+
+
+
+
+def old_more_height( obj, solid ):
+    '''
+    '''
+    # Si el obj, esta colisionando con el collide, seguira el codigo
+    # Para detectar que la altura del solido y la del jugador sean correctas.
+    if obj.rect.height > solid.rect.height:
+        # Advertencia altura de solid mas pequeña comparada con la del obj
+        if solid.rect.height == obj.rect.height/2:
+            # obj = 16, obj_collide = 8, 
+            # more_height = obj -( obj + (solid/2) ) = -4
+            more_height = (
+                obj.rect.height -( obj.rect.height + (solid.rect.height/2) )
+            )
+        else:
+            more_height = 0
+
+    elif obj.rect.height < solid.rect.height:
+        # Advertencia Altura de obj_collide mas alta comparada con la del obj_main
+        # Para acomodar colision del lado de abajo de forma adecuada.
+        # Ejemplo:
+        # solid.altura = 32
+        # obj.altura = 16
+        # 16 cabe dos veces en 32, entonces: count = 2
+        # more_height = solid.altura - ( obj.altura / ( count/(count/2) ) ) = 24
+        # para evitar bugs:
+        # more_height = more_height -(obj.altura/4)
+        count = 1
+        difference = solid.rect.height
+        reduction = True
+        while reduction:
+            count += 1
+            difference -= obj.rect.height
+            if difference <= obj.rect.height:
+                reduction = False
+        more_height = (
+            solid.rect.height -( obj.rect.height / ( count/(count/2) ) )
+            -(obj.rect.height/4)
+        )
+
+    else:
+        # Excelente, la altura de obj_main es la misma que la de solid
+        # El "+(solid.rect.height//4)", es para evitar dos colisiones seguidas:
+        # Puede ser colisionar del lado izquierdo o derecho y seguido el lado inferior.
+        # Funciona, porque la colision del lado inferior, esta un poco mas abajo de lo normal.
+        more_height = solid.rect.height//4
+    
+    return more_height
+
+
+
+
+def number_most_to_least(
+        number_range=[256,0], divider=8, most_to_least=True, from_zero=True, int_value=True 
+    ):
+    '''
+    Listar un numero de mas a menos o de menos a mas. 
+    En esta función siempre queda un valor suelto, ya sea el rango max o el min.
+    
+    Donde en el number_range el indice 0 es mayor que el indice 1.
+    Divisior indica la cantidad de numeros en la lista.
+    
+    El operación necesaria es: (number_range[0]/divisor) -number_range[1]/divisor
+    Donde el indice 0 es mayor que el indice 1.
+    Esta operación sirve para saber cuanto restar, o cuanto agregar
+    
+    Argumentos:
+        number_range = [int, int]   # Max, Min default(256,0)
+        divider = int               # Para hacer la lista, cantidad de indices con valores determinados por el rango.
+        most_to_least = bool        # Determinar si ir de mas a menos, o de menos a mas.
+        from_zero = bool            # Terminar en el fin execto o no.
+        int_value = bool            # Determinar si los valores de la lista seran enteros o no.
+
+    Return:
+        list[] # Con divider cantidad de indices.
+    '''
+    return_list = [] # Lista a devolver
+
+    # Los ejempos que se veran serian; si divider = 8, range = [256,128]
+    # Valor necesario. Se usa para restar | Operar en el bucle
+    necessary_value = (number_range[0]/divider)
+    if number_range[1] > 0:
+        necessary_value -= (number_range[1]/divider)
+    
+    # Determinar si inicia en cero o no.
+    if from_zero == True:   initial_value = 0
+    else:                   initial_value = 1
+    
+    # Bucle
+    for i in range(0, divider):
+        if most_to_least == True:
+            # Restar, si ya esta o ya paso el para valor inicial
+            # De mas a menos
+            if i >= initial_value:
+                # 256 -(32-16)
+                number_range[0] -= necessary_value
+                value_to_add = number_range[0]
+            else:
+                value_to_add = number_range[0]
+        else:
+            # De menos a mas
+            # 256 - (32-16)*8
+            value_to_add = number_range[0] -( necessary_value*(divider-i-initial_value) )
+        
+        # Agregar a la lista
+        if int_value == True:   return_list.append( int(value_to_add) )
+        else:                   return_list.append( value_to_add )
+    
+    
+    return return_list # Devolver lista
+
+cocos = number_most_to_least([512, 0], 8, most_to_least=True, from_zero=True)
+print( cocos )
+print( len( cocos ) )
+
+espuma = number_most_to_least([512, 0], 8, most_to_least=False, from_zero=True)
+print( espuma )
+print( len( espuma ) )
+
+
+
+
+def surface_gradient( size=[32,32], alpha_range=[255,0], color=[0,0,0], dimension=0, positive=True ):
+    '''
+    Crear un gradiante, que sera una superficie chida, con degradado excitante.
+
+    size = [0,0] # Tamaño xy del gradiante
+    alpha_range = [255, 0] # Valor inicial y final del gradiante
+    color = [0,0,0] # Color del gradiante
+    dimension=int, # Dimención donde se hara el gradiante.
+    positive=bool, # Gradiante de mas a menos, o de menos a mas.
+    
+    return pygame.Surface()
+    '''
+    surface = pygame.Surface(size, pygame.SRCALPHA)
+    
+    # Determinar multiplicador y adición por la dimensión establecida.
+    if positive == True:
+        multipler = -1
+        addition = 1
+    else:
+        multipler = 1
+        addition = 0
+    
+    
+    # Degradado
+    #alpha_values = number_most_to_least(
+    #    alpha_range, divider=size[dimension], most_to_least=True, from_zero=False, int_value=True
+    #)
+    #print(alpha_values)
+    for d in range(size[dimension]):
+        #alpha = (alpha_values[d])
+        #if alpha < 0: alpha = 0
+
+        alpha = int(
+            ( alpha_range[0] -alpha_range[1] ) * ( addition + ( multipler*(d / (size[dimension]-1) ) ) )
+        )  
+        if dimension == 0:
+            pygame.draw.line(
+                surface, (color[0], color[1], color[2], alpha), (d, 0), (d, size[1])
+            )
+        elif dimension == 1:
+            pygame.draw.line(
+                surface, (color[0], color[1], color[2], alpha), (0,d), (size[0], d)
+            )
+    
+
+    # Devolver superficie
+    return surface
+
+
+
+
+def create_mask_gradient(sprite, alpha_range=[255, 0], color=[0,0,0], dimension=0, positive=True ):
+    """
+    Crear un gradiante, que sera una maskara chida, con degradado excitante. Es una superficie individual
+    Depende de surface_gradient
+
+    sprite = pygame.Surface() # Superficie de pygame
+    color = [0,0,0] # RGB color
+    dimension=int # Dimencion donde se hara el gradiante.
+    positive=bool # Gradiante de mas a menos, o de menos a mas.
+    
+    return pygame.Surface()
+    """
+    # Obtener datos necesarios, inciar objetos necesarios
+    mask = pygame.mask.from_surface(sprite)  
+    width, height = sprite.get_size()
+    size = [width, height]
+    
+    # Degradado
+    surf_grad = surface_gradient( size, alpha_range, color, dimension, positive )
+
+
+    # Para que siga la forma del sprite.
+    # Aplicar la máscara para que la sombra siga la forma del sprite
+    shadow_mask = mask.to_surface(setcolor=(color[0], color[1], color[2], 255), unsetcolor=(0, 0, 0, 0))  
+    shadow_mask.set_colorkey((0, 0, 0))  
+    surf_grad.blit(shadow_mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)  
+
+
+
+    return surf_grad  # Retorna solo la sombra, sin tocar el sprite
+    
+
+
+
+def surface_bloom( size=[32,32], alpha_range=[255, 0], color=[0,0,0], middle_color=True ):
+    '''
+    Pone alrededor de un cuadrado, gradiantes en dirección de los lados. Gradiantes de mas a menos.
+    Depende de surface_gradient
+    
+    size = [0,0] # Tamaño xy
+    alpha_range = [255, 0] # Valor inicial y valor final del gradiante.
+    color = bool # Color del bloom
+    middle_color = bool # Color en el medio del bloom.
+    
+    return pygame.Surface()
+    '''
+    # Establecer el surface a devolver
+    final_size = [size[0]*3, size[1]*3]
+    surface_final = pygame.Surface( final_size, pygame.SRCALPHA)
+    if middle_color == True:  
+        surf_middle = pygame.Surface( size, pygame.SRCALPHA)
+        surf_middle.fill( color )
+        surf_middle.set_alpha( alpha_range[0] )
+        surface_final.blit( surf_middle, [size[0],size[1]] )
+
+    # Generar cuatro gradianes alrederdor de los lados del size
+    for part in range(4):
+        # Mover de positivo a negativo o de negativo a positivo
+        if part == 0 or part == 2:  positive = True
+        else:                       positive = False
+        
+        # Dimension del gradiante
+        if part == 0 or part == 1:  dimension = 0
+        if part == 2 or part == 3:  dimension = 1
+        
+        # Posición
+        if part == 0:       position = [size[0]*2, size[1]]
+        elif part == 1:     position = [0, size[1]]
+        elif part == 2:     position = [size[0], size[1]*2]
+        elif part == 3:     position = [size[0], 0]
+        
+        surf_grad = surface_gradient(
+            size=size, alpha_range=alpha_range, color=color, dimension=dimension, positive=positive
+        )
+        
+        surface_final.blit( surf_grad, position )
+    
+    # Devolver surface.
+    return surface_final

@@ -1,16 +1,183 @@
 from entities import CF, Map
 from data.CF_info import *
 from data.CF_data import (save_Map, dict_object, prefix_object, return_map, dict_climate)
+from logic.Modulo_Text import (prefix_abc, pass_text_filter)
 from logic.pygame.Modulo_pygame import *
 from logic.pygame.CF_function import *
 import pygame, os, random
 from pygame.locals import *
 
 
-# Inicio
-pygame.display.set_caption(game_title)
-display = pygame.display.set_mode( data_CF.disp )
-clock = pygame.time.Clock()
+
+
+# Funcion para crear un mapa default
+def generate_map( size_xy=[int,int], with_limit=True, path='custom', name='custumTumTum' ) -> str:
+    '''
+    Te genera un archivo de texto, que sirve como un mapa para el juego.
+    Si ya existe el archivo de texto, no remplasa nada lo deja como esta.
+    
+    Parametros:
+    size_xy = [0,0]
+    with_limit = bool
+    path = str (directory)
+    name = str (file)
+    
+    Por defecto el path para los niveles custom es: custom. 
+    Y el nombre es customDefault
+
+    Devuelve la ruta completa del archivo guardado, un string
+    '''
+    
+    name = ignore_text_filter( text=name, filter=(prefix_abc+prefix_number+"-_") )
+    if name == '':
+        return None
+    
+    preset_type = 'cf_map_'
+    preset_file = '.txt'
+    text = ''
+    if isinstance( size_xy[0], int) and isinstance( size_xy[1], int):
+        if size_xy[1] >= 4 and size_xy[0] >= 4:
+            for line in range(0, size_xy[1]):
+                for number in range(0, size_xy[0]):
+                    obj = 'space'
+                    if with_limit == True:
+                        if line == 0 or line == size_xy[1]-1:
+                            if number == 0 or number == size_xy[0]-1:
+                                obj = 'limit'
+                    if line == 1:
+                        if number == 1:
+                            obj = 'player'
+
+                    text += dict_object[obj]
+                text += '\n'
+            text += (
+                f'$${path}:{name}\n'+
+                f'$$default\n'+
+                f'$$'
+            )
+
+            text_to_save = os.path.join(dir_maps, path, f'{preset_type}{name}{preset_file}')
+            if not os.path.isfile(text_to_save):
+            #if True == True:
+                with open(
+                    text_to_save, 
+                    'w', encoding="utf-8"
+                ) as text_file:
+                    text_file.write(text)
+            #data_CF.current_level=text_to_save
+            #save_CF( data_CF )
+            print(text)
+
+            return text_to_save
+        else:
+            print( 'ERROR: The game min-size is 4x4')
+            return data_CF.current_level
+    else:
+        print( 'ERROR: Only int values' )
+        return data_CF.current_level
+        
+
+
+
+# Función establecer donde inicia la camara el scroll
+def start_camera( pos_xy=[0,0], display_xy=[0,0], limit_xy=[0,0], difference_xy=[0,0] ) ->[int, int]:
+    xy = [0,0]
+    
+    # Posicionar camara, con el jugador a la der o izq, arriba o abajo
+    if (pos_xy[0] + difference_xy[0] + (display_xy[0]/2)) > limit_xy[0]:
+        # Jugador en la izq
+        xy[0] = pos_xy[0] -(display_xy[0]/2) +difference_xy[0]
+    else:
+        # Jugador en la der
+        xy[0] = pos_xy[0] +(display_xy[0]/2) -difference_xy[0]
+    
+    if (pos_xy[1] +difference_xy[1] + (display_xy[1]/2)) > limit_xy[1]:
+        # Jugador abajo
+        xy[1] = pos_xy[1] -(display_xy[1]/2) +difference_xy[1]
+    else:
+        # Jugador arriba
+        xy[1] = pos_xy[1] +(display_xy[1]/2) -difference_xy[1]
+    
+    print(f'start camera: {xy}')
+    return xy
+
+
+
+
+# Función detectar clima de juego
+def get_climate( Map ):
+    climate = None
+    if Map.climate in dict_climate.keys():
+        climate = Map.climate
+    else:
+        climate = 'default'
+    
+    if climate != None:
+        print(f'climate {climate}: {dict_climate[climate]}')
+        return dict_climate[climate]
+    #return generic_colors('green')
+
+
+
+
+# Función para detectar limite
+def get_limit_xy( group_sprite ):
+    '''
+    Limite del mapa
+    '''
+    '''
+    limit_xy = [ [], [] ]
+    for sprite in grid_objects:
+        if sprite.type_object == '|':
+            limit_xy[0].append( sprite.rect.x )
+            limit_xy[1].append( sprite.rect.y )
+    return [ max(limit_xy[0]),  max(limit_xy[1]) ]
+    '''
+    pos_x = []
+    pos_y = []
+    for sprite in group_sprite:
+        pos_x.append(sprite.rect.x)
+        pos_y.append(sprite.rect.y)
+        
+    xy = [ max(pos_x), max(pos_y) ]
+    print(f'limit xy: {xy}')
+    return xy
+    
+    
+
+
+# Función Scroll/Camara | Posicionar camara en donde esta la posición de camara
+def start_scroll( pos_xy=[0,0] ):
+    scroll_float = [0,0]
+    scroll_float[0] += (pos_xy[0] -size_display_edit[0]/2)
+    scroll_float[1] += (pos_xy[1] -size_display_edit[1]/2)
+    
+    xy = [int(scroll_float[0]), int(scroll_float[1])]
+    print(f'start scroll: {xy}')
+    return xy
+
+
+
+
+# Teclas para hacer mapas
+interface_key = {
+    'ok': pygame.K_RETURN,
+    'del': pygame.K_BACKSPACE,
+    'up': pygame.K_UP,
+    'down': pygame.K_DOWN,
+    'left': pygame.K_LEFT,
+    'right': pygame.K_RIGHT,
+    'walk': pygame.K_LSHIFT
+}
+prefix_text_input = prefix_abc+prefix_number+'-_ '
+
+# Fuente de texto
+font_str='monospace'
+font_size = int(data_CF.pixel_space*0.75)
+font=pygame.font.SysFont(font_str, font_size)
+color_background=generic_colors('white')
+color_text=generic_colors('black')
+use_lang=False # Para que las opciones usen de texto previsualizado los datos de language.dat
 
 
 
@@ -27,9 +194,21 @@ display_edit = pygame.Surface( size_display_edit )
 
 
 
-# Objetos de interfaz agregar boton.
+# Tipos de objetos
+print( f'prefix objects: "{prefix_object}"')
+
+# Grupo de Objetos de interfaz agregar boton.
 buttons = pygame.sprite.Group()
 interface_background = pygame.sprite.Group()
+
+# Grupos de Objetos del mapa
+layer_all_sprites = pygame.sprite.LayeredUpdates()
+grid_objects = pygame.sprite.Group()
+
+
+
+
+# Objeto boton
 class Button(pygame.sprite.Sprite):
     def __init__(
         self, font=pygame.font.SysFont, text=str, use_lang=False,
@@ -88,52 +267,16 @@ class Button(pygame.sprite.Sprite):
 
         # Rectangulo y agregar a los sprites
         buttons.add( self )
-
-
-font_str='monospace'
-font_size = int(data_CF.pixel_space*0.75)
-font=pygame.font.SysFont(font_str, font_size)
-color_background=generic_colors('white')
-color_text=generic_colors('black')
-use_lang=False
-
-list_option = ['message', 'save', 'play']
-posx = data_CF.disp[0]//(len(list_option)+1)
-for index in range(0, len(list_option)) :
-    Button(
-        font=font, text=list_option[index], use_lang=use_lang,
-        color_text=color_text, color_background=color_background,
-        position_xy=[ posx*(index+1), data_CF.pixel_space ]
-    )
-    print( posx*(index+1) )
-
-
-posx = data_CF.disp[0]//(len(dict_climate.keys())+1)
-posy = data_CF.disp[1] -data_CF.pixel_space*2
-for index in range(0, len(dict_climate.keys()) ):
-    Button(
-        font=font, text=list(dict_climate.keys())[index], use_lang=use_lang,
-        color_text=color_text, color_background=color_background,
-        position_xy=[ posx*(index+1), posy ]
-    )
-    
-
-
-# Tipos de objetos
-print( f'prefix objects: "{prefix_object}"')
-
-
-
-# Objetos
-layer_all_sprites = pygame.sprite.LayeredUpdates()
-grid_objects = pygame.sprite.Group()
+        
 
 
 
 
+# Objeto | A mostrar y agregar borrar y etc.
 class object_grid( pygame.sprite.Sprite ):
-    def __init__(self, size=[data_CF.pixel_space, data_CF.pixel_space], position=[0,0], image=None ):
+    def __init__(self, size=[data_CF.pixel_space, data_CF.pixel_space], position=[0,0], image=None, current_map=None ):
         super().__init__()
+        # Esto da mucho lag
         
         # Para mostrar cuadricula, ayuda visual.
         transparency = 47
@@ -170,21 +313,6 @@ class object_grid( pygame.sprite.Sprite ):
 
         # Establecer imagen con size personalizado
         self.image = pygame.sprite.Sprite()
-        '''
-        if image is None:
-            self.image = None
-
-        else:
-            self.image = pygame.sprite.Sprite()
-            if image == 'limit':
-                self.image.surf = pygame.Surface( size )
-                self.image.surf.fill( generic_colors('red') )
-            else:
-                self.image.surf = get_image( image=image, number=0, size=size )
-            
-            self.image.rect = self.image.surf.get_rect( topleft=position )
-            layer_all_sprites.add(self.image, layer=0)
-        '''
 
         # Superficie/collider que sera para los clicks
         self.surf = pygame.Surface( (data_CF.pixel_space, data_CF.pixel_space), pygame.SRCALPHA )
@@ -194,6 +322,7 @@ class object_grid( pygame.sprite.Sprite ):
         grid_objects.add(self)
         
         # Tipo de objeto
+        self.current_map = current_map
         self.type_object = (
             current_map.list_map
             [ (self.rect.y) //data_CF.pixel_space ]
@@ -247,9 +376,12 @@ class object_grid( pygame.sprite.Sprite ):
                 image = 'ladder'
             elif self.type_object == 'x' or self.type_object == 'y':
                 image = 'elevator'
+                
+            elif self.type_object == '~':
+                image = 'rain'
 
             elif self.type_object == '0' or self.type_object == 'F':
-                image = 'level_change'            
+                image = 'level_change' 
             
             # Establecer color
             if (
@@ -262,6 +394,10 @@ class object_grid( pygame.sprite.Sprite ):
                 self.type_object == 'Y'
             ):
                 color = [0, 0, 71]
+                
+            elif self.type_object == '~':
+                color = [0,0,127]
+
             elif self.type_object == 'F':
                 color = [0, 47, 0]
 
@@ -306,554 +442,514 @@ class object_grid( pygame.sprite.Sprite ):
             layer_all_sprites.add(self.image, layer=0)
             
         # Establecer nuevo tipo de texto en el texto a guardar/cambiar
-        current_map.list_map [self.xy_spawn[0]] [self.xy_spawn[1]] = self.type_object
+        self.current_map.list_map [self.xy_spawn[0]] [self.xy_spawn[1]] = self.type_object
 
 
 
-# Funcion para crear un mapa default
-def generate_map( size_xy=[int,int], with_limit=True, path='custom', name='custumTumTum' ):
-    '''
-    Te genera un archivo de texto, que sirve como un mapa para el juego.
-    '''
-    preset_type = 'cf_map_'
-    preset_file = '.txt'
-    text = ''
-    if isinstance( size_xy[0], int) and isinstance( size_xy[1], int):
-        if size_xy[1] >= 4 and size_xy[0] >= 4:
-            for line in range(0, size_xy[1]):
-                for number in range(0, size_xy[0]):
-                    obj = 'space'
-                    if with_limit == True:
-                        if line == 0 or line == size_xy[1]-1:
-                            if number == 0 or number == size_xy[0]-1:
-                                obj = 'limit'
-                    if line == 1:
-                        if number == 1:
-                            obj = 'player'
 
-                    text += dict_object[obj]
-                text += '\n'
-            text += (
-                f'$${path}:{name}\n'+
-                f'$$default\n'+
-                f'$$'
-            )
-
-            text_to_save = os.path.join(dir_maps, path, f'{preset_type}{name}{preset_file}')
-            if not os.path.isfile(text_to_save):
-            #if True == True:
-                with open(
-                    text_to_save, 
-                    'w', encoding="utf-8"
-                ) as text_file:
-                    text_file.write(text)
-            #data_CF.current_level=text_to_save
-            #save_CF( data_CF )
-            print(text)
-
-            return text_to_save
-        else:
-            print( 'ERROR: The game min-size is 4x4')
-            return data_CF.current_level
-    else:
-        print( 'ERROR: Only int values' )
-        return data_CF.current_level
-file_current_map = generate_map( [60, 34] )
-print( f'map file: {file_current_map}' )
-    
+# Función que abre el editor de mapa.
+def run( 
+        level=data_CF.current_level, size_xy=[64, 32], with_limit=True, path='custom', create_map=False 
+    ):
+    # Inicializar pygame
+    pygame.display.set_caption(game_title)
+    display = pygame.display.set_mode( data_CF.disp )
+    clock = pygame.time.Clock()
 
 
 
-# Generador de cuadritos para hacer el mapa / Renderizado del mapa
-current_map = Map
-read_Map( current_map, level=file_current_map )
-print( 
-    f'map path: {current_map.path}\n'
-    f'map next level: {current_map.next_level}\n'
-    f'map climate: {current_map.climate}\n'
-    f'map message start: {current_map.message_start}'
-)
-#read_Map( current_map, level='./resources/maps/cf_map_default.txt' )
-#read_Map( current_map, level='./resources/maps/cf_map.txt' )
 
-#object_grid()
-
-player_spawn_xy = [0,0]
-xy = [0, 0]
-for line in current_map.list_map:
-    xy[0] = 0
-    position = [ xy[0], xy[1]*data_CF.pixel_space]
-    xy[1] += 1
-    
-    for character in line:
-        position[0] = xy[0]*data_CF.pixel_space
-
+    # Función generador de cuadritos para hacer el mapa / Renderizado del mapa
+    def render_map( current_map ):
         '''
-        Tipos de objeto
-        "." "#" = Espacios
-        "p" = Floor
-        ""
+        Renderiza el mapa, y devuelve el spawn del player. Depende del objeto tipo sprite; object_gird
         '''
-        for key in dict_object.keys():
-            preset = dict_object[key]
-            if character == preset:
-                # Agregar espacio y cuadrito
-                xy[0] += 1
-                
-                object_grid( position=position )
-                if preset == 'j':
-                    player_spawn_xy[0] = position[0]
-                    player_spawn_xy[1] = position[1]
-        '''
-        if character == '#':
-            # Agregar espacio y cuadrito
-            xy[0] += 1
+        print( 
+            f'map path: {current_map.path}\n'
+            f'map next level: {current_map.next_level}\n'
+            f'map climate: {current_map.climate}\n'
+            f'map message start: {current_map.message_start}'
+        )
+        player_spawn_xy = [0,0]
+        xy = [0, 0]
+        for line in current_map.list_map:
+            xy[0] = 0
+            position = [ xy[0], xy[1]*data_CF.pixel_space]
+            xy[1] += 1
             
-            object_grid( position=position )
-        '''
+            for character in line:
+                position[0] = xy[0]*data_CF.pixel_space
 
-
-
-# Clima
-def get_climate( Map ):
-    climate = None
-    if Map.climate in dict_climate.keys():
-        climate = Map.climate
-    else:
-        climate = 'default'
-    
-    if climate != None:
-        print(f'climate {climate}: {dict_climate[climate]}')
-        return dict_climate[climate]
-    #return generic_colors('green')
-climate_color = get_climate( current_map )
-
-
-
-
-# Camara | Scroll
-scroll_float = [0,0]
-
-
-
-
-# Función | Limite del mapa y de camara | Camara
-def get_limit_xy():
-    '''
-    Limite del mapa
-    '''
-    '''
-    limit_xy = [ [], [] ]
-    for sprite in grid_objects:
-        if sprite.type_object == '|':
-            limit_xy[0].append( sprite.rect.x )
-            limit_xy[1].append( sprite.rect.y )
-    return [ max(limit_xy[0]),  max(limit_xy[1]) ]
-    '''
-    pos_x = []
-    pos_y = []
-    for sprite in grid_objects:
-        pos_x.append(sprite.rect.x)
-        pos_y.append(sprite.rect.y)
-        
-    xy = [ max(pos_x), max(pos_y) ]
-    print(f'limit xy: {xy}')
-    return xy
-limit_xy = get_limit_xy()
-#input(get_limit_xy())
-
-
-
-
-# Posición de camara en donde esta el jugador
-print(f'display edit: {size_display_edit}')
-print(f'player spawn: {player_spawn_xy}' )
-print( player_spawn_xy[0] - (size_display_edit[0]/2) )
-#input()
-def start_camera( pos_xy=[0,0], display_xy=[0,0], limit_xy=[0,0], difference_xy=[0,0] ) ->[int, int]:
-    xy = [0,0]
-    
-    # Posicionar camara, con el jugador a la der o izq, arriba o abajo
-    if (pos_xy[0] + difference_xy[0] + (display_xy[0]/2)) > limit_xy[0]:
-        # Jugador en la izq
-        xy[0] = pos_xy[0] -(display_xy[0]/2) +difference_xy[0]
-    else:
-        # Jugador en la der
-        xy[0] = pos_xy[0] +(display_xy[0]/2) -difference_xy[0]
-    
-    if (pos_xy[1] +difference_xy[1] + (display_xy[1]/2)) > limit_xy[1]:
-        # Jugador abajo
-        xy[1] = pos_xy[1] -(display_xy[1]/2) +difference_xy[1]
-    else:
-        # Jugador arriba
-        xy[1] = pos_xy[1] +(display_xy[1]/2) -difference_xy[1]
-    
-    print(f'start camera: {xy}')
-    return xy
-camera_xy = start_camera(
-    pos_xy=player_spawn_xy, display_xy=size_display_edit, limit_xy=limit_xy,
-    #pos_xy=player_spawn_xy, display_xy=size_display_edit,
-    difference_xy=[data_CF.pixel_space*2, data_CF.pixel_space*3]
-)
-#camera_xy = [size_display_edit[0]/2,size_display_edit[1]/2]
-click_left = False
-click_right = False
-move_up = False
-move_down = False
-move_left = False
-move_right = False
-
-
-
-
-# Función Scroll/Camara | Posicionar camara en donde esta la posición de camara
-def start_scroll( pos_xy=[0,0] ):
-    scroll_float[0] += (pos_xy[0] -size_display_edit[0]/2)
-    scroll_float[1] += (pos_xy[1] -size_display_edit[1]/2)
-    
-    xy = [int(scroll_float[0]), int(scroll_float[1])]
-    print(f'start scroll: {xy}')
-    return xy
+                '''
+                Tipos de objeto
+                "." "#" = Espacios
+                "p" = Floor
+                ""
+                '''
+                for key in dict_object.keys():
+                    preset = dict_object[key]
+                    if character == preset:
+                        # Agregar espacio y cuadrito
+                        xy[0] += 1
                         
-scroll_float = start_scroll( camera_xy )
-scroll_int = [0,0]
+                        object_grid( position=position, current_map=current_map)
+                        if preset == 'j':
+                            player_spawn_xy[0] = position[0]
+                            player_spawn_xy[1] = position[1]
+        return player_spawn_xy
 
 
-# Seleccion de objeto en el grid
-current_object_selected = None
 
 
-# Loop del juego
-run_game = False
-exec_game = True
-while exec_game:
+    # Lista de opciones botones | Botones | Arriba y abajo
+    list_option = ['path', 'next_level', 'message_start', 'save', 'play']
+    posx = data_CF.disp[0]//(len(list_option)+1)
+    for index in range(0, len(list_option)) :
+        Button(
+            font=font, text=list_option[index], use_lang=use_lang,
+            color_text=color_text, color_background=color_background,
+            position_xy=[ posx*(index+1), data_CF.pixel_space ]
+        )
+        print( posx*(index+1) )
+
+
+    posx = data_CF.disp[0]//(len(dict_climate.keys())+1)
+    posy = data_CF.disp[1] -data_CF.pixel_space*2
+    for index in range(0, len(dict_climate.keys()) ):
+        Button(
+            font=font, text=list(dict_climate.keys())[index], use_lang=use_lang,
+            color_text=color_text, color_background=color_background,
+            position_xy=[ posx*(index+1), posy ]
+        )
+    
+    
+    
+    
+    # Determinar si crear mapa o no
+    if create_map == True:
+        file_current_map = generate_map( 
+            size_xy=size_xy, with_limit=with_limit, path=path, name=level
+        ) # Ejemplo de Generar mapa
+        print( f'map file: {file_current_map}' )
+    else:
+        print( 'No se genero ningun mapa' )
+        file_current_map = level
+        
+
+
+
+    # Mapa a generar
+    current_map = Map
+    read_Map( current_map, level=file_current_map )
+
+    # Spawn del mapa generado
+    player_spawn_xy = render_map( current_map )
+
+
+
+
+    # Clima | Establecer color de fondo
+    climate_color = get_climate( current_map )
+
+    # Camara | Scroll
+    # Camara | Limite del mapa y de camara
+    scroll_float = [0,0]
+    limit_xy = get_limit_xy( group_sprite=grid_objects )
+
+
+
+    # Posición de camara en donde esta el jugador | Detectar limites
+    print(f'display edit: {size_display_edit}')
+    print(f'player spawn: {player_spawn_xy}' )
+    print( player_spawn_xy[0] - (size_display_edit[0]/2) )
+    camera_xy = start_camera(
+        pos_xy=player_spawn_xy, display_xy=size_display_edit, limit_xy=limit_xy,
+        difference_xy=[data_CF.pixel_space*2, data_CF.pixel_space*3]
+    )
+
+    # Variables de movimiento
     click_left = False
     click_right = False
-    set_object_prefix = None
-    # Eventos de juego
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            exec_game = False
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            # Detección de mouse
-            left, middle, right = pygame.mouse.get_pressed()
-            if left or right:
-                # Click izquierdo
-                mouse_pos = pygame.mouse.get_pos()
-                click_left = True
-                click_right = False
-            if middle:
-                # Click Rueda de mouse
-                mouse_movement = pygame.mouse.get_rel()
+    move_up = False
+    move_down = False
+    move_left = False
+    move_right = False
 
-                if mouse_movement[1] < 0:
-                    move_up = True
-                if mouse_movement[1] > 0:
-                    move_down = True
-                
-                if mouse_movement[0] < 0:
-                    move_left = True
-                if mouse_movement[0] > 0:
-                    move_right = True
-        if event.type == pygame.MOUSEBUTTONUP:
-            move_up = False
-            move_down = False
-            move_left = False
-            move_right = False
-                    
 
-        if event.type == pygame.KEYDOWN:
-            # Detectar letra actual precionada
-            letter = event.unicode
-            if letter in prefix_object:
-                #print( letter )
-                set_object_prefix = letter
-        
-            # Mover camara/scroll
-            if event.key == player_key['up']:
-                move_up = True
-            if event.key == player_key['down']:
-                move_down = True
 
-            if event.key == player_key['left']:
-                move_left = True
-            if event.key == player_key['right']:
-                move_right = True    
 
-        if event.type == pygame.KEYUP:
-            # Detectar letra actual precionada
-            set_object_prefix = None
-        
-            # Mover camara/scroll
-            if event.key == player_key['up']:
-                move_up = False
-            if event.key == player_key['down']:
-                move_down = False
+    # Inicializar scroll  | Acomodar scroll en dode este el player
+    scroll_float = start_scroll( camera_xy )
+    scroll_int = [0,0]
 
-            if event.key == player_key['left']:
-                move_left = False
-            if event.key == player_key['right']:
-                move_right = False
-    
-    # Ejecutar juego
-    if run_game == True:
-        exec_game = False
-    
-    
-    
-    
-    # Limpiar pantalla (agregar esta línea)
-    display.fill( generic_colors('black') )
-    display_edit.fill( climate_color )
-    
-    
-    
-    
-    # Movimiento camara | Establecer si direccion de movimietno
-    moving_xy = [0,0]
-    if move_up == True:
-        moving_xy[1] -= data_CF.pixel_space
-    if move_down == True:
-        moving_xy[1] += data_CF.pixel_space
-        
-    if move_left == True:
-        moving_xy[0] -= data_CF.pixel_space
-    if move_right == True:
-        moving_xy[0] += data_CF.pixel_space
-    
-    # Movimienteo camara 
-    # Detactar limites | Función para bloquear el movimiento de camara
-    '''
-    print(limit_xy, 'limit of map')
-    print(player_spawn_xy, 'camera spawn')
-    print(camera_xy, 'camera')
-    print(scroll_float, 'scroll')
-    '''
 
-    for index in range(0, 2):
-        if camera_xy[index] + ((size_display_edit[index]/2)-data_CF.pixel_space) > limit_xy[index]:
-            if moving_xy[index] > 0:
-                moving_xy[index] = 0
-        elif camera_xy[index] < (size_display_edit[index]/2):
-            if moving_xy[index] < 0:
-                moving_xy[index] = 0
-    camera_xy[0] += moving_xy[0]
-    camera_xy[1] += moving_xy[1]
-    
-    '''
-    # Función objetos que limitan la camara
-    not_scroll_xy = [False, False]
-    for obj in grid_objects:
-        if obj.type_object == '|':
-            not_scroll_xy = detect_camera_limit(
-                limit_xy=[obj.rect.x, obj.rect.y], moving_xy=moving_xy, 
-                camera_xy=camera_xy, camera_spawn_xy=player_spawn_xy,
-                scroll_float=scroll_float, not_scroll_xy=not_scroll_xy,
-                grid_square=data_CF.pixel_space, disp_xy=size_display_edit
-            )
-                
-    
-    # Función Scroll/Camara
-    if not_scroll_xy[0] == False:
-        scroll_float[0] += (camera_xy[0] -scroll_float[0] -size_display_edit[0]/2)/4
-    if not_scroll_xy[1] == False:
-        scroll_float[1] += (camera_xy[1] -scroll_float[1] -size_display_edit[1]/2)/4
-    '''
-    # Función scroll | Camara
-    scroll_float[0] += (camera_xy[0] -scroll_float[0] -size_display_edit[0]/2)/4
-    scroll_float[1] += (camera_xy[1] -scroll_float[1] -size_display_edit[1]/2)/4
-    scroll_int = [int(scroll_float[0]), int(scroll_float[1])]
-    
-    
-    
-    # Función | Mouse | Cuando se hace click a un objeto
-    if click_left == True or click_right == True:
+
+
+    # Boleanos de botones. Detección de click en el boton.
+    current_object_selected = None
+    set_message_start = False
+    set_path = False
+    set_next_level = False
+    text_input = ''
+
+
+    # Loop del juego
+    run_game = False
+    exec_game = True
+    while exec_game:
         click_left = False
+        click_right = False
+        set_object_prefix = None
+        # Eventos de juego
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                exec_game = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                # Detección de mouse
+                left, middle, right = pygame.mouse.get_pressed()
+                if left or right:
+                    # Click izquierdo
+                    mouse_pos = pygame.mouse.get_pos()
+                    click_left = True
+                    click_right = False
+                if middle:
+                    # Click Rueda de mouse
+                    mouse_movement = pygame.mouse.get_rel()
+
+                    if mouse_movement[1] < 0:
+                        move_up = True
+                    if mouse_movement[1] > 0:
+                        move_down = True
+                    
+                    if mouse_movement[0] < 0:
+                        move_left = True
+                    if mouse_movement[0] > 0:
+                        move_right = True
+            if event.type == pygame.MOUSEBUTTONUP:
+                move_up = False
+                move_down = False
+                move_left = False
+                move_right = False
+                        
+
+            if event.type == pygame.KEYDOWN:
+                # Para el input
+                # Detectar letra actual precionada
+                letter = event.unicode
+                
+                if pass_text_filter( letter, filter=prefix_text_input ):
+                    print(f'{letter} Esta listo para ser texto de next level')
+                    if set_next_level == True or set_path == True or set_message_start == True:
+                        text_input += letter
+                        print(text_input)
+                        
+                if letter in prefix_object:
+                    #print( letter )
+                    set_object_prefix = letter
+            
+                # Mover camara/scroll
+                if event.key == player_key['up']:
+                    move_up = True
+                if event.key == player_key['down']:
+                    move_down = True
+
+                if event.key == player_key['left']:
+                    move_left = True
+                if event.key == player_key['right']:
+                    move_right = True    
+                
+                if event.key == interface_key['ok']:
+                    # Precionando ok             
+                    # Dejar de guardar el input en text_input
+                    # Guardar input en algun lado.
+                    # Guardar next level
+                    if set_next_level == True:
+                        set_next_level = False
+                        current_map.next_level = text_input
+                    if set_path == True:
+                        set_path = False
+                        current_map.path = text_input
+                    if set_message_start == True:
+                        set_message_start = False
+                        current_map.message_start = text_input
+                    
+                    # Restablecer el estado de text_input
+                    text_input = ''
+                if event.key == interface_key['del']:
+                    # Borrar texto
+                    text_input = text_input[:-1]
+
+            if event.type == pygame.KEYUP:
+                # Detectar letra actual precionada
+                set_object_prefix = None
+            
+                # Mover camara/scroll
+                if event.key == player_key['up']:
+                    move_up = False
+                if event.key == player_key['down']:
+                    move_down = False
+
+                if event.key == player_key['left']:
+                    move_left = False
+                if event.key == player_key['right']:
+                    move_right = False
         
-        # Detectar si se clickea una opcion
-        button_change_object = False
-        button_change_map = False
-        button_text = None
-        for button in buttons:
-            if button.rect.collidepoint( 
-                mouse_pos[0],
-                mouse_pos[1]
-            ):
-                for text in dict_object.keys():
-                    if button.text == text:
-                        button_change_object = True
+        # Ejecutar juego
+        if run_game == True: exec_game = False
+        
+        
+        
+        
+        # Limpiar pantalla | Para evitar bugasos.
+        display.fill( generic_colors('black') )
+        display_edit.fill( climate_color )
+        
+        
+        
+        
+        # Movimiento camara | Establecer si direccion de movimietno
+        moving_xy = [0,0]
+        if move_up == True:
+            moving_xy[1] -= data_CF.pixel_space
+        if move_down == True:
+            moving_xy[1] += data_CF.pixel_space
+            
+        if move_left == True:
+            moving_xy[0] -= data_CF.pixel_space
+        if move_right == True:
+            moving_xy[0] += data_CF.pixel_space
+        
+        # Movimienteo camara 
+        # Detectar limites | Función para bloquear el movimiento de camara
+        for index in range(0, 2):
+            if camera_xy[index] + ((size_display_edit[index]/2)-data_CF.pixel_space) > limit_xy[index]:
+                if moving_xy[index] > 0:
+                    moving_xy[index] = 0
+            elif camera_xy[index] < (size_display_edit[index]/2):
+                if moving_xy[index] < 0:
+                    moving_xy[index] = 0
+        camera_xy[0] += moving_xy[0]
+        camera_xy[1] += moving_xy[1]
+        
+
+
+
+        # Función scroll | Camara
+        scroll_float[0] += (camera_xy[0] -scroll_float[0] -size_display_edit[0]/2)/4
+        scroll_float[1] += (camera_xy[1] -scroll_float[1] -size_display_edit[1]/2)/4
+        scroll_int = [int(scroll_float[0]), int(scroll_float[1])]
+        
+        
+        
+
+        # Función | Mouse | Cuando se hace click a un objeto
+        if (
+            (click_left == True or click_right == True) and 
+
+            set_next_level == False and set_path == False and set_message_start == False
+            # Esto es para ignorar selecionar botones, si se esta esperando una entrada de texto/input
+        ):
+            click_left = False
+            
+            # Detectar si se clickea una opcion
+            button_change_object = False
+            button_change_map = False
+            button_text = None
+            for button in buttons:
+                if button.rect.collidepoint( 
+                    mouse_pos[0],
+                    mouse_pos[1]
+                ):
+                    for text in dict_object.keys():
+                        if button.text == text:
+                            button_change_object = True
+                            button_text = button.text
+                            print( button.text )
+                    if button_text == None:
+                        button_change_map = True
                         button_text = button.text
                         print( button.text )
-                if button_text == None:
-                    button_change_map = True
-                    button_text = button.text
-                    print( button.text )
-                    if button.text == 'save':
-                        data_CF.current_level = file_current_map
-                        save_CF( data_CF )
-                        save_Map( current_map, data_CF.current_level )
-                    elif button.text == 'play':
-                        run_game = True
-                    else:
-                        if button.text in dict_climate.keys():
-                            current_map.climate = button.text
-                            climate_color = get_climate( current_map )
-                                
-        if button_change_object == True:
-            # Establecer tipo de objeto
-            if not current_object_selected == None:
-                if isinstance(button_text, str):
-                    current_object_selected.type_object = dict_object[button_text]
-                    current_object_selected.update_type_object()
-            # Borrar                                
-            for button in buttons:
-                for text in dict_object.keys():
-                    if button.text == text:
-                        button.kill()
-                        if not button.background == None:
-                            button.background.kill()
-            
+                        if button.text == 'save':
+                            data_CF.current_level = file_current_map
+                            save_CF( data_CF )
+                            save_Map( current_map, data_CF.current_level )
+                        elif button.text == 'play':
+                            run_game = True
+                        elif button.text == 'next_level': 
+                            set_next_level = True
+                            if isinstance(current_map.next_level, str):
+                                text_input = current_map.next_level
+                        elif button.text == 'path': 
+                            set_path = True
+                            if isinstance(current_map.path, str):
+                                text_input = current_map.path
+                        elif button.text == 'message_start': 
+                            set_message_start = True
+                            if isinstance(current_map.message_start, str):
+                                text_input = current_map.message_start
+                        else:
+                            if button.text in dict_climate.keys():
+                                current_map.climate = button.text
+                                climate_color = get_climate( current_map )
+                                    
+            if button_change_object == True:
+                # Establecer tipo de objeto
+                if not current_object_selected == None:
+                    if isinstance(button_text, str):
+                        current_object_selected.type_object = dict_object[button_text]
+                        current_object_selected.update_type_object()
+                # Borrar                                
+                for button in buttons:
+                    for text in dict_object.keys():
+                        if button.text == text:
+                            button.kill()
+                            if not button.background == None:
+                                button.background.kill()
+                
 
-        # Detectar que se clickea un objeto_grid
-        if button_change_object == False:
-            for obj in grid_objects:
-                # Calcular la posición relativa del objeto dentro de la vista previa
-                rel_pos_x = obj.rect.x - scroll_int[0]
-                rel_pos_y = obj.rect.y - scroll_int[1]
+            # Detectar que se clickea un objeto_grid
+            if button_change_object == False:
+                for obj in grid_objects:
+                    # Calcular la posición relativa del objeto dentro de la vista previa
+                    rel_pos_x = obj.rect.x - scroll_int[0]
+                    rel_pos_y = obj.rect.y - scroll_int[1]
 
-                # Comprobar si el objeto está dentro de la vista previa (display_edit)
-                if (0 <= rel_pos_x < size_display_edit[0]) and (0 <= rel_pos_y < size_display_edit[1]):
-                    if obj.rect.collidepoint(
-                        mouse_pos[0] - difference_display_edit[0] + scroll_int[0],
-                        mouse_pos[1] - difference_display_edit[1] + scroll_int[1]
-                    ):
-                        # Si el objeto está en la vista y se hace clic, realizar la acción
-                        #print(obj.rect.x, obj.rect.y)  # Posición en píxeles
-                        #print(obj.type_object)
-                        #obj.type_object = '.'
-                        #obj.update_type_object()
-                        current_object_selected = obj
-                        
-                        number = 0
-                        for option in dict_object.keys():
-                            Button(
-                                font=font, text=option, use_lang=use_lang,
-                                color_text=color_text, color_background=color_background,
-                                position_xy=[mouse_pos[0], mouse_pos[1] +(font_size*number)]
-                            )
-                            number+=1
+                    # Comprobar si el objeto está dentro de la vista previa (display_edit)
+                    if (0 <= rel_pos_x < size_display_edit[0]) and (0 <= rel_pos_y < size_display_edit[1]):
+                        if obj.rect.collidepoint(
+                            mouse_pos[0] - difference_display_edit[0] + scroll_int[0],
+                            mouse_pos[1] - difference_display_edit[1] + scroll_int[1]
+                        ):
+                            # Si el objeto está en la vista y se hace clic, realizar la acción
+                            #print(obj.rect.x, obj.rect.y)  # Posición en píxeles
+                            #print(obj.type_object)
+                            #obj.type_object = '.'
+                            #obj.update_type_object()
+                            current_object_selected = obj
                             
-    
-    # Funcion cambiar objeto con teclado
-    if not current_object_selected == None:
-        if not set_object_prefix == None:
-            if not set_object_prefix.replace(' ', '') == '':
-                #print(set_object_prefix)
+                            number = 0
+                            for option in dict_object.keys():
+                                Button(
+                                    font=font, text=option, use_lang=use_lang,
+                                    color_text=color_text, color_background=color_background,
+                                    position_xy=[mouse_pos[0], mouse_pos[1] +(font_size*number)]
+                                )
+                                number+=1
+                                
+        
+        # Funcion cambiar objeto con teclado
+        if not current_object_selected == None:
+            if not set_object_prefix == None:
+                if not set_object_prefix.replace(' ', '') == '':
+                    #print(set_object_prefix)
+                    for button in buttons:
+                        if button.text in dict_object.keys():
+                            button.kill()
+                            button.background.kill()
+                    current_object_selected.type_object = set_object_prefix
+                    current_object_selected.update_type_object()
+                    current_object_selected = None
+        
+        
+        
+        
+        # Objetos / Mostrar / Todos los sprites
+        for sprite in layer_all_sprites.sprites():
+            # Detectar que el sprite no sebrepase la pantalla
+            display_collision = scroll_display_collision(
+                [sprite.rect.x, sprite.rect.y], scroll_int, size_display_edit, [data_CF.pixel_space, 0]
+            )
+
+            # Si el esprite esta en pantalla, mostrarlo.
+            if display_collision == None:
+                display_edit.blit(
+                    sprite.surf, (
+                        sprite.rect.x -scroll_int[0], sprite.rect.y -scroll_int[1]
+                    )
+                )
+        
+        
+        # Mostrar display edit
+        display.blit( display_edit, (difference_display_edit[0], difference_display_edit[1]) )
+
+
+        
+        # Detectar dimencion x.
+        size_buttons_xy = [0,0]
+        pos_x = []
+        pos_y = []
+        aditional = 0
+        for button in buttons:
+            if button.text in dict_object.keys():
+                size_buttons_xy[0] = button.rect.width
+                size_buttons_xy[1] += button.rect.height
+                aditional = button.rect.height
+                pos_x.append(button.rect.x)
+                pos_y.append(button.rect.y)
+
+        #print(size_buttons_xy)
+        if not (pos_x == [] or pos_y == []):
+            #print( max(pos_x), max(pos_y)+aditional )
+            #print( min(pos_x), min(pos_y) )
+            if max(pos_y)+aditional >= data_CF.disp[1]:
+                #print( max(pos_y)+aditional )
+                #print( ( max(pos_y)+aditional ) -data_CF.disp[1] )
                 for button in buttons:
                     if button.text in dict_object.keys():
-                        button.kill()
-                        button.background.kill()
-                current_object_selected.type_object = set_object_prefix
-                current_object_selected.update_type_object()
-                current_object_selected = None
+                        button.rect.y -= ( max(pos_y)+aditional ) -data_CF.disp[1]
+                        button.background.rect.y -= ( max(pos_y)+aditional ) -data_CF.disp[1]
 
-
-    '''
-    if click_left == True or click_right == True:
-        for obj in grid_objects:
-            if obj.rect.collidepoint( 
-                mouse_pos[0]-difference_display_edit[0] +scroll_int[0],
-                mouse_pos[1]-difference_display_edit[1] +scroll_int[1]
-            ):
-                # Click en grid
-                # Obtener menu de objetos y seleccionar uno
-                print( obj.rect.x, obj.rect.y ) # Posicion en pixeles
-                print( obj.type_object )
-                obj.type_object = '.'
-                obj.update_type_object()
-    '''
-
-    
-    
-    
-    # Objetos / Mostrar / Todos los sprites
-    for sprite in layer_all_sprites.sprites():
-        # Detectar que el sprite no sebrepase la pantalla
-        display_collision = scroll_display_collision(
-            [sprite.rect.x, sprite.rect.y], scroll_int, size_display_edit, [data_CF.pixel_space, 0]
-        )
-
-        # Si el esprite esta en pantalla, mostrarlo.
-        if display_collision == None:
-            display_edit.blit(
-                sprite.surf, (
-                    sprite.rect.x -scroll_int[0], sprite.rect.y -scroll_int[1]
-                )
-            )
-    
-    
-    # Mostrar display edit
-    display.blit( display_edit, (difference_display_edit[0], difference_display_edit[1]) )
-
-
-    
-    # Detectar dimencion x.
-    size_buttons_xy = [0,0]
-    pos_x = []
-    pos_y = []
-    aditional = 0
-    for button in buttons:
-        if button.text in dict_object.keys():
-            size_buttons_xy[0] = button.rect.width
-            size_buttons_xy[1] += button.rect.height
-            aditional = button.rect.height
-            pos_x.append(button.rect.x)
-            pos_y.append(button.rect.y)
-
-    #print(size_buttons_xy)
-    if not (pos_x == [] or pos_y == []):
-        #print( max(pos_x), max(pos_y)+aditional )
-        #print( min(pos_x), min(pos_y) )
-        if max(pos_y)+aditional >= data_CF.disp[1]:
-            #print( max(pos_y)+aditional )
-            #print( ( max(pos_y)+aditional ) -data_CF.disp[1] )
-            for button in buttons:
-                if button.text in dict_object.keys():
-                    button.rect.y -= ( max(pos_y)+aditional ) -data_CF.disp[1]
-                    button.background.rect.y -= ( max(pos_y)+aditional ) -data_CF.disp[1]
-
-    # Sección de interfaz/hud
-    if click_left == False:
-        # Borrar botones repetidos
+        # Sección de interfaz/hud
+        if click_left == False:
+            # Borrar botones repetidos
+            for sprite in buttons:
+                for x in buttons:
+                    if not sprite == x:
+                        if sprite.rect.x == x.rect.x and sprite.rect.y == x.rect.y:
+                            print('borrar')
+                            x.kill()
+                            if not x.background == None:
+                                x.background.kill()
+                        elif sprite.text == x.text:
+                            print('borrar')
+                            x.kill()
+                            if not x.background == None:
+                                x.background.kill()
+        
+        for sprite in interface_background:
+            display.blit( sprite.surf, sprite.rect )
+        
         for sprite in buttons:
-            for x in buttons:
-                if not sprite == x:
-                    if sprite.rect.x == x.rect.x and sprite.rect.y == x.rect.y:
-                        print('borrar')
-                        x.kill()
-                        if not x.background == None:
-                            x.background.kill()
-                    elif sprite.text == x.text:
-                        print('borrar')
-                        x.kill()
-                        if not x.background == None:
-                            x.background.kill()
-    
-    for sprite in interface_background:
-        display.blit( sprite.surf, sprite.rect )
-    
-    for sprite in buttons:
-        display.blit( sprite.surf, sprite.rect )
+            display.blit( sprite.surf, sprite.rect )
+            
+        
+        # Mostrar input
+        if set_path == True or set_next_level == True or set_message_start == True:
+            if text_input == '':
+                text = 'None'
+            else:
+                text = text_input
+            font_text_input = font.render(text, True, color_text )
+            rect = font_text_input.get_rect()
+            position = [ (data_CF.disp[0]//2 -(rect.width//2) ), (data_CF.disp[1]//2 -(rect.height//2) ) ]
+            
+            surf = pygame.Surface( [rect.width, rect.height] )
+            surf.fill( color_background )
+
+            display.blit( surf, position )
+            display.blit( font_text_input, position )
+            
 
 
-    
-    # Fin
-    pygame.display.update()
-    clock.tick( data_CF.fps )
-if run_game == True:
-    data_CF.current_level = file_current_map
-    save_CF( data_CF )
-    import cuadradoFeliz
-pygame.quit()
+        
+        # Fin
+        pygame.display.update()
+        clock.tick( data_CF.fps )
+    if run_game == True:
+        data_CF.current_level = file_current_map
+        save_CF( data_CF )
+        import cuadradoFeliz
+    print( return_map( current_map ) ) # Mostrar estado actual del mapa.
+    pygame.quit()
 
-print( return_map( current_map ) )
+#run( )

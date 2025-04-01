@@ -234,7 +234,7 @@ class Window_Main(Gtk.Window):
         #self.hide()
     
     def thread_start_game(self):
-        import cuadradoFeliz_newver
+        import cuadradoFeliz
     #    GLib.idle_add(self.thread_fin_game)
     #def thread_fin_game(self):
     #    self.show_all()
