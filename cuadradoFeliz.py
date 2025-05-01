@@ -260,7 +260,10 @@ class Start_Map( ):
         
         Cada valor obtenido de este ciclo, generara una lluvia, en la posición x. Que sera el valor actual obtenido del ciclo. Y en el eje "y" en un rango -pixel_space a -pixel_space*16
         '''
-        if Map.climate == 'rain' and xy[0] > 0:
+        if (Map.climate == 'rain' or Map.climate == 'acid') and xy[0] > 0:
+            if Map.climate == 'rain': damage = False
+            if Map.climate == 'acid': damage = True
+
             rain_multipler = 2
             for generate_number in range(0, rain_multipler):
                 more_distance_xy = [8, 0]
@@ -275,7 +278,7 @@ class Start_Map( ):
                             -( random.randint( data_CF.pixel_space, data_CF.pixel_space*16) )
                         ),
                         transparency_collide=transparency_collide, transparency_sprite=transparency_sprite_rain,
-                        damage=False
+                        damage=damage
                     )
             print( 
                 f'rain multipler: {rain_multipler}\n' 
@@ -303,10 +306,15 @@ def get_climate( Map ):
     else:
         return 'default'
 
+#time_dayloop=data_CF.fps*0 # Tienpo de duración del dia y de la noche.
+time_dayloop=data_CF.fps*10 # Tienpo de duración del dia y de la noche.
 def Loop_allday( Map ):
     climate = get_climate( Map )
     gradiant_color = GradiantColor( 
-        color=dict_climate[climate], transparency=127, divider=16, start_with_max_power=True, time=data_CF.fps*120
+        color=dict_climate[climate], transparency=127, divider=16, start_with_max_power=True, 
+        #time=data_CF.fps*120
+        time=time_dayloop
+        #time=data_CF.fps*0
     )
     gradiant_color.climate=climate
     
@@ -502,28 +510,32 @@ scroll_float = start_scroll(
 
 
 # Sol solecito
-size_sun = [data_CF.pixel_space, data_CF.pixel_space] 
-color_sun = generic_colors('yellow')
+# Total en tardar el loop del sun: data_CF.fps*240
+HappySun = Sun( time=time_dayloop, display=[ data_CF.disp[0]+data_CF.pixel_space, data_CF.disp[1] ], divider=24)
+#HappySun = Sun( time=data_CF.fps*0, display=[ data_CF.disp[0]+data_CF.pixel_space, data_CF.disp[1] ], divider=24)
 
-surf_sun = pygame.Surface( size_sun )
-surf_sun.fill( color_sun )
+light_dict = {}
 
+def create_light():
+    for key in light_dict.keys():
+        light_dict[key].kill()
+    light_dict.clear()
 
-sprite_sun = pygame.sprite.Sprite()
-sprite_sun.surf = surf_sun
-position_sun = [data_CF.pixel_space*4, data_CF.pixel_space*1]
-sprite_sun.rect = sprite_sun.surf.get_rect( topleft=position_sun )
-nocamera_back_sprites.add(sprite_sun)
+    for object in lighting_objects:
+        sprite = pygame.sprite.Sprite()
+        sprite.surf = surface_bloom(
+            size=object.surf.get_size(), alpha_range=[127, 0], 
+            color=generic_colors('yellow'), middle_color=False
+        )
+        sprite.surf.get_rect()
+        sprite.rect = sprite.surf.get_rect( 
+            topleft=[object.rect.x-sprite.surf.get_width(), object.rect.y-sprite.surf.get_height()] 
+        )
+        sprite.color = object.color
+        nocamera_back_sprites.add(sprite)
+        light_dict.update( {object : sprite} )
 
-surf_sun_bloom = surface_bloom(
-    size=size_sun, alpha_range=[127, 0], color=generic_colors('yellow'), middle_color=False
-)
-sprite_sun_grad = pygame.sprite.Sprite()
-sprite_sun_grad.surf = surf_sun_bloom
-sprite_sun_grad.rect = sprite_sun_grad.surf.get_rect( 
-    topleft=( position_sun[0]-size_sun[0], position_sun[1]-size_sun[1] )
-)
-nocamera_back_sprites.add(sprite_sun_grad)
+create_light()
 
 
 
@@ -564,6 +576,7 @@ while exec_game:
     display.fill( generic_colors('green') )
     display.blit( image_background, (0,0) )
     display.blit( background_surf, (0,0) )
+
     loop_allday.update()
 
     
@@ -627,6 +640,10 @@ while exec_game:
     # Función actualizar animacion de sprites.
     for sprite in anim_sprites:
         sprite.anim()
+        
+    # Función Objetos actualizables
+    for obj in update_objects:
+        obj.update()
     
     
     # Función clima
@@ -692,7 +709,11 @@ while exec_game:
                 
                 # Clima | Color de fondo
                 if not loop_allday.climate == get_climate( current_map ):
-                    loop_allday = Loop_allday( current_map )
+                    #loop_allday = Loop_allday( current_map )
+                    loop_allday.climate = get_climate( current_map )
+                    loop_allday.color = dict_climate[ get_climate( current_map ) ]
+                    loop_allday.restart()
+                    HappySun.restart()
                     
                 # Clima | Sonido de fondo
                 play_background_music.climate=f'climate_{get_climate( current_map )}'
@@ -707,13 +728,38 @@ while exec_game:
                     pos_xy=[player.rect.x, player.rect.y], display_xy=data_CF.disp, limit_xy=limit_xy,
                     difference_xy=[data_CF.pixel_space*2, data_CF.pixel_space*3]
                 )
-
-
-
+    
+    
+    
+    
+    # Ilumination
+    for key in light_dict.keys():
+        if light_dict[key].color != key.color:
+            light_dict[key].surf = surface_bloom(
+                size=key.surf.get_size(), alpha_range=[127, 0], 
+                color=key.color, middle_color=False
+            )
+        light_dict[key].rect.topleft = (
+            key.rect.x - key.rect.width, 
+            key.rect.y - key.rect.height
+        )
 
     # Objetos / Mostrar / Los sprites de atras, que no puede mover la camara.
     for sprite in nocamera_back_sprites:
         display.blit(sprite.surf, sprite.rect)
+    
+    '''
+    # Objetos con iluminacion
+    for sprite in lighting_objects:
+        # Generar lusesillas
+        size = [sprite.rect.width, sprite.rect.height]
+        surf = surface_bloom(
+            size=size, alpha_range=[127, 0], color=sprite.color, middle_color=False
+        )
+        position = ( sprite.rect.x-size[0], sprite.rect.y-size[1] )
+        display.blit(surf, position)
+    '''
+
 
     # Función renderizado de sprites / Mostrar / Todos los sprites / Layer Capas
     for sprite in layer_all_sprites.sprites():
@@ -728,7 +774,6 @@ while exec_game:
                 sprite.surf, 
                 ( sprite.rect.x -scroll_int[0], sprite.rect.y -scroll_int[1] )
             )
-            
             if True == True:
                 if sprite.surf.get_alpha() > 0:
                     # [255, 169]
