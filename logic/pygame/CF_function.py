@@ -6,6 +6,7 @@ from data.CF_data import *
 from logic.Modulo_Text import *
 from logic.pygame.Modulo_pygame import *
 from logic.Modulo_Files import *
+import math
 import pygame, os, random
 
 
@@ -389,103 +390,123 @@ def get_coordinate_multipler( multipler=int, pixel_space=int, position=[int,int]
 
 
 # Funcion del clima
-def divider_color_rgb(color=[255,255,255], divider=2):
+def divider_color_rgb( 
+        color=[255,255,255], divider=2, alpha=255, min_value_multipler=0, 
+        most_to_least=True, from_zero=False, int_value=True
+    ):
     '''
     Dividir un color rgb, en varios colores rgb.
-    color = [int, int, int] (min 0, max 255)
-    divider = int or float (recomend int)
+    
+    Argumentos
+        color = [int, int, int] (min 0, max 255)
+        divider = int
+        alpha = int ; Valor de transparencia. Por defecto 255
+        min_value_multipler ; Multiplicador del valor minimo. Por defecto 0.
+        most_to_least = bool ; Para hacer la lista de mayor a menor o de menor a mayor.
+        from_zero = bool ; Para determinar si el valor se saltara el primer o el ultimo valor.
+        int_value = bool ; Para devolver un numero entero si o si.
+    
+    Devulve:
+        Una lista con listas de tres items.
+        Ejemplo: [ [0,0,0] ]
     '''
-    # Detectar que el color rgb sea una lita aceptable, para cada valor en la lista
-    number = 0
-    for c in color:
-        if c < 0 or c > 255:
-            color[index] = 255
-        number += 1
-
-    if number < 0 or number > 3:
-        color = [255, 255, 255]
+    # Dividir cada valor del rgb
+    r = stepped_number_sequence(
+        [color[0], color[0]*min_value_multipler], divider=divider,
+        most_to_least=most_to_least, from_zero=from_zero, int_value=int_value 
+    )
+    g = stepped_number_sequence(
+        [color[1], color[1]*min_value_multipler], divider=divider,
+        most_to_least=most_to_least, from_zero=from_zero, int_value=int_value 
+    )
+    b = stepped_number_sequence( 
+        [color[2], color[2]*min_value_multipler], divider=divider,
+        most_to_least=most_to_least, from_zero=from_zero, int_value=int_value 
+    )
     
-    # Detectar que divisor sea un valor aceptable, para cada valor en el rgb
-    for c in color:
-        if divider < 0 or divider> c:
-            divider = 1
-        else:
-            pass
-    
-    # Dividir valores | Lista de colores rgb
-    color_list = []
+    # Asignar cada valor del rgb
+    list_color = []
+    for x in range(divider):
+        #list_color.append( [ r[x], g[x], b[x] ] )
+        list_color.append( [ r[x], g[x], b[x], alpha ] )
+    return list_color
 
-    multipler = 0
-    for x in range(0, divider):
-        multipler += 1
-
-        # Agregar nuevo color rgb a la lista de colores final.
-        new_color = []
-        for c in color:
-            new_color.append( (c/divider)*multipler )
-        color_list.append( new_color )
-    
-    # Devuelve la lista de colores rgb final
-    return color_list
 
 
 class GradiantColor():
-    def __init__(
-        self, color=[155, 168, 187], transparency=255, divider=2, start_with_max_power=False, time=0
+    def __init__ (
+        self, color=[255,255,255], transparency=255, divider=2, start_with_max_power=False, time=0
     ):
-        '''
-        Divide un color rgb y con la funcion update, actualiza el color a uno de la lista, dependiendo si se ánade mas color, o se disminulle el color. Esto esta pensado para utilizarse en un bucle.
-        
-        color = [int, int, int] (min 0, max 255)
-        divider = int or float (recomend int)
-        start_with_max_power = bool
-        time = int
-        '''
         super().__init__()
         
-        # Listar colores | Obtener color de inico y color de fin
-        self.__color_list = divider_color_rgb( color=color, divider=divider )
-        if transparency <= 255 and transparency >= 0:
-            for color in self.__color_list:
-                color.append(transparency)
-        self.__number_list = len(self.__color_list)-1
-        self.start_color = self.__color_list[0]
-        self.end_color = self.__color_list[self.__number_list]
+        # Lista de colores
+        self.__divider = divider # Divisor de colores/cantidad de indices.
+        self.__transparency = transparency
+        self.__start_with_max_power = start_with_max_power
+        self.color = color
+        self.__color_list = divider_color_rgb( 
+            color=self.color, divider=self.__divider, 
+            alpha=self.__transparency, most_to_least=self.__start_with_max_power
+        )
         
-        # Reducir colores
-        if start_with_max_power == True:
-            self.__color_number = self.__number_list
-            self.__reduce_color = True
-        else:
-            self.__color_number = 0
-            self.___reduce_color = False
-        self.current_color = self.__color_list[ self.__color_number ]
-        
-        # Tiempo de ejecución
-        self.__current_time = 0
 
-        self.__time = calculate_multiplier( number_start=divider, number_fin=time )
-    
+        self.time = time # Tiempo para que se realice cada cambio.
+        
+        # Contador de tiempo, indice de lista de color.
+        self.count = 0
+        self.index = 0
+
+        # Color actual, color de inicio, color final
+        self.current_color = self.__color_list[ self.index ]
+        self.start_color = self.__color_list[ 0 ]
+        self.end_color = self.__color_list[ self.__divider-1 ]
+        
+        # Invert es para poner los indices de menos a mas o de mas a menos.
+        self.invert = False
+
     def update(self):
-        # Tiempo de ejecución
-        self.__current_time += 1
-        if self.__current_time >= self.__time:
-            self.__current_time = 0
-            
-            # Cambiar color
-            self.current_color = self.__color_list[self.__color_number]
-            
-            # Aumentar color
-            if self.__reduce_color == False:
-                self.__color_number += 1
-                if self.__color_number >= self.__number_list:
-                    self.__reduce_color = True
+        '''
+        Cambia de color, 
+        invert False, hace que el index de la lista sea de menor a mayor
+        invert True, hace que el index de la lista sea de mayor a menor
+        '''
+        self.count += 1
+        if self.count >= self.time:
+            self.count = 0
+            self.current_color = self.__color_list[self.index]
 
-            # Disminuir color
-            elif self.__reduce_color == True:
-                self.__color_number -= 1
-                if self.__color_number <= 0:
-                    self.__reduce_color = False
+            if self.invert == False:
+                self.index += 1
+                if self.index >= self.__divider:
+                    self.index = self.__divider-1
+                    self.invert = True
+            elif self.invert == True:
+                self.index -= 1
+                if self.index <= 0:
+                    self.index = 0
+                    self.invert = False
+
+    def restart(self):
+        '''
+        Restablecer valores de inicio. Se empezara de 0
+        '''
+        # Colores
+        self.__color_list = divider_color_rgb( 
+            color=self.color, divider=self.__divider, 
+            alpha=self.__transparency, most_to_least=self.__start_with_max_power
+        )
+        
+        # Contador de tiempo, indice de lista de color.
+        self.count = 0
+        self.index = 0
+
+        # Color actual, color de inicio, color final
+        self.current_color = self.__color_list[ self.index ]
+        self.start_color = self.__color_list[ 0 ]
+        self.end_color = self.__color_list[ self.__divider-1 ]
+        
+        # Invert es para poner los indices de menos a mas o de mas a menos.
+        self.invert = False
 
 
 
@@ -627,125 +648,7 @@ def surf_limit_width( surf, limit_widht ) -> list:
 
 
 
-
-
-def old_collision_sides_solid( obj, obj_movement, solid_objects):
-    '''
-    Depende de la funcion loca more_height
-    '''    
-
-    # Sumar    
-    obj.rect.x += obj_movement[0]
-    obj.rect.y += obj_movement[1]
-
-    direction = None
-
-    if obj_movement[0] < 0:
-        speed = obj_movement[0]*-1
-    else:
-        speed = obj_movement[0]
-    for solid in solid_objects:
-        # Si el obj, esta colisionando con el solid, seguira el codigo
-        if obj.rect.colliderect( solid.rect ):
-            # Para detectar que la altura el solido y la del jugador sean correctas.
-            more_height = old_more_height( obj, solid )
-            
-            # Deteccion de colision arriba/abajo
-            # Recuerda que no se puede colisionar dos veces, se eliguira una colision, y en este caso siempre tiene mas pioridad la colision arriba, debido a que esta arriba de la linea de colision de a abajo.
-            if obj.rect.y < solid.rect.y:
-                # El obj, se movera "el valor de coordenadas y del solid, menos el valor de la altura del obj_collide, mas un pixel", mueve al obj hacia arriba ( tendencia a ser valor negativo ).
-                # Unicamente en esta posición, el jugador podra moverse y saltar.
-                direction = 'bottom'
-                obj.rect.y = solid.rect.y - obj.rect.height+1
-            elif obj.rect.y > solid.rect.y + (more_height):
-                # El obj, se movera "el valor de coorenadas y de solid, mas el valor de la altura del solid, mueva al obj hacia abajo ( tendencia a ser valor positivo ).
-                # El obj, ya no tendra permitido saltar.
-                direction = 'top'
-                obj_movement[1] = 0
-                obj.rect.y = solid.rect.y + solid.rect.height
-                
-                # Si el obj tiene menos altura que el obj, el obj no podra moverse de izq/der
-                # Se forzara aleatoriamente el movimiento hacia la izquierda o derecha.
-                if more_height == 0:
-                    x_positive = random.randint(0, 1)
-                    if x_positive == 0:
-                        obj.rect.x -= speed
-                    elif x_positive == 1:
-                        obj.rect.x += speed
-                        
-
-            # Deteccion de colision izquierda/derecha
-            # Collisionar de izquierda/derecha solo cuando el obj no es mas pequeño en hight que del solid
-            # Si more_height esta en 0, el jugador no colisionara en lados izquierda/derecha.
-            elif not more_height == 0:
-                if obj.rect.x < solid.rect.x + (speed/8):
-                    direction = 'left'
-                    obj.rect.x = solid.rect.x -obj.rect.width -speed
-
-                elif obj.rect.x > solid.rect.x - (speed/8):
-                    direction = 'right'
-                    obj.rect.x = solid.rect.x + solid.rect.width +speed
-    print(direction)      
-
-    
-    # Retornar valores
-    return direction
-
-
-
-
-def old_more_height( obj, solid ):
-    '''
-    '''
-    # Si el obj, esta colisionando con el collide, seguira el codigo
-    # Para detectar que la altura del solido y la del jugador sean correctas.
-    if obj.rect.height > solid.rect.height:
-        # Advertencia altura de solid mas pequeña comparada con la del obj
-        if solid.rect.height == obj.rect.height/2:
-            # obj = 16, obj_collide = 8, 
-            # more_height = obj -( obj + (solid/2) ) = -4
-            more_height = (
-                obj.rect.height -( obj.rect.height + (solid.rect.height/2) )
-            )
-        else:
-            more_height = 0
-
-    elif obj.rect.height < solid.rect.height:
-        # Advertencia Altura de obj_collide mas alta comparada con la del obj_main
-        # Para acomodar colision del lado de abajo de forma adecuada.
-        # Ejemplo:
-        # solid.altura = 32
-        # obj.altura = 16
-        # 16 cabe dos veces en 32, entonces: count = 2
-        # more_height = solid.altura - ( obj.altura / ( count/(count/2) ) ) = 24
-        # para evitar bugs:
-        # more_height = more_height -(obj.altura/4)
-        count = 1
-        difference = solid.rect.height
-        reduction = True
-        while reduction:
-            count += 1
-            difference -= obj.rect.height
-            if difference <= obj.rect.height:
-                reduction = False
-        more_height = (
-            solid.rect.height -( obj.rect.height / ( count/(count/2) ) )
-            -(obj.rect.height/4)
-        )
-
-    else:
-        # Excelente, la altura de obj_main es la misma que la de solid
-        # El "+(solid.rect.height//4)", es para evitar dos colisiones seguidas:
-        # Puede ser colisionar del lado izquierdo o derecho y seguido el lado inferior.
-        # Funciona, porque la colision del lado inferior, esta un poco mas abajo de lo normal.
-        more_height = solid.rect.height//4
-    
-    return more_height
-
-
-
-
-def number_most_to_least(
+def stepped_number_sequence(
         number_range=[256,0], divider=8, most_to_least=True, from_zero=True, int_value=True 
     ):
     '''
@@ -804,11 +707,11 @@ def number_most_to_least(
     
     return return_list # Devolver lista
 
-cocos = number_most_to_least([512, 0], 8, most_to_least=True, from_zero=True)
+cocos = stepped_number_sequence([512, 0], 8, most_to_least=True, from_zero=True)
 print( cocos )
 print( len( cocos ) )
 
-espuma = number_most_to_least([512, 0], 8, most_to_least=False, from_zero=True)
+espuma = stepped_number_sequence([1920, 0], 8, most_to_least=False, from_zero=True)
 print( espuma )
 print( len( espuma ) )
 
@@ -839,13 +742,12 @@ def surface_gradient( size=[32,32], alpha_range=[255,0], color=[0,0,0], dimensio
     
     
     # Degradado
-    #alpha_values = number_most_to_least(
-    #    alpha_range, divider=size[dimension], most_to_least=True, from_zero=False, int_value=True
+    #alpha_values = stepped_number_sequence(
+    #    alpha_range, divider=size[dimension], most_to_least=positive, from_zero=True, int_value=True
     #)
     #print(alpha_values)
     for d in range(size[dimension]):
-        #alpha = (alpha_values[d])
-        #if alpha < 0: alpha = 0
+        #alpha = alpha_values[d]
 
         alpha = int(
             ( alpha_range[0] -alpha_range[1] ) * ( addition + ( multipler*(d / (size[dimension]-1) ) ) )
@@ -938,10 +840,24 @@ def surface_bloom( size=[32,32], alpha_range=[255, 0], color=[0,0,0], middle_col
         elif part == 3:     position = [size[0], 0]
         
         surf_grad = surface_gradient(
-            size=size, alpha_range=alpha_range, color=color, dimension=dimension, positive=positive
+            size, [ alpha_range[0], alpha_range[1] ], color, dimension, positive
         )
         
         surface_final.blit( surf_grad, position )
     
     # Devolver surface.
     return surface_final
+
+
+
+
+def speed2d_with_angle( speed, angle ):
+    speed_xy = [ speed *math.cos(math.radians(angle)),  -speed *math.sin(math.radians(angle)) ]
+    # math.radians(), Convierte angulos a radianes
+    # math.cos, funcion coseno.
+    # math.sin, función seno.
+    # x = speed * cos(angle)
+    # y = speed * sin(angle)
+    # Coseno de cero es uno y seno de cero es cero. Por eso en el angulo cero; xy=[4,0]
+    
+    return speed_xy

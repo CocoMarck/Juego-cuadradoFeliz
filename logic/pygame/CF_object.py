@@ -1,3 +1,4 @@
+import math
 from logic.pygame.Modulo_pygame import (
     generic_colors, obj_collision_sides_solid, obj_coordinate_multiplier,
     player_camera_prepare, player_camera_move,
@@ -19,6 +20,144 @@ from logic.pygame.CF_function import *
 
 import pygame, sys, os, random
 from pygame.locals import *
+
+
+
+
+# Objetos para uso general
+class Sprite_Standar(pygame.sprite.Sprite):
+    '''
+    Sprite estandar para el juego CuadradoFeliz
+    
+    Objeto heredado de pygame.sprite.Sprite
+    Con respecto a pygame.sprite.Srprite
+        - Este objeto tiene varios atributos adicioneles.     
+        - Este objeto tiene varias funciones adicionales. 
+
+    Parametros:
+        surf; pygame.Surface
+        transparency; int
+        position; [int,int]
+    
+    Atributos:
+        surf_base = pygame.Surface
+        surf = pygame.Surface
+        rect = pygame.Rect
+        transparency = int (de 0 a 255)
+        position = [int,int]
+        
+        angle = int. Para rotar surf
+        moving_xy = [int,int]. Para mover rect
+        
+        time = int, Tiempo para hacer algo
+        time_count = int, Contador para llegar al tiempo
+    
+
+    Como se establecen lo atributos:
+    Esta objeto con el surf, establece el rect.
+    Con el position, establece la posición del rect.
+    El transparency establece el alpha de surf.
+    Los demas atributos, tienen valores default y es posible que no se usen.
+    '''
+    def __init__(
+        self, surf, transparency=255, position=[0,0]
+    ):
+        super().__init__()
+
+        self.surf_base = surf
+        self.surf = surf
+        self.transparency = transparency
+        self.surf.set_alpha( self.transparency )
+        self.rect = self.surf.get_rect( topleft=position )
+
+        # Relacionado con el movimiento.
+        self.angle = 0 
+        self.moving_xy = [0,0]
+        
+        # Relacionado con el tiempo/timer/time
+        self.time = 0
+        self.time_count = 0
+    
+    def sync_size(self):
+        '''
+        Sincronisar tamaño del surf y el tamaño del rect. Mismo size xy.
+        Si cambia de tamaño surf, volver a obtener rect.
+        '''
+        if self.surf.get_size() != self.rect.size:
+            self.rect = self.surf.get_rect()
+    
+    def set_transparency(self):
+        '''
+        Establecer alpha del surf
+        '''
+        self.surf.set_alpha( self.transparency )
+    
+    def movement(self):
+        '''
+        Mover rectangulo. Mover sprite
+        '''
+        self.rect.x += self.moving_xy[0]
+        self.rect.y += self.moving_xy[1]
+    
+    def rotate(self):
+        '''
+        Rotar el surf base. Y establecer lo rotado en el surf. Rotar sprite
+        '''
+        if self.angle != 0:
+            self.surf = pygame.transform.rotate( self.surf_base, self.angle )
+        else:
+            self.surf = self.surf_base
+        self.sync_size()
+        
+    def sync_all(self):
+        '''
+        Sincronisar todo lo que se pueda
+        '''
+        self.sync_size()
+        self.set_transparency()
+        self.rotate()
+        self.movement()
+        
+    def time_over(self):
+        '''
+        Verifica si ha pasado el tiempo especificado.
+        
+        Devolver:
+            True El time_count es mayor o igual a time.
+            False Si no pasa lo anterior mencionado.
+        '''
+        return self.time_count >= self.time
+
+
+
+
+class Sprite_pasted_rect(Sprite_Standar):
+    '''
+    Este objeto es heredado de Sprite_Standar
+
+    Este objeto tiene un metodo update, este metodo hace que se quede centralizado en el rect indicado en los parametros.
+    
+    Parametros:
+    rect_pasted=collider, coordenadas de objeto a pegarse
+    update_group=grupo en donde se añadira (opcional)
+    
+    Tiene el un metodo update, el cual permite que el sprite se pege al rect, a la posición.
+    '''
+    def __init__( 
+        self, surf, rect_pasted
+    ):  
+        # Establecer parametros para Sprite_Standar
+        super().__init__( surf, surf.get_alpha(), rect_pasted.center )
+
+        # Superficie
+        self.rect_pasted = rect_pasted
+    
+    def update(self):
+        # Si cambia de tamaño surf, volver a obtener rect.
+        self.sync_size()
+        
+        # Centrar rect en el rect_pasted
+        self.rect.center = self.rect_pasted.center
 
 
 
@@ -103,6 +242,23 @@ class Player(pygame.sprite.Sprite):
         layer_all_sprites.add(self, layer=3)
         player_objects.add(self) # Para que la lluvia colisione
         
+        # Sprite GUN
+        #self.sprite_gun = pygame.sprite.Sprite()
+        self.gun_surf = pygame.Surface( [size[1], size[1]], pygame.SRCALPHA)
+        palote = pygame.Surface( [size[1], size[1]//2 ], pygame.SRCALPHA )
+        palote.fill( (127, 127, 127) )
+        self.gun_surf.blit( palote, [0, size[1]//2 - size[1]//4 ] )
+
+        puntito = pygame.Surface( [size[1]//4, size[1]//4], pygame.SRCALPHA )
+        puntito.fill( [255,0,0] )
+        self.gun_surf.blit( puntito, [ size[1] -size[1]//4, size[1]//2 - size[1]//8 ] )
+        
+        self.gun_surf.set_alpha(127)
+        
+        self.sprite_gun = Sprite_pasted_rect( self.gun_surf, self.rect )
+        update_objects.add( self.sprite_gun )
+        layer_all_sprites.add( self.sprite_gun, layer=4 )
+        
         # Sprite
         size_sprite = [data_CF.pixel_space*2, data_CF.pixel_space*2]
         self.sprite_player_not_move = get_image( 
@@ -127,6 +283,8 @@ class Player(pygame.sprite.Sprite):
         self.hp = 100
         self.speed = size[1]*0.5
         self.collision_solid = None
+        self.angle = 0
+        self.side_positive = True
         
         # Valores de porcentaje para poder gravedad usados 
         # 0.0625 0.05 0.025 0.028125 0.03125 0.015625
@@ -179,6 +337,12 @@ class Player(pygame.sprite.Sprite):
     def jump(self, multipler=1):
         self.move_jump = True
         self.jump_max_height = (self.rect.height*4)*multipler
+
+        # bala
+        Bullet(
+           size=[self.rect.height//4, self.rect.height//4], position=self.rect.center, image=None,
+           speed_xy=speed2d_with_angle( self.rect.height//4, self.angle ), time=90
+        )
         
         
     def collision_no_solid(self):
@@ -289,7 +453,7 @@ class Player(pygame.sprite.Sprite):
                         
 
 
-    def sprite_anim(self, fall=False, speed_multipler=1):
+    def sprite_anim(self, fall=False, speed_multipler=1):    
         # Animacion | Sprites | Surface | Collider
         flip_image = False
         moving = False
@@ -381,6 +545,32 @@ class Player(pygame.sprite.Sprite):
             self.move_jump = False
             self.walking = False
         
+        
+        
+        # Cambiar angulo
+        if self.side_positive == True:
+            speed_move_angle = 2
+        else:
+            speed_move_angle = -2
+
+        if self.move_up == True:
+            self.angle += speed_move_angle
+        if self.move_down == True:
+            self.angle -= speed_move_angle
+
+        # Bloquear rotación
+        if self.side_positive == True:
+            if self.angle > 90:
+                self.angle = 90
+            elif self.angle < -90:
+                self.angle = -90
+        else:
+            if self.angle < -180-90:
+                self.angle = -180-90
+            elif self.angle > -180+90:
+                self.angle = -180+90
+        #elif self.angle < 0:
+        #    self.angle = 0
 
 
 
@@ -415,12 +605,19 @@ class Player(pygame.sprite.Sprite):
         
         # Mover el jugador
         self.moving_xy = [0,0]
-        if self.move_left == True:  self.moving_xy[0] -= speed
-        if self.move_right == True: self.moving_xy[0] += speed
+        if self.move_left == True:  
+            self.moving_xy[0] -= speed
+            self.angle = -180
+            self.side_positive = False
+        if self.move_right == True: 
+            self.moving_xy[0] += speed
+            self.angle = 0
+            self.side_positive = True
         if self.move_jump == True:
             if fall == False:
                 self.jumping = True
                 self.move_jump = False
+        self.move_jump = False # Para que no puedas inicializar el salto en el aire.
         
         
         
@@ -483,6 +680,10 @@ class Player(pygame.sprite.Sprite):
             
             self.jumping = False
             self.jump_count = 0
+        
+        # Sprite gun
+        self.sprite_gun.angle = self.angle
+        self.sprite_gun.rotate()
         
         # Anim
         self.sprite_anim(fall=fall, speed_multipler=speed_multipler)
@@ -1541,11 +1742,128 @@ class Cloud(pygame.sprite.Sprite):
         self.sprite.rect.y = self.rect.y
 
 
+
+
+class Sun( pygame.sprite.Sprite ):
+    def __init__( 
+        self, size=[16, 16], color=generic_colors('yellow'), divider=16, 
+        start_with_max_power=True, time=0, display=[1920,1080]
+    ):
+        super().__init__()
+        
+        self.time = time
+        self.count = 0
+        self.divider = divider
+        self.step = 0
+        
+        # Transparencia
+        self.transparency_collide = False
+        self.transparency_sprite = False
+        
+        # Colores | Colores a mostrar
+        self.color = color # Color actual
+        self.list_color = []
+        r = stepped_number_sequence( [color[0], color[0]*0.2], divider, True, False, True )
+        g = stepped_number_sequence( [color[1], color[1]*0.2], divider, True, False, True )
+        b = stepped_number_sequence( [color[2], color[2]*0.2], divider, True, False, True )
+        for x in range(divider):
+            self.list_color.append( [r[x], g[x], b[x]] )
+        
+        # Movimiento de posición de la pantalla
+        self.move_xy =[0,0]
+        self.move_xy[0] = stepped_number_sequence(
+            [display[0], 0], divider, most_to_least=False, from_zero=True
+        )
+        self.move_xy[1] = stepped_number_sequence(
+            [display[1]//2, 0], divider, most_to_least=False, from_zero=False
+        )
+        position = [ self.move_xy[0][0], self.move_xy[1][0] ]
+        
+        # Superficie y collider
+        self.surf = pygame.Surface(size)
+        self.surf.fill( self.color ) 
+        self.rect = self.surf.get_rect( topleft=position )
+        
+        # Agergar a grupos de sprites. Iluminación, background.
+        anim_sprites.add( self )
+        nocamera_back_sprites.add( self )
+        lighting_objects.add( self )
+    
+    def anim(self):
+        '''
+        Metodo anim, mueve el sol solecito y lo cambia de color 
+        Dependiendo su pos en pantalla cambia de color.
+        Dependiendo el valor divider
+        '''
+        self.count += 1
+        
+        if self.count >= self.time:
+            #print(self.step)
+            self.count = 0
+            
+            position = [ self.move_xy[0][self.step], self.move_xy[1][self.step] ]
+            self.color = self.list_color[self.step]
+
+            self.rect.topleft = position
+            self.surf.fill(self.color)
+            
+            self.step += 1
+            if self.step >= self.divider:
+                self.step = 0
+    
+    def restart(self):
+        '''
+        Restablece el bucle. Desde el comienzo.
+        '''
+        self.count = 0
+
+        self.step = 0
+        position = [ self.move_xy[0][self.step], self.move_xy[1][self.step] ]
+        self.rect.topleft = position
+
+        self.color = self.list_color[self.step]
+        self.surf.fill(self.color)
+
+
+
+
+
+class Bullet( Sprite_Standar ):
+    def __init__( self, size, position, image, speed_xy, time ):
+        # Superficie de collider
+        surf = pygame.Surface( size, pygame.SRCALPHA ) 
+        surf.fill( [255, 255, 0] )
+    
+        # Establecer parametros para Sprite_Standar
+        super().__init__( 
+            surf, transparency=255, position=position
+        )
+        
+        self.moving_xy = speed_xy
+        self.time = time
+        
+        # Agregar 
+        layer_all_sprites.add( self, layer=3 )
+        anim_sprites.add( self )
+    
+    def anim(self):
+        # Mover bala
+        self.time_count += 1
+
+        self.movement()
+        
+        if self.time_over():
+            self.kill()
+
+
+
+
 # Grupos de sprites
 layer_all_sprites = pygame.sprite.LayeredUpdates()
 nocamera_back_sprites = pygame.sprite.Group()
 
 player_objects = pygame.sprite.Group()
+update_objects = pygame.sprite.Group()
 
 solid_objects = pygame.sprite.Group()
 ladder_objects = pygame.sprite.Group()
@@ -1559,3 +1877,5 @@ anim_sprites = pygame.sprite.Group()
 climate_objects = pygame.sprite.Group()
 score_objects = pygame.sprite.Group()
 particle_objects = pygame.sprite.Group()
+
+lighting_objects = pygame.sprite.Group()
