@@ -279,7 +279,8 @@ player_key = {
     'down': pygame.K_DOWN,
     'left': pygame.K_LEFT,
     'right': pygame.K_RIGHT,
-    'walk': pygame.K_LSHIFT
+    'walk': pygame.K_LSHIFT,
+    'action': pygame.K_a
 }
 
 
