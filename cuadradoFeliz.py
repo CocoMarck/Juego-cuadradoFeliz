@@ -511,7 +511,10 @@ scroll_float = start_scroll(
 
 # Sol solecito
 # Total en tardar el loop del sun: data_CF.fps*240
-HappySun = Sun( time=time_dayloop, display=[ data_CF.disp[0]+data_CF.pixel_space, data_CF.disp[1] ], divider=24)
+HappySun = Sun( 
+    size=[data_CF.pixel_space,data_CF.pixel_space], time=time_dayloop, 
+    display=[ data_CF.disp[0]+data_CF.pixel_space, data_CF.disp[1] ], divider=24
+)
 #HappySun = Sun( time=data_CF.fps*0, display=[ data_CF.disp[0]+data_CF.pixel_space, data_CF.disp[1] ], divider=24)
 
 light_dict = {}
@@ -540,6 +543,16 @@ create_light()
 
 
 
+# Prueba character
+character = Enemy( position=render_map.player_spawn )
+character.limit_xy = limit_xy
+#character.left = True
+#character.jump = True
+#character.walk = True
+
+
+
+
 # Bucle del juego
 exec_game = True
 while exec_game:
@@ -555,7 +568,8 @@ while exec_game:
                     player.not_move=False
                 else:
                     # El jugador salta si no hay mensajes
-                    player.jump()
+                    pass
+                    #player.jump()
                     
                 if credits_count == credits_fps*2:
                     # Cerrar juegito si estamos en el mensaje para saltar los credito
@@ -583,8 +597,8 @@ while exec_game:
 
 
     # Jugador
-    player.move()
-    player.update(False)
+    #player.move()
+    #player.update(False)
     
 
 
@@ -595,6 +609,7 @@ while exec_game:
     scroll_int = [int(scroll_float[0]), int(scroll_float[1])]
     diference = data_CF.pixel_space
     for index in range(0, 2):
+    #if True == False: # Para evitar scroll
         '''
         Para que funcione la camara solo se necesita de esto:
         scroll_float[index] += (player_pos[index] -scroll_float[index] -data_CF.disp[index]/2)/4
