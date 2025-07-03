@@ -11,8 +11,8 @@ import pygame, sys, os, random
 from pygame.locals import *
 
 # Resolución de pantalla de juego
-disp_resolution = ( data_CF.disp[0], data_CF.disp[1] )
-display = pygame.display.set_mode( disp_resolution )
+window = pygame.display.set_mode( data_CF.disp )
+display = pygame.Surface( scale_surface_size )
 
 # Fotogramas del juego
 clock = pygame.time.Clock()
@@ -24,19 +24,19 @@ pygame.display.set_caption(game_title)
 # Estan en el modulo CF_function
 
 # Fuentes de texto
-size_font_big = int(data_CF.pixel_space*4)
-size_font_normal = data_CF.pixel_space
+size_font_big = int(pixel_space_to_scale*4)
+size_font_normal = pixel_space_to_scale
 font_str = 'monospace'
 font_normal = pygame.font.SysFont(font_str, size_font_normal)
 font_big = pygame.font.SysFont(font_str, size_font_big)
 
 # Fondo
 if data_CF.show_sprite == True:
-    image_background = get_image('background', size=data_CF.disp, return_method='normal')
+    image_background = get_image('background', size=scale_surface_size, return_method='normal')
 else:
-    image_background = pygame.Surface( (data_CF.disp[0], data_CF.disp[1]) )
+    image_background = pygame.Surface( (scale_surface_size[0], scale_surface_size[1]) )
     image_background.fill( (63, 63, 63) )
-color_background = pygame.Surface( (data_CF.disp[0], data_CF.disp[1]), pygame.SRCALPHA )
+color_background = pygame.Surface( (scale_surface_size[0], scale_surface_size[1]), pygame.SRCALPHA )
 
 # Transparencia
 if data_CF.show_collide == True: transparency_collide = 255
@@ -64,7 +64,7 @@ class Start_Map( ):
     def __init__(self, Map):
         super().__init__()
         
-        print(f'pixel space: {data_CF.pixel_space}px' )# Mostrar pixel space
+        print(f'pixel space: {pixel_space_to_scale}px' )# Mostrar pixel space
         
         # Mensaje de inicio
         self.message_start = current_map.message_start
@@ -81,11 +81,11 @@ class Start_Map( ):
             print_line = '' # Mostrar mapa en caracteres
         
             xy[0] = 0
-            position = [ xy[0], xy[1]*data_CF.pixel_space ]
+            position = [ xy[0], xy[1]*pixel_space_to_scale ]
             xy[1] += 1
             
             for character in line:
-                position[0] = xy[0]*data_CF.pixel_space
+                position[0] = xy[0]*pixel_space_to_scale
                 
                 xy[0] += 1
 
@@ -100,14 +100,14 @@ class Start_Map( ):
                 elif character == 'p':
                     # Objeto plataforma Piso Floor
                     Floor(
-                        size=(data_CF.pixel_space, data_CF.pixel_space),
+                        size=(pixel_space_to_scale, pixel_space_to_scale),
                         position=position, climate=Map.climate,
                         transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                 elif character == 'P':
                     # Posicionar de forma adecuada
                     new_size_pos = get_coordinate_multipler( 
-                        multipler=2, pixel_space=data_CF.pixel_space, position=position 
+                        multipler=2, pixel_space=pixel_space_to_scale, position=position 
                     )
                     new_size_pos[1] = position
                 
@@ -119,43 +119,43 @@ class Start_Map( ):
                 
                 elif character == 's':
                     Score( 
-                        size=data_CF.pixel_space, position=position, 
+                        size=pixel_space_to_scale, position=position, 
                         transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                     
                 elif character == '+':
                     Stair(
-                        size=data_CF.pixel_space, position=position, invert=False, climate=Map.climate, 
+                        size=pixel_space_to_scale, position=position, invert=False, climate=Map.climate, 
                         transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                     
                 elif character == '-':
                     Stair(
-                        size=data_CF.pixel_space, position=position, invert=True, climate=Map.climate,      
+                        size=pixel_space_to_scale, position=position, invert=True, climate=Map.climate,      
                         transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
 
                 elif character == 'H':
                     Ladder(
-                        size=data_CF.pixel_space, position=position,
+                        size=pixel_space_to_scale, position=position,
                         transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                     
                 elif character == '_':
                     Trampoline(
-                        size=data_CF.pixel_space, position=position,
+                        size=pixel_space_to_scale, position=position,
                         transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                     
                 elif character == 'x':
                     Elevator(
-                        size=data_CF.pixel_space, position=position, move_dimension=1,
+                        size=pixel_space_to_scale, position=position, move_dimension=1,
                         transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                     
                 elif character == 'y':
                     Elevator(
-                        size=data_CF.pixel_space, position=position, move_dimension=2,
+                        size=pixel_space_to_scale, position=position, move_dimension=2,
                         transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                     
@@ -198,7 +198,7 @@ class Start_Map( ):
                 elif character == 'A':
                     # Objeto pico
                     Spike(
-                        size=data_CF.pixel_space*2, position=position,
+                        size=pixel_space_to_scale*2, position=position,
                         transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
                     )
                     
@@ -241,7 +241,7 @@ class Start_Map( ):
             reduce = 1
         else:
             reduce = 0
-        self.limit_xy = [ (xy[0]-reduce) *data_CF.pixel_space, (xy[1]-reduce) *data_CF.pixel_space ]
+        self.limit_xy = [ (xy[0]-reduce) *pixel_space_to_scale, (xy[1]-reduce) *pixel_space_to_scale ]
 
 
 
@@ -272,10 +272,10 @@ class Start_Map( ):
                     Climate_rain(
                         position=(
                             #random.randint(
-                            #    x*data_CF.pixel_space, (x*data_CF.pixel_space) + data_CF.pixel_space*1
+                            #    x*pixel_space_to_scale, (x*pixel_space_to_scale) + pixel_space_to_scale*1
                             #),
-                            x*data_CF.pixel_space,
-                            -( random.randint( data_CF.pixel_space, data_CF.pixel_space*16) )
+                            x*pixel_space_to_scale,
+                            -( random.randint( pixel_space_to_scale, pixel_space_to_scale*16) )
                         ),
                         transparency_collide=transparency_collide, transparency_sprite=transparency_sprite_rain,
                         damage=damage
@@ -326,7 +326,7 @@ def Loop_allday( Map ):
 
 loop_allday = Loop_allday( current_map )
 
-background_surf = pygame.Surface( data_CF.disp, pygame.SRCALPHA )
+background_surf = pygame.Surface( scale_surface_size, pygame.SRCALPHA )
 background_surf.fill( loop_allday.current_color )
 
 
@@ -403,13 +403,13 @@ play_background_music.play()
 
 # Función nubes de fondo
 # rehacer
-def create_clouds(c_number = int( (data_CF.disp[0]//3.75)//data_CF.pixel_space) ): #16 nubes por defecto
+def create_clouds(c_number = int( (scale_surface_size[0]//3.75)//pixel_space_to_scale) ): #16 nubes por defecto
     '''
     Imagenes de fondo | Nubes de fondo
     # Si hay demasiadas nubes se dejaran de crear.
     # Se creara una nube de forma random, con posibilidades 1-6
     '''
-    c_size = [data_CF.disp[0]//c_number, data_CF.disp[1]//c_number]
+    c_size = [scale_surface_size[0]//c_number, scale_surface_size[1]//c_number]
 
     pos = [0, 0]
     clouds = 0
@@ -502,8 +502,8 @@ def start_scroll( pos_xy=[0,0], display_xy=[0,0], limit_xy=[0,0], difference_xy=
     return xy_return
 scroll_float = [0,0]
 scroll_float = start_scroll(
-    pos_xy=[player.rect.x, player.rect.y], display_xy=data_CF.disp, limit_xy=limit_xy,
-    difference_xy=[data_CF.pixel_space*2, data_CF.pixel_space*3]
+    pos_xy=[player.rect.x, player.rect.y], display_xy=scale_surface_size, limit_xy=limit_xy,
+    difference_xy=[pixel_space_to_scale*2, pixel_space_to_scale*3]
 )
 
 
@@ -512,10 +512,10 @@ scroll_float = start_scroll(
 # Sol solecito
 # Total en tardar el loop del sun: data_CF.fps*240
 HappySun = Sun( 
-    size=[data_CF.pixel_space,data_CF.pixel_space], time=time_dayloop, 
-    display=[ data_CF.disp[0]+data_CF.pixel_space, data_CF.disp[1] ], divider=24
+    size=[pixel_space_to_scale,pixel_space_to_scale], time=time_dayloop, 
+    display=[ scale_surface_size[0]+pixel_space_to_scale, scale_surface_size[1] ], divider=24
 )
-#HappySun = Sun( time=data_CF.fps*0, display=[ data_CF.disp[0]+data_CF.pixel_space, data_CF.disp[1] ], divider=24)
+#HappySun = Sun( time=data_CF.fps*0, display=[ scale_surface_size[0]+pixel_space_to_scale, scale_surface_size[1] ], divider=24)
 
 light_dict = {}
 
@@ -607,22 +607,22 @@ while exec_game:
     player_pos = [player.rect.x, player.rect.y]
 
     scroll_int = [int(scroll_float[0]), int(scroll_float[1])]
-    diference = data_CF.pixel_space
+    diference = pixel_space_to_scale
     for index in range(0, 2):
     #if True == False: # Para evitar scroll
         '''
         Para que funcione la camara solo se necesita de esto:
-        scroll_float[index] += (player_pos[index] -scroll_float[index] -data_CF.disp[index]/2)/4
+        scroll_float[index] += (player_pos[index] -scroll_float[index] -scale_surface_size[index]/2)/4
         
         Lo demas esta relacionado con evitar que se mueva la camara, cuando se llega a un cierto limite.
         '''
-        # en los "((data_CF.disp[index]/2) )" antes tenia "((data_CF.disp[index]/2) -data_CF.pixel_space)
+        # en los "((scale_surface_size[index]/2) )" antes tenia "((scale_surface_size[index]/2) -pixel_space_to_scale)
         if not (
-            ( player_pos[index] + ((data_CF.disp[index]/2) ) > limit_xy[index] ) or
-            ( player_pos[index] - ((data_CF.disp[index]/2) ) < 0)
+            ( player_pos[index] + ((scale_surface_size[index]/2) ) > limit_xy[index] ) or
+            ( player_pos[index] - ((scale_surface_size[index]/2) ) < 0)
         ):
             # Mover scroll
-            scroll_float[index] += (player_pos[index] -scroll_float[index] -data_CF.disp[index]/2)/4
+            scroll_float[index] += (player_pos[index] -scroll_float[index] -scale_surface_size[index]/2)/4
         else:
             # Detectados limites de mapa/scroll | Evitar movimiento de scroll/camera
             # Nota: El limite positivo debe estar un bloque/grid/cuadricula de mas
@@ -631,14 +631,14 @@ while exec_game:
             #print( 'posicion jugador en patalla: ', player_pos[index]-scroll_int[index])
             #print( 'scroll: ', scroll_int[index])
             #print( 'limite: ', limit_xy[index])
-            #print( 'pantalla', data_CF.disp[index])
-            more_pixels = data_CF.pixel_space
-            if player_pos[index]-scroll_float[index] > data_CF.disp[index]/2 + more_pixels:
-                aditional = limit_xy[index] -(scroll_float[index] + data_CF.disp[index])
+            #print( 'pantalla', scale_surface_size[index])
+            more_pixels = pixel_space_to_scale
+            if player_pos[index]-scroll_float[index] > scale_surface_size[index]/2 + more_pixels:
+                aditional = limit_xy[index] -(scroll_float[index] + scale_surface_size[index])
                 #if scroll_float[index] < limit_xy[index]-scroll_float[index]:
                 scroll_float[index] += aditional + more_pixels
                 # limite - (scroll + pantalla)
-            elif player_pos[index]-scroll_float[index] < data_CF.disp[index]/2 -more_pixels:
+            elif player_pos[index]-scroll_float[index] < scale_surface_size[index]/2 -more_pixels:
                 scroll_float[index] -= scroll_float[index]
                 
     scroll_int = [int(scroll_float[0]), int(scroll_float[1])]  
@@ -680,9 +680,9 @@ while exec_game:
     
     
     # Función | Player | Limite del mapa
-    if player.rect.x > limit_xy[0] +data_CF.pixel_space or player.rect.x < 0:
+    if player.rect.x > limit_xy[0] +pixel_space_to_scale or player.rect.x < 0:
         player.hp = -1
-    elif player.rect.y > limit_xy[1] +data_CF.pixel_space or player.rect.y < 0:
+    elif player.rect.y > limit_xy[1] +pixel_space_to_scale or player.rect.y < 0:
         player.hp = -1
     
     
@@ -740,8 +740,8 @@ while exec_game:
                 limit_xy = render_map.limit_xy #get_limit_xy()
                 scroll_float = [0,0]
                 scroll_float = start_scroll(
-                    pos_xy=[player.rect.x, player.rect.y], display_xy=data_CF.disp, limit_xy=limit_xy,
-                    difference_xy=[data_CF.pixel_space*2, data_CF.pixel_space*3]
+                    pos_xy=[player.rect.x, player.rect.y], display_xy=scale_surface_size, limit_xy=limit_xy,
+                    difference_xy=[pixel_space_to_scale*2, pixel_space_to_scale*3]
                 )
     
     
@@ -780,7 +780,7 @@ while exec_game:
     for sprite in layer_all_sprites.sprites():
         # Detectar que el sprite no sebrepase la pantalla
         display_collision = scroll_display_collision(
-            [sprite.rect.x, sprite.rect.y], scroll_int, data_CF.disp, [data_CF.pixel_space, 0]
+            [sprite.rect.x, sprite.rect.y], scroll_int, scale_surface_size, [pixel_space_to_scale, 0]
         )
 
         # Si el esprite esta en pantalla, mostrarlo.
@@ -825,11 +825,11 @@ while exec_game:
                 #if data_CF.show_sprite == True: player.transparency_sprite = 255
                 #player.show_sprite = data_CF.show_sprite
                 player.rect.topleft = render_map.player_spawn
-                player.rect.x += (data_CF.pixel_space -player.rect.width)//2
+                player.rect.x += (pixel_space_to_scale -player.rect.width)//2
 
                 scroll_float = start_scroll(
-                    pos_xy=[player.rect.x, player.rect.y], display_xy=data_CF.disp, limit_xy=limit_xy,
-                    difference_xy=[data_CF.pixel_space*2, data_CF.pixel_space*3]
+                    pos_xy=[player.rect.x, player.rect.y], display_xy=scale_surface_size, limit_xy=limit_xy,
+                    difference_xy=[pixel_space_to_scale*2, pixel_space_to_scale*3]
                 )
                 
                 player_anim_dead = None
@@ -852,7 +852,7 @@ while exec_game:
     # Mostrar Vida de jugador
     text_hp = font_normal.render( str(player.hp), True, generic_colors('green') )
     display.blit(
-        text_hp, ( (data_CF.disp[0])-(size_font_normal*3), size_font_normal )
+        text_hp, ( (scale_surface_size[0])-(size_font_normal*3), size_font_normal )
     )
     
     # Fondo negro | Ocultar todo
@@ -860,14 +860,14 @@ while exec_game:
         pygame.draw.rect(
             display, generic_colors('black'), 
             (
-                0, 0, data_CF.disp[0], data_CF.disp[1]
+                0, 0, scale_surface_size[0], scale_surface_size[1]
             )
         )
     
     # Mostrar Puntaje
     text_score = font_normal.render( str(score), True, generic_colors('yellow') )
     display.blit(
-        text_score, ( (data_CF.disp[0])-(size_font_normal*3), size_font_normal*2 )
+        text_score, ( (scale_surface_size[0])-(size_font_normal*3), size_font_normal*2 )
     )
     
     
@@ -893,7 +893,7 @@ while exec_game:
         width_message = rect_text.width
 
         # Determinar diviciones de texto si sobrepasa la pantalla. En base al limit_of_text
-        limit_of_text = data_CF.disp[0]
+        limit_of_text = scale_surface_size[0]
 
         text_parts = surf_limit_width( text_message, limit_of_text )
 
@@ -906,7 +906,7 @@ while exec_game:
                 # Mostrar parte de mensaje
                 rect_text = message_part.get_rect()
                 position = [
-                    (data_CF.disp[0]//2)-(rect_text.width//2),
+                    (scale_surface_size[0]//2)-(rect_text.width//2),
                     size_font_normal * (x+1)
                 ]
 
@@ -925,7 +925,7 @@ while exec_game:
         else:
             # Mostrar todo el mensaje sin dividirlo.
             position = [
-                (data_CF.disp[0]//2)-(rect_text.width//2),
+                (scale_surface_size[0]//2)-(rect_text.width//2),
                 size_font_normal
             ]
 
@@ -944,7 +944,7 @@ while exec_game:
         text_continue = font_normal.render(
             f"{Lang.get_text('continue_jump')}...", True, generic_colors('white')
         )
-        position = [size_font_normal, data_CF.disp[1]-(size_font_normal*2)]
+        position = [size_font_normal, scale_surface_size[1]-(size_font_normal*2)]
         
         rect_text = text_continue.get_rect()
         pygame.draw.rect(
@@ -975,7 +975,7 @@ while exec_game:
             text_credits = font_normal.render(
                 Lang.get_text('credits'), True, generic_colors('yellow')
             )
-            position = [(data_CF.disp[0]//2)-(text_credits.get_rect().width//2), (size_font_normal//2)]
+            position = [(scale_surface_size[0]//2)-(text_credits.get_rect().width//2), (size_font_normal//2)]
         
             display.blit(
                 text_credits, (
@@ -989,7 +989,7 @@ while exec_game:
                 credits(), True, generic_colors('green')
             )
             position = [
-                (data_CF.disp[0]//2)-(text_by.get_rect().width//2), (data_CF.disp[1]//2)-(size_font_normal//2)
+                (scale_surface_size[0]//2)-(text_by.get_rect().width//2), (scale_surface_size[1]//2)-(size_font_normal//2)
             ]
         
             display.blit(
@@ -1010,7 +1010,7 @@ while exec_game:
             width_message = rect_text.width
 
             # Determinar diviciones de texto si sobrepasa la pantalla. En base al limit_of_text
-            text_parts = surf_limit_width( text_message, data_CF.disp[0] )
+            text_parts = surf_limit_width( text_message, scale_surface_size[0] )
             
             if len(text_parts) == 0:
                 text_parts.append( text_message )
@@ -1022,8 +1022,8 @@ while exec_game:
                 # Mostrar parte de mensaje
                 rect_text = message_part.get_rect()
                 position = [
-                    (data_CF.disp[0]//2)-(rect_text.width//2),
-                    (data_CF.disp[1]//2)-(rect_text.height//2) + ( size_font_normal * (x) )
+                    (scale_surface_size[0]//2)-(rect_text.width//2),
+                    (scale_surface_size[1]//2)-(rect_text.height//2) + ( size_font_normal * (x) )
                 ]
 
                 pygame.draw.rect(
@@ -1038,7 +1038,9 @@ while exec_game:
                 )
     
 
-    
+    # Sección adicionar todos los sprites a una superficie y agregarlo a la pantalla
+    surf = pygame.transform.scale(display, [data_CF.disp[0]*1, data_CF.disp[1]*1] )
+    window.blit(surf, (0,0) )
     
     # Fin
     clock.tick(data_CF.fps)

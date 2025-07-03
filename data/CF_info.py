@@ -36,3 +36,6 @@ game_title = 'El cuadrado Feliz'
 # Sub directorios Data
 dir_sprites = os.path.join(dir_data, 'sprites')
 dir_audio = os.path.join(dir_data, 'audio')
+
+scale_surface_size = [960, 540]
+pixel_space_to_scale = 16
