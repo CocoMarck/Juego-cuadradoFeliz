@@ -351,6 +351,7 @@ class Character( SpriteStandar ):
         
         # Transparencia
         #self.transparency
+        self.color_sprite = color_sprite
         
         # Imagen que se vera.
         self.anim_xy = [False, False]
@@ -377,6 +378,7 @@ class Character( SpriteStandar ):
         puntito = pygame.Surface( [size//4, size//4], pygame.SRCALPHA )
         puntito.fill( [255,0,0] )
         self.gun_surf.blit( puntito, [ size -size//4, size//2 - size//8 ] )
+        self.with_gun = False
         
         # Capas | Sprites | Apariencia de player
         self.sprite_layer = LayerSpriteRectPasted(
@@ -421,6 +423,9 @@ class Character( SpriteStandar ):
         self.damage_effect = False
         self.hp = 100
         self.dead = False
+        self.anim_dead_count = 0
+        self.anim_dead = None
+        self.anim_fin = False
         
         # Movimiento | Gravedad
         # Valores de porcentaje de porder de gravedad usados
@@ -716,40 +721,46 @@ class Character( SpriteStandar ):
     
     
     def gun_event(self):
-        # Arma Gun | Disparo
-        if self.action:
-            bullet = Bullet(
-               size=[self.rect.height//4, self.rect.height//4], position=self.rect.center, image=None,
-               speed_xy=speed2d_with_angle( self.rect.height, self.sprite_layer.layer[1].angle ), time=90
-            )
-            bullet.rect.center = self.rect.center
-        self.action = False
-        
-        # Arma Gun | Cambiar angulo
-        if self.side_positive == True:
-            speed_move_angle = 2
-        else:
-            speed_move_angle = -2
+        # Establecer arma
+        if self.with_gun:
+            # Arma Gun | Disparo
+            if self.action:
+                bullet = Bullet(
+                   size=[self.rect.height//4, self.rect.height//4], position=self.rect.center, image=None,
+                   speed_xy=speed2d_with_angle( self.rect.height, self.sprite_layer.layer[1].angle ), time=90
+                )
+                bullet.rect.center = self.rect.center
+            self.action = False
+            
+            # Arma Gun | Cambiar angulo
+            if self.side_positive == True:
+                speed_move_angle = 2
+            else:
+                speed_move_angle = -2
 
-        if self.up == True:
-            self.sprite_layer.layer[1].angle += speed_move_angle
-        if self.down == True:
-            self.sprite_layer.layer[1].angle -= speed_move_angle
+            if self.up == True:
+                self.sprite_layer.layer[1].angle += speed_move_angle
+            if self.down == True:
+                self.sprite_layer.layer[1].angle -= speed_move_angle
 
-        # Arma Gun | Bloquear rotación
-        if self.side_positive == True:
-            if self.sprite_layer.layer[1].angle > 90:
-                self.sprite_layer.layer[1].angle = 90
-            elif self.sprite_layer.layer[1].angle < -90:
-                self.sprite_layer.layer[1].angle = -90
-        else:
-            if self.sprite_layer.layer[1].angle < -180-90:
-                self.sprite_layer.layer[1].angle = -180-90
-            elif self.sprite_layer.layer[1].angle > -180+90:
-                self.sprite_layer.layer[1].angle = -180+90
-                
-        # Arma Gun | Rotar Sprite gun
-        self.sprite_layer.layer[1].rotate()
+            # Arma Gun | Bloquear rotación
+            if self.side_positive == True:
+                if self.sprite_layer.layer[1].angle > 90:
+                    self.sprite_layer.layer[1].angle = 90
+                elif self.sprite_layer.layer[1].angle < -90:
+                    self.sprite_layer.layer[1].angle = -90
+            else:
+                if self.sprite_layer.layer[1].angle < -180-90:
+                    self.sprite_layer.layer[1].angle = -180-90
+                elif self.sprite_layer.layer[1].angle > -180+90:
+                    self.sprite_layer.layer[1].angle = -180+90
+                    
+            # Arma Gun | Rotar Sprite gun
+            self.sprite_layer.layer[1].rotate()
+
+        # Para que no se vea si es que no se tiene arma
+        self.sprite_layer.layer[1].not_see = not self.with_gun
+        self.sprite_layer.layer[1].set_transparency()
     
     
     def update(self, old_gravity=False, old_jump=True):
@@ -780,6 +791,31 @@ class Character( SpriteStandar ):
             self.jump = False
             self.walk = False
             self.action = False
+        
+        # Animacion de kill
+        if self.dead:
+            # Si el contador de animaaciones de kill esta en cero.
+            if self.anim_dead_count <= 0:
+                self.anim_dead_count += 1
+                self.anim_dead = AnimDeadCharacter(
+                    position=[
+                        self.rect.x -self.rect.width//2, self.rect.y
+                    ],
+                    transparency_collide=self.transparency, 
+                    transparency_sprite=self.sprite_layer.transparency_layer,
+                    color_sprite=self.color_sprite
+                )
+                ( random.choice(sounds_dead) ).play()
+        else:
+            self.anim_dead_count = 0
+        
+        if not (self.anim_dead == None):
+            if self.anim_dead.anim_fin:
+                self.anim_fin = True
+                self.anim_dead = None
+        else:
+            self.anim_fin = False
+                
             
         # Detectar si esta en el piso o no
         # Esto se determina dependiendo la cantidad de frames en las que el jugador esta en el aire
@@ -1513,11 +1549,11 @@ class Player_old(pygame.sprite.Sprite):
 
 
 
-class Anim_player_dead(pygame.sprite.Sprite):
+class AnimDeadCharacter(pygame.sprite.Sprite):
     def __init__(
         self, position=[0,0], fps=data_CF.fps, 
         transparency_collide=255, transparency_sprite=255,
-        color_sprite=(153, 252, 152) 
+        color_sprite=(153,252,152)
     ):
         super().__init__()
 

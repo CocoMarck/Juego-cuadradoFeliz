@@ -722,7 +722,6 @@ while exec_game:
                 )
                 player.score = score
                 player_spawn_hp = player.hp
-                player_anim_dead = None
                 
                 # Clima | Color de fondo
                 if not loop_allday.climate == get_climate( current_map ):
@@ -806,35 +805,20 @@ while exec_game:
     
     # Funcion | Player Muerto/Dead
     if player.hp <= 0:
-        if player_anim_dead == None:
-            # Iniciar animacion
-            player_anim_dead = Anim_player_dead(
-                position=[
-                    player.rect.x -player.rect.width//2, player.rect.y
-                ],
-                transparency_collide=transparency_collide, transparency_sprite=transparency_sprite
-            )
-            #if data_CF.show_sprite == True: player.transparency_sprite = 0
-            #player.show_sprite = False
-            player.transparency_sprite = 0
-            ( random.choice(sounds_dead) ).play()
-        else:
-            if player_anim_dead.anim_fin == True:
-                # Finalizar animacion y spawnear al jugador
-                player.not_move=False
-                player.transparency_sprite = transparency_sprite
-                player.hp = player_spawn_hp
-                #if data_CF.show_sprite == True: player.transparency_sprite = 255
-                #player.show_sprite = data_CF.show_sprite
-                player.rect.topleft = render_map.player_spawn
-                player.rect.x += (pixel_space_to_scale -player.rect.width)//2
+        if player.anim_fin == True:
+            # Finalizar animacion y spawnear al jugador
+            player.not_move=False
+            player.transparency_sprite = transparency_sprite
+            player.hp = player_spawn_hp
+            #if data_CF.show_sprite == True: player.transparency_sprite = 255
+            #player.show_sprite = data_CF.show_sprite
+            player.rect.topleft = render_map.player_spawn
+            player.rect.x += (pixel_space_to_scale -player.rect.width)//2
 
-                scroll_float = start_scroll(
-                    pos_xy=[player.rect.x, player.rect.y], display_xy=scale_surface_size, limit_xy=limit_xy,
-                    difference_xy=[pixel_space_to_scale*2, pixel_space_to_scale*3]
-                )
-                
-                player_anim_dead = None
+            scroll_float = start_scroll(
+                pos_xy=[player.rect.x, player.rect.y], display_xy=scale_surface_size, limit_xy=limit_xy,
+                difference_xy=[pixel_space_to_scale*2, pixel_space_to_scale*3]
+            )
                 
                 
 
