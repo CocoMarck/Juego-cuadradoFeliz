@@ -646,10 +646,11 @@ while exec_game:
 
 
     # Funciones / Objetos / Puntos
-    for obj in score_objects:
-        if obj.point == True:
-            obj.remove_point()
-            score += 1
+    score = player.score
+    #for obj in score_objects:
+    #    if obj.point == True:
+    #        obj.remove_point()
+    #        score += 1
 
             
     # Función actualizar animacion de sprites.
@@ -719,6 +720,7 @@ while exec_game:
                     position=render_map.player_spawn,
                     transparency_collide=transparency_collide, transparency_sprite=transparency_sprite,
                 )
+                player.score = score
                 player_spawn_hp = player.hp
                 player_anim_dead = None
                 
