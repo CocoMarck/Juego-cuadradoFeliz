@@ -1,0 +1,12 @@
+disp=1440x810
+volume=0.01
+fps=30
+
+music=True
+climate_sound=False
+
+show_clouds=True
+show_collide=False
+show_sprite=True
+
+current_level=/home/jean_abraham/Proyectos/Programacion/python/videojuegos/pygame/CuadradoFeliz-1/resources/maps/custom/cf_map_NPC-test.txt

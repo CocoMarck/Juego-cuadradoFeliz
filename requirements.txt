@@ -1,0 +1,4 @@
+PyQt6
+PyGtk3
+pygame
+screeninfo

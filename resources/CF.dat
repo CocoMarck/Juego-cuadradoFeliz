@@ -1,9 +1,9 @@
-disp=960x540
+disp=1440x810
 volume=0.01
 fps=30
 
 music=True
-climate_sound=True
+climate_sound=False
 
 show_clouds=True
 show_collide=False

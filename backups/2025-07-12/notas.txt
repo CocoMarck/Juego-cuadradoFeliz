@@ -1,0 +1,230 @@
+Clases base hechas:
+SpriteStandar( pygame.sprite.Sprite )
+SpritePasteRect( SpriteStandar )
+
+LayerSpriteRectPasted( )
+SpriteMultiLayer( SpriteStandar ) # Depende tambien de LayerSpriteRectPasted. Esta por ahora no se usa.
+
+SpriteGravity( SpriteStandar )
+# Este objeto tendra atributos necesarios para la gravedad y colisiones. 
+# El metodo gravity que procesara los eventos de gravedad.
+# El metodo collision, colisiones con solidos.
+# El metodo collision_no_solid, colisiones con objetos no solidos.
+# El metodo update que activara todos los metodos (gravity, collision, collision_no_solid)
+# Solo contendra cosas relacionadas para que jale la gravedad incluyendo colisiones, nada de movimiento.
+
+
+SpriteStandar
+    SpriteGravity
+        Character # Atributo a destacar: sprite_layer: LayerSpriteRectPasted (para las capas visuales)
+            Player
+            Enemy
+    SpriteRectPasted
+    #...Otros
+
+Hacer clase:
+SpriteTwoLayer(), su papa sera SpriteStandar()
+Nomas tiene agregados el atributo sprite; este atributo es un objeto tipo SpritePasteRect()
+Posiblemente se le agregaran mas metodos relacionados con la modificación del sprite
+
+
+
+monedas: aprox 126
+
+Poner CF_data.py en la ruta "./"
+Soluciona el problema de compilación
+
+
+Estructura / Entorno de desarrollo / Capas /  Carpetas:
+resources/
+    CF.dat
+    maps/
+        custom/
+        part1/
+        part2/
+    sprites/
+        floor/
+    audio/
+        effects/
+            dead/
+            hits/
+            items/
+            items_backup/
+            steps/
+        music/
+
+    languages/
+        Langauge_en.dat
+        Language_es.dat
+
+data/
+    Modulo_Language.py
+    System_data.py
+
+logic/
+    pygame/
+        CF_data.py
+        CF_info.py
+        CF_object.py
+        Modulo_pygame.py
+
+    Modulo_Files.py
+    Modulo_System.py
+    Modulo_Text.py
+
+interface/    
+    Modulo_ShowPrint.py
+    
+cuadradoFeliz.py
+cuadradoFeliz_clientGtk.py
+cuadradoFeliz_clientQt.py
+
+
+
+
+El error al compilar, quizas sea en el modulo CF_info.py, en dir_sprites y dir_audio
+El modulo "CF_data.py" es crucial en la comunicación con los datos del juego; se comunica desde :
+"Modulos/pygame/" A "data/*" (Todos los archivos contenidos en esta carpeta.
+Es decir el dir_data = "Modulos/pygame/../../data"
+Y el main_dir = "Modulos/pygame/../.."
+
+Comando que utilizo para compilar: pyinstaller cuadradoFeliz.py
+Utilizo la libreira os.path para movere entre carpetas. Sin compilar funciona bien.
+Al compilar con pyinstaller, me crea lo siguiente:
+_Internal
+    ...
+cuadradoFeliz
+
+Tengo que poner manualmente los directorios: data y Languages, para que funcione el juego:
+_Internal
+    data/
+    Languages/
+    ...
+cuadradoFeliz
+
+Se supone que así deberia funcionar, pero no lo hace. De esta manera no funciona.
+
+Sin eliminar los cambios hechos tengo que poner otra vez las carpetas data/ y Languages/, de esta manera:
+data/
+Languages/
+_Internal
+    data/
+    Languages/
+    ...
+cuadradoFeliz
+
+Así si funciona, algo que tengo que recalcar, es que cuando mi programa realiza cambios en los archivos data/ o Languages, estos cambios se hacen unicamente adentro de la carpeta _Internal.
+
+
+
+
+Objetos de iluminación
+light_dict = {}
+
+def create_light():
+    for key in light_dict.keys():
+        light_dict[key].kill()
+    light_dict.clear()
+
+    for object in lighting_objects:
+        sprite = pygame.sprite.Sprite()
+        sprite.surf = surface_bloom(
+            size=object.surf.get_size(), alpha_range=[127, 0], 
+            color=generic_colors('yellow'), middle_color=False
+        )
+        sprite.surf.get_rect()
+        sprite.rect = sprite.surf.get_rect( 
+            topleft=[object.rect.x-object.rect.width, object.rect.y-object.rect.height] 
+        )
+        sprite.color = object.color
+        nocamera_back_sprites.add(sprite)
+        light_dict.update( {object : sprite} )
+
+create_light()
+
+
+while loop:
+    ...
+    # Ilumination
+    for key in light_dict.keys():
+        if light_dict[key].color != key.color:
+            light_dict[key].surf = surface_bloom(
+                size=key.surf.get_size(), alpha_range=[127, 0], 
+                color=key.color, middle_color=False
+            )
+        light_dict[key].rect.topleft = (
+            key.rect.x - key.rect.width, 
+            key.rect.y - key.rect.height
+        )
+
+
+
+
+Otra manera:
+while loop:
+    ...
+    # Objetos con iluminacion
+    for sprite in lighting_objects:
+        # Generar lusesillas
+        size = [sprite.rect.width, sprite.rect.height]
+        surf = surface_bloom(
+            size=size, alpha_range=[127, 0], color=sprite.color, middle_color=False
+        )
+        position = ( sprite.rect.x-size[0], sprite.rect.y-size[1] )
+        display.blit(surf, position)        
+
+
+
+
+Las sombras/shadow
+
+shadow_dict = {}
+def create_shadow():
+    for key in shadow_dict.keys():
+        shadow_dict[key].kill()
+
+    for sprite in layer_all_sprites.sprites():
+        if sprite.surf.get_alpha() > 0:
+            shadow = create_mask_gradient(
+                sprite.surf, alpha_range=[127,0], color=generic_colors('black'),
+                dimension=0, positive=True
+            )
+            shadow_dict.update( {sprite : shadow} )
+create_shadow()
+
+while loop:
+    ...
+    for sprite in layer_all_sprites.sprites():
+        ....
+        if sprite in shadow_dict.keys():
+            if (
+                (sprite.surf.get_width() != shadow_dict[sprite].get_width()) or 
+                (sprite.surf.get_height() != shadow_dict[sprite].get_height()) or 
+                (sprite in anim_sprites)
+            ):
+                shadow_dict[sprite] = create_mask_gradient(
+                   sprite.surf, alpha_range=[127,0], color=generic_colors('black'),
+                   dimension=0, positive=True
+                )
+
+            display.blit( 
+                shadow_dict[sprite], 
+                ( sprite.rect.x -scroll_int[0], sprite.rect.y -scroll_int[1] ) 
+            )
+
+
+
+
+def function_generate_xy(x=1, steps=1, multipler=1):
+    '''
+    Para funciones cuadraticas: ax^2 + bx^2 + c
+    ejemplo: 1*x^2 + 0*x + 0 = x^2
+    
+    Para Funciones lineales: x + y - z
+    Ejemplo: 2 + 3 - 9
+    '''
+    list_xy = []
+    for step in range(0, steps):
+        list_xy.append( [x, ( (1*x)**2 + 0*x + 0)] )
+    
+    return xy

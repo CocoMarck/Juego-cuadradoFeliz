@@ -1,7 +1,7 @@
 '''
 Este modulo tiene la función de obtener los datos/recursos necesarios para que el programa tenga imagenes/iconos/sonidos. Etc...
 '''
-from logic.Modulo_System import *
+from core.system_util import get_system
 import os, sys
 
 # Obtén la ruta al directorio actual del script
