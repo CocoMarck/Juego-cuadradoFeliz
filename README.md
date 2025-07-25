@@ -15,6 +15,6 @@ pip install pyqt6 screeninfo pygame
 
 # Ejecutar
 ```bash
-python3 ./cuadradoFeliz.py
+python3 ./main.py
 ```
 En windows remplazar el `python3`, por `py` o `python.exe`. Tambien puedes ver las variables de entorno.
