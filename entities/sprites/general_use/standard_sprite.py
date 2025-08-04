@@ -60,10 +60,11 @@ class StandardSprite(pygame.sprite.Sprite):
     def sync_size(self):
         '''
         Sincronisar tamaño del surf y el tamaño del rect. Mismo size xy.
-        Si cambia de tamaño surf, volver a obtener rect.
+        Si cambia de tamaño surf, volver a obtener rect. Volver a establecer posición
         '''
+        old_position = (self.rect.x, self.rect.y)
         if self.surf.get_size() != self.rect.size:
-            self.rect = self.surf.get_rect()
+            self.rect = self.surf.get_rect( topleft=old_position )
     
     def set_transparency(self):
         '''
@@ -102,6 +103,7 @@ class StandardSprite(pygame.sprite.Sprite):
         else:
             self.surf = self.surf_base
         self.sync_size()
+        self.set_transparency()
         
     def sync_all(self):
         '''

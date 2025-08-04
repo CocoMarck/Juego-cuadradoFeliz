@@ -104,7 +104,11 @@ class Character( StandardSprite ):
         puntito = pygame.Surface( [size//4, size//4], pygame.SRCALPHA )
         puntito.fill( [255,0,0] )
         self.gun_surf.blit( puntito, [ size -size//4, size//2 - size//8 ] )
-        self.with_gun = False
+        self.with_gun = True
+        
+        self.can_shot = True
+        self.count_shot = 0
+        self.time_to_shot = data_CF.fps*0.25
         
         # Capas | Sprites | Apariencia de player
         self.sprite_layer = SpriteLayerPastedRect(
@@ -399,6 +403,7 @@ class Character( StandardSprite ):
         # Establecer trnasparencia, a collide y sprite.
         self.set_transparency()
         self.sprite_layer.layer[0].set_transparency()
+        self.sprite_layer.layer[1].set_transparency()
     
     def sound(self):
         '''
@@ -452,14 +457,50 @@ class Character( StandardSprite ):
     def gun_event(self):
         # Establecer arma
         if self.with_gun:
+            # Speed
+            speed_xy = speed2d_with_angle( self.rect.height*2, self.sprite_layer.layer[1].angle )
+        
             # Arma Gun | Disparo
-            if self.action:
+            if self.action and self.can_shot:
                 bullet = Bullet(
-                   size=[self.rect.height//4, self.rect.height//4], position=self.rect.center, image=None,
-                   speed_xy=speed2d_with_angle( self.rect.height, self.sprite_layer.layer[1].angle ), time=90
+                 size=[self.rect.height*2, self.rect.height//4], position=self.rect.topleft, image=None,
+                 speed_xy=speed_xy, time=data_CF.fps*2,
+                 particle_objects=self.__particle_objects, solid_objects=self.__solid_objects,
+                 damage_objects=self.__damage_objects, jumping_objects=self.__jumping_objects, 
+                 anim_sprites=self.__anim_sprites, layer_all_sprites=self.__layer_all_sprites,
+                 particle_size=[self.rect.height//4, self.rect.height//4], damage=20
                 )
+                #bullet.angle = self.sprite_layer.layer[1].angle
+                #bullet.rotate()
+                '''
+                bullet.rect.y += self.rect.width*0.75
+                if self.side_positive:
+                    bullet.rect.x += self.rect.width
+                else:
+                    bullet.rect.x -= bullet.rect.width
+                if self.left:
+                    bullet.rect.x -= self.speed
+                if self.right:
+                    bullet.rect.x += self.speed
+                '''
+                bullet.angle = self.sprite_layer.layer[1].angle
+                bullet.rotate()
                 bullet.rect.center = self.rect.center
+                
+
+                self.can_shot = False
+                random.choice(sounds_shot).play()
+
+            # Limitar generacion de balasos
+            if self.can_shot == False:
+                self.count_shot += 1
+                if self.count_shot >= self.time_to_shot:
+                    self.count_shot = 0
+                    self.can_shot = True
+
+            # Reiniciar estado de disparo
             self.action = False
+            
             
             # Arma Gun | Cambiar angulo
             if self.side_positive == True:
@@ -483,13 +524,20 @@ class Character( StandardSprite ):
                     self.sprite_layer.layer[1].angle = -180-90
                 elif self.sprite_layer.layer[1].angle > -180+90:
                     self.sprite_layer.layer[1].angle = -180+90
-                    
-            # Arma Gun | Rotar Sprite gun
-            self.sprite_layer.layer[1].rotate()
+        
+        # Cambiar dirección del arma
+        if self.left:  
+            self.sprite_layer.layer[1].angle = -180
+        if self.right: 
+            self.sprite_layer.layer[1].angle = 0
+            
+        # Arma Gun | Rotar Sprite gun
+        self.sprite_layer.layer[1].rotate()
 
         # Para que no se vea si es que no se tiene arma
-        self.sprite_layer.layer[1].not_see = not self.with_gun
-        self.sprite_layer.layer[1].set_transparency()
+        if self.dead == False:
+            self.sprite_layer.layer[1].not_see = not self.with_gun
+            self.sprite_layer.layer[1].set_transparency()
     
     
     def update(self, old_gravity=False, old_jump=True):
@@ -497,7 +545,8 @@ class Character( StandardSprite ):
         Actualizar eventos del jugador. Moverse y todo eso.
         '''
         # Moverse
-        self.move()
+        if self.dead == False:
+            self.move()
         
         # HP | Determinar si el jugador esta vivo o muerto
         if self.hp <= 0:
@@ -506,8 +555,10 @@ class Character( StandardSprite ):
             self.jump_count = self.jump_max_height
             self.gravity_current = 0
             self.sprite_layer.layer[0].not_see=True
+            self.sprite_layer.layer[1].not_see=True
         else:
             self.sprite_layer.layer[0].not_see=False
+            self.sprite_layer.layer[1].not_see=False
             self.dead = False
             if self.hp > self.get_max_hp(multipler=1): self.hp = self.get_max_hp(multipler=1)
         
@@ -574,11 +625,9 @@ class Character( StandardSprite ):
         self.moving_xy = [0,0]
         if self.left == True:  
             self.moving_xy[0] -= speed
-            self.sprite_layer.layer[1].angle = -180
             self.side_positive = False
         if self.right == True: 
             self.moving_xy[0] += speed
-            self.sprite_layer.layer[1].angle = 0
             self.side_positive = True
         if self.jump == True:
             if self.fall == False:
@@ -644,11 +693,11 @@ class Character( StandardSprite ):
             self.jumping = False
             self.jump_count = 0
             
-        # Arma Gun | Disparos
-        self.gun_event()
-            
         # Anim
         self.anim_all(fall=self.fall, speed_multipler=speed_multipler)
+        
+       # Arma Gun | Disparos
+        self.gun_event()
         
         # Sound
         self.sound()

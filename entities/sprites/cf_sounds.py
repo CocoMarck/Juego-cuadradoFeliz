@@ -43,3 +43,12 @@ sounds_score = [
 ]
 for score in sounds_score:
     score.set_volume(data_CF.volume)
+
+
+sounds_shot = [
+    pygame.mixer.Sound( dir_audio.joinpath( 'effects/shooting/shot-1.ogg' ) ),
+    pygame.mixer.Sound( dir_audio.joinpath( 'effects/shooting/shot-2.ogg' ) ),
+    pygame.mixer.Sound( dir_audio.joinpath( 'effects/shooting/shot-3.ogg' ) )
+]
+for shot in sounds_shot:
+    shot.set_volume( data_CF.volume )

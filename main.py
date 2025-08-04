@@ -596,18 +596,20 @@ create_light()
 
 
 
-# Prueba character
-character = Enemy( 
+# Prueba de enemigo
+#'''
+enemy = Enemy( 
  position=render_map.player_spawn, 
  solid_objects=solid_objects, damage_objects=damage_objects, level_objects=level_objects, 
  score_objects=score_objects, jumping_objects=jumping_objects, moving_objects=moving_objects,
  ladder_objects=ladder_objects, particle_objects=particle_objects, anim_sprites=anim_sprites,
  update_objects=update_objects, layer_all_sprites=layer_all_sprites
 )
-character.limit_xy = limit_xy
-#character.left = True
-#character.jump = True
-#character.walk = True
+enemy.limit_xy = limit_xy
+#'''
+#enemy.left = True
+#enemy.jump = True
+#enemy.walk = True
 
 
 
@@ -624,11 +626,8 @@ while exec_game:
                 if isinstance(render_map.message_start, str):
                     # Evitar mensaje
                     render_map.message_start = None
-                    player.not_move=False
-                else:
-                    # El jugador salta si no hay mensajes
-                    pass
-                    #player.jump()
+                    player.not_move = False
+                    player.jump = False
                     
                 if credits_count == credits_fps*2:
                     # Cerrar juegito si estamos en el mensaje para saltar los credito

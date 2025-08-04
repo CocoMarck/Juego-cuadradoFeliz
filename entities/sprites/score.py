@@ -3,24 +3,26 @@ from core.pygame.pygame_util import generic_colors
 from core.pygame.cf_util import get_image
 from controllers.cf_info import pixel_space_to_scale
 
+from .general_use.multi_layer_sprite import MultiLayerSprite
 
 
 
-class Score(pygame.sprite.Sprite):
+
+class Score(MultiLayerSprite):
     def __init__(
         self, size=pixel_space_to_scale, position=[0,0], transparency_collide=255, transparency_sprite=255,
         score_objects:object=None, layer_all_sprites:object=None
     ):
-        super().__init__()
-        
-        # Transaparencia
-        self.transparency_collide = transparency_collide
-        self.transparency_sprite = transparency_sprite
+        # Inicializar todo
+        super().__init__(
+         surf=pygame.Surface( ( size//2, size//2 ), pygame.SRCALPHA ), 
+         transparency=transparency_collide, position=position, 
+         layer=[ get_image('coin', size=[size, size]) ], 
+         layer_transparency=transparency_sprite, layer_difference_xy=[0,0]
+        )
         
         # Collider
-        self.surf = pygame.Surface( ( size//2, size//2 ), pygame.SRCALPHA )
-        self.surf.fill( generic_colors('yellow', transparency=self.transparency_collide) )
-        self.rect = self.surf.get_rect( topleft=position )
+        self.surf.fill( generic_colors('yellow', transparency=transparency_collide) )
         self.rect.x += ( size -self.rect.width)//2
         self.rect.y += ( size -self.rect.height)//2
         
@@ -29,10 +31,9 @@ class Score(pygame.sprite.Sprite):
         score_objects.add(self)
         
         # Sprite
-        self.sprite = pygame.sprite.Sprite()
-        self.sprite.surf = get_image( 'coin', size=[size, size], transparency=self.transparency_sprite )
-        self.sprite.rect = self.sprite.surf.get_rect( topleft=position )
-        layer_all_sprites.add(self.sprite, layer=3)
+        self.sprite = self.sprite_layer.layer[0]
+        self.sprite.update()
+        layer_all_sprites.add(self.sprite, layer=2)
         
         
         # Variables principales
