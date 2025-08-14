@@ -6,6 +6,7 @@ layer_all_sprites = pygame.sprite.LayeredUpdates()
 nocamera_back_sprites = pygame.sprite.Group()
 
 player_objects = pygame.sprite.Group()
+respawn_objects = pygame.sprite.Group()
 update_objects = pygame.sprite.Group()
 
 solid_objects = pygame.sprite.Group()

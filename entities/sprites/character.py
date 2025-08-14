@@ -151,7 +151,8 @@ class Character( StandardSprite ):
 
         # Vida
         self.damage_effect = False
-        self.hp = 100
+        self.initial_hp = 100
+        self.hp = self.initial_hp
         self.dead = False
         self.anim_dead_count = 0
         self.anim_dead = None
@@ -282,7 +283,7 @@ class Character( StandardSprite ):
             for level in self.__level_objects:
                 if self.rect.colliderect(level.rect):
                     level.change_level = True
-                    self.hp = 100
+                    self.hp = self.initial_hp
                     self.rect.topleft = (level.rect.x+(self.rect.width//2), level.rect.y)
                     self.moving_xy = [0,0]
                 
@@ -293,7 +294,7 @@ class Character( StandardSprite ):
                 self.score += 1
                 self.collision_score = True
                 if (
-                    self.hp < 100 and
+                    self.hp < self.initial_hp and
                     (self.dead == False)
                 ):
                     self.hp += 10

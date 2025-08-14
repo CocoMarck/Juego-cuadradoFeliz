@@ -23,7 +23,7 @@ class Enemy(Character):
      sprite_difference_xy=[0,-(pixel_space_to_scale//2)],
      solid_objects=None, damage_objects=None, level_objects=None, score_objects=None, jumping_objects=None,
      moving_objects=None, ladder_objects=None, particle_objects=None, anim_sprites=None,
-     update_objects=None, layer_all_sprites=None
+     update_objects=None, layer_all_sprites=None, respawn_objects=None
     ):
         
         super().__init__( 
@@ -52,6 +52,7 @@ class Enemy(Character):
         self.count_not_move = 0
         
         #self.sprite_layer.layer[0].center_difference_xy = [0, -(self.rect.height//2)]
+        respawn_objects.add(self)
     
     def change_direction(self):
         if self.direction_xy[0] == True:

@@ -603,7 +603,7 @@ enemy = Enemy(
  solid_objects=solid_objects, damage_objects=damage_objects, level_objects=level_objects, 
  score_objects=score_objects, jumping_objects=jumping_objects, moving_objects=moving_objects,
  ladder_objects=ladder_objects, particle_objects=particle_objects, anim_sprites=anim_sprites,
- update_objects=update_objects, layer_all_sprites=layer_all_sprites
+ update_objects=update_objects, layer_all_sprites=layer_all_sprites, respawn_objects=respawn_objects
 )
 enemy.limit_xy = limit_xy
 #'''
@@ -718,6 +718,12 @@ while exec_game:
     # Función Objetos actualizables
     for obj in update_objects:
         obj.update()
+    
+    # Función respawn
+    for obj in respawn_objects:
+        if obj.dead and obj.anim_fin:
+            obj.hp = obj.initial_hp
+            obj.rect.topleft = obj.position
     
     
     # Función clima
