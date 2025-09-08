@@ -68,7 +68,7 @@ for music in list_files( files=f'*{sound_type}', path=dir_music ):
 
 
 # Sonido | Función para devolver un sonido
-def get_sound( sound=None, number=None ) -> pygame.mixer.Sound:
+def get_sound( sound=None, number=None, volume:float=None) -> pygame.mixer.Sound:
     '''
     Devuelve un objeto pygame.mixer.Sound.
     sound=str, es un key para diccionario all_sprites
@@ -109,6 +109,10 @@ def get_sound( sound=None, number=None ) -> pygame.mixer.Sound:
             sound_final = all_sounds[sound][number]
     else:
         sound_final = all_sounds[sound]
+
+    # Volumen
+    if isinstance( volume, float ):
+        sound_final.set_volume(volume)
     
     return sound_final
 

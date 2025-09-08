@@ -73,7 +73,7 @@ class Enemy(Character):
         self.up = self.direction_xy[1] == False
     
     def move(self):
-        # Nn mover al resivir daño
+        # No mover al resivir daño
         if self.damage_effect:
             self.not_move = True
             self.count_not_move = 0

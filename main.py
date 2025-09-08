@@ -101,14 +101,14 @@ class Start_Map( ):
                 xy[0] += 1
 
                 # Jugador
-                if character == 'j':
+                if character == dict_object['player']:
                     self.player_spawn = [ position[0], position[1] ]
                 
                 
                 
                 
                 # Objetos solidos/saltarines/monedas/checkpoint, no dañinos
-                elif character == 'p':
+                elif character == dict_object['stone']:
                     # Objeto plataforma Piso Floor
                     Floor(
                         size=(pixel_space_to_scale, pixel_space_to_scale),
@@ -117,7 +117,7 @@ class Start_Map( ):
                         solid_objects=solid_objects, 
                         update_objects=update_objects, layer_all_sprites=layer_all_sprites
                     )
-                elif character == 'P':
+                elif character == dict_object['stone-big']:
                     # Posicionar de forma adecuada
                     new_size_pos = get_coordinate_multipler( 
                         multipler=2, pixel_space=pixel_space_to_scale, position=position 
@@ -132,14 +132,14 @@ class Start_Map( ):
                         update_objects=update_objects, layer_all_sprites=layer_all_sprites
                     )
                 
-                elif character == 's':
+                elif character == dict_object['coin']:
                     Score( 
                         size=pixel_space_to_scale, position=position, 
                         transparency_collide=transparency_collide, transparency_sprite=transparency_sprite,
                         score_objects=score_objects, layer_all_sprites=layer_all_sprites
                     )
                     
-                elif character == '+':
+                elif character == dict_object['stair-right']:
                     Stair(
                         size=pixel_space_to_scale, position=position, invert=False, climate=Map.climate, 
                         transparency_collide=transparency_collide, transparency_sprite=transparency_sprite,
@@ -147,29 +147,29 @@ class Start_Map( ):
                         layer_all_sprites=layer_all_sprites
                     )
                     
-                elif character == '-':
+                elif character == dict_object['stair-left']:
                     Stair(
-                        size=pixel_space_to_scale, position=position, invert=True, climate=Map.climate,      
-                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite,
-                        solid_objects=solid_objects, update_objects=update_objects, 
-                        layer_all_sprites=layer_all_sprites
+                     size=pixel_space_to_scale, position=position, invert=True, climate=Map.climate,      
+                     transparency_collide=transparency_collide, transparency_sprite=transparency_sprite,
+                     solid_objects=solid_objects, update_objects=update_objects, 
+                     layer_all_sprites=layer_all_sprites
                     )
 
-                elif character == 'H':
+                elif character == dict_object['ladder-y']:
                     Ladder(
-                        size=pixel_space_to_scale, position=position,
-                        transparency_collide=transparency_collide, transparency_sprite=transparency_sprite,
-                        ladder_objects=ladder_objects, layer_all_sprites=layer_all_sprites
+                     size=pixel_space_to_scale, position=position,
+                     transparency_collide=transparency_collide, transparency_sprite=transparency_sprite,
+                     ladder_objects=ladder_objects, layer_all_sprites=layer_all_sprites
                     )
                     
-                elif character == '_':
+                elif character == dict_object['trampoline']:
                     Trampoline(
                         size=pixel_space_to_scale, position=position,
                         transparency_collide=transparency_collide, transparency_sprite=transparency_sprite,
                         jumping_objects=jumping_objects, layer_all_sprites=layer_all_sprites
                     )
                     
-                elif character == 'x':
+                elif character == dict_object['elevator-x']:
                     Elevator(
                      size=pixel_space_to_scale, position=position, move_dimension=1,
                      transparency_collide=transparency_collide, transparency_sprite=transparency_sprite,
@@ -177,7 +177,7 @@ class Start_Map( ):
                      layer_all_sprites=layer_all_sprites
                     )
                     
-                elif character == 'y':
+                elif character == dict_object['elevator-y']:
                     Elevator(
                      size=pixel_space_to_scale, position=position, move_dimension=2,
                      transparency_collide=transparency_collide, transparency_sprite=transparency_sprite,
@@ -185,7 +185,7 @@ class Start_Map( ):
                      layer_all_sprites=layer_all_sprites
                     )
                     
-                elif character == '~':
+                elif character == dict_object['climate-rain']:
                     ClimateRain(
                      position=position, transparency_collide=transparency_collide, 
                      transparency_sprite=transparency_sprite_rain, climate_objects=climate_objects, 
@@ -193,14 +193,30 @@ class Start_Map( ):
                      solid_objects=solid_objects, layer_all_sprites=layer_all_sprites
                     )
 
-                elif character == '0':
+                # NPC
+                elif character == dict_object['enemy']:
+                    Enemy(
+                     transparency_collide=transparency_collide,
+                     transparency_sprite=transparency_sprite,
+                     position=[ (xy[0]-1)*pixel_space_to_scale, (xy[1]-1)*pixel_space_to_scale ],
+                     solid_objects=solid_objects, damage_objects=damage_objects,
+                     level_objects=level_objects, score_objects=score_objects,
+                     jumping_objects=jumping_objects, moving_objects=moving_objects,
+                     ladder_objects=ladder_objects, particle_objects=particle_objects,
+                     anim_sprites=anim_sprites, update_objects=update_objects,
+                     layer_all_sprites=layer_all_sprites, respawn_objects=respawn_objects
+                    )
+
+
+                # Niveles
+                elif character == dict_object['level-change']:
                     level = ChangeLevel(
                         dir_level=Map.path, level=Map.next_level, position=position, 
                         transparency_collide=transparency_collide, transparency_sprite=transparency_sprite,
                         layer_all_sprites=layer_all_sprites, level_objects=level_objects
                     )
                     
-                elif character == 'F':
+                elif character == dict_object['end-game']:
                     ChangeLevel(
                         dir_level=Map.path, level=Map.next_level, position=position, gamecomplete=True,
                         transparency_collide=transparency_collide, transparency_sprite=transparency_sprite,
@@ -211,7 +227,7 @@ class Start_Map( ):
                 
                 
                 # Limite del mapa
-                elif character == '|':
+                elif character == dict_object['limit']:
                     LimitIndicator(
                         position=position, transparency_collide=transparency_collide,
                         layer_all_sprites=layer_all_sprites, limit_objects=limit_objects
@@ -220,7 +236,7 @@ class Start_Map( ):
                 
                 
                 # Objetos dañinos
-                elif character == '^':
+                elif character == dict_object['spike']:
                     spike = Spike( 
                      position=position, transparency_collide=transparency_collide, 
                      transparency_sprite=transparency_sprite, damage_objects=damage_objects, 
@@ -228,7 +244,7 @@ class Start_Map( ):
                      layer_all_sprites=layer_all_sprites
                     )
                     
-                elif character == 'A':
+                elif character == dict_object['spike-big']:
                     # Objeto pico
                     Spike(
                      size=pixel_space_to_scale*2, position=position, transparency_collide=transparency_collide,
@@ -237,7 +253,7 @@ class Start_Map( ):
                      layer_all_sprites=layer_all_sprites
                     )
                     
-                elif character == '\\':
+                elif character == dict_object['spike-anim']:
                     Spike( 
                      position=position, moving=True, instakill=True, transparency_collide=transparency_collide, 
                      transparency_sprite=transparency_sprite, damage_objects=damage_objects, 
@@ -245,7 +261,7 @@ class Start_Map( ):
                      layer_all_sprites=layer_all_sprites
                     )
 
-                elif character == '!':
+                elif character == dict_object['spike-instakill']:
                     Spike( 
                      position=position, instakill=True, transparency_collide=transparency_collide,
                      transparency_sprite=transparency_sprite, damage_objects=damage_objects, 
@@ -253,7 +269,7 @@ class Start_Map( ):
                      layer_all_sprites=layer_all_sprites
                     )
                     
-                elif character == 'Y':
+                elif character == dict_object['star-pointed']:
                     PointedStar(
                         position=position,
                         transparency_collide=transparency_collide, transparency_sprite=transparency_sprite,
@@ -261,7 +277,7 @@ class Start_Map( ):
                         layer_all_sprites=layer_all_sprites
                     )
 
-                elif character == '*':
+                elif character == dict_object['star-pointed-anim']:
                     PointedStar(
                         position=position, moving=True, instakill=True,
                         transparency_collide=transparency_collide, transparency_sprite=transparency_sprite,
@@ -269,7 +285,7 @@ class Start_Map( ):
                         layer_all_sprites=layer_all_sprites
                     )
 
-                elif character == 'X':
+                elif character == dict_object['star-pointed-instakill']:
                     PointedStar(
                         position=position, instakill=True,
                         transparency_collide=transparency_collide, transparency_sprite=transparency_sprite,
@@ -288,6 +304,13 @@ class Start_Map( ):
             reduce = 0
         self.limit_xy = [ (xy[0]-reduce) *pixel_space_to_scale, (xy[1]-reduce) *pixel_space_to_scale ]
 
+
+
+        '''
+        Limite para objetos que hacen respawn
+        '''
+        for obj in respawn_objects:
+            obj.limit_xy=self.limit_xy
 
 
         # Sección generación de clima
@@ -597,7 +620,7 @@ create_light()
 
 
 # Prueba de enemigo
-#'''
+'''
 enemy = Enemy( 
  position=render_map.player_spawn, 
  solid_objects=solid_objects, damage_objects=damage_objects, level_objects=level_objects, 
@@ -606,10 +629,10 @@ enemy = Enemy(
  update_objects=update_objects, layer_all_sprites=layer_all_sprites, respawn_objects=respawn_objects
 )
 enemy.limit_xy = limit_xy
-#'''
 #enemy.left = True
 #enemy.jump = True
 #enemy.walk = True
+'''
 
 
 
@@ -724,6 +747,7 @@ while exec_game:
         if obj.dead and obj.anim_fin:
             obj.hp = obj.initial_hp
             obj.rect.topleft = obj.position
+            obj.change_direction()
     
     
     # Función clima
@@ -850,7 +874,7 @@ while exec_game:
     for sprite in layer_all_sprites.sprites():
         # Detectar que el sprite no sebrepase la pantalla
         display_collision = scroll_display_collision(
-            [sprite.rect.x, sprite.rect.y], scroll_int, scale_surface_size, [pixel_space_to_scale, 0]
+         [sprite.rect.x, sprite.rect.y], scroll_int, scale_surface_size, [pixel_space_to_scale*2, pixel_space_to_scale*1]
         )
 
         # Si el esprite esta en pantalla, mostrarlo.
@@ -859,6 +883,7 @@ while exec_game:
                 sprite.surf, 
                 ( sprite.rect.x -scroll_int[0], sprite.rect.y -scroll_int[1] )
             )
+            sprite.volume=float(data_CF.volume)
             if True == True:
                 if sprite.surf.get_alpha() > 0:
                     # [255, 169]
@@ -870,6 +895,8 @@ while exec_game:
                         shadow, 
                         ( sprite.rect.x -scroll_int[0], sprite.rect.y -scroll_int[1] )
                     )
+        else:
+            sprite.volume=float(0)
     
     
     # Funcion | Player Muerto/Dead

@@ -51,7 +51,7 @@ class Character( StandardSprite ):
      moving_objects=None, ladder_objects=None, particle_objects=None, anim_sprites=None,
      update_objects=None, layer_all_sprites=None
     ):
-        # grupos
+        # Grupos
         self.__damage_objects=damage_objects
         self.__solid_objects=solid_objects
         self.__level_objects=level_objects
@@ -70,9 +70,10 @@ class Character( StandardSprite ):
         surf.fill( [0,0,0] )
         
         # Establecer parametros
-        super().__init__( 
+        super().__init__(
             surf, transparency=transparency_collide, position=position
         )
+        print(self.position)
         self.rect.x += size*0.25
         
         # Transparencia
@@ -104,7 +105,7 @@ class Character( StandardSprite ):
         puntito = pygame.Surface( [size//4, size//4], pygame.SRCALPHA )
         puntito.fill( [255,0,0] )
         self.gun_surf.blit( puntito, [ size -size//4, size//2 - size//8 ] )
-        self.with_gun = True
+        self.with_gun = False
         
         self.can_shot = True
         self.count_shot = 0
@@ -411,14 +412,15 @@ class Character( StandardSprite ):
         Sonido hits pasos, saltar y colision.
         '''
         # Sonido hits
-        if self.damage_effect == True and self.dead == False: get_sound('hits').play()
+        if self.damage_effect == True and self.dead == False:
+            get_sound('hits', volume=self.volume).play()
         
         # Sonido | Pasos | Saltar | Colisionar con piso
         if (
             ( self.step_count == self.frames_xy[0] *0.5 ) or
             ( self.state_collide_in_floor == 'yes' )
         ):
-            get_sound('steps').play()
+            get_sound('steps', volume=self.volume).play()
             Particle( 
                 size=[self.rect.height//4, self.rect.height//4], 
                 position=[self.rect.x, self.rect.y-1+self.rect.height-pixel_space_to_scale//4], 
@@ -430,7 +432,7 @@ class Character( StandardSprite ):
             )
         
         if self.jumping == True and self.jump_count == self.jump_power:
-            get_sound('jump').play()
+            get_sound('jump', volume=self.volume).play()
         
         # Score Monedas
         if self.collision_score == True:

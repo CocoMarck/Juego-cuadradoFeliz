@@ -14,6 +14,7 @@ class StandardSprite(pygame.sprite.Sprite):
         surf; pygame.Surface
         transparency; int
         position; [int,int]
+        valume; float
     
     Atributos:
         surf_base = pygame.Surface
@@ -28,6 +29,11 @@ class StandardSprite(pygame.sprite.Sprite):
         
         time = int, Tiempo para hacer algo
         time_count = int, Contador para llegar al tiempo
+
+        valume = float. Volumen, maximo de `1.0`
+
+    Metodos:
+        set_volume()
     
 
     Como se establecen lo atributos:
@@ -37,7 +43,7 @@ class StandardSprite(pygame.sprite.Sprite):
     Los demas atributos, tienen valores default y es posible que no se usen.
     '''
     def __init__(
-        self, surf, transparency=255, position=[0,0]
+        self, surf, transparency=255, position=[0,0], volume=float(1.0)
     ):
         super().__init__()
 
@@ -56,6 +62,10 @@ class StandardSprite(pygame.sprite.Sprite):
         # Relacionado con el tiempo/timer/time
         self.time = 0
         self.time_count = 0
+
+        # Volumen
+        self.__initial_volume = volume
+        self.volume = volume
     
     def sync_size(self):
         '''
@@ -123,3 +133,21 @@ class StandardSprite(pygame.sprite.Sprite):
             False Si no pasa lo anterior mencionado.
         '''
         return self.time_count >= self.time
+
+
+
+
+    def set_volume( self, volume:float ):
+        '''
+        Establacer volumen
+        '''
+        if isinstance( volume, int ):
+            self.volume = float(volume)
+
+        if not isinstance( self.volume, float ):
+            self.volume = 1.0
+
+        if self.volume > 1:
+            self.volume = 1.0
+        elif self.volume < 0:
+            self.volume = 0.0

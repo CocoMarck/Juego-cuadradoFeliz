@@ -531,6 +531,8 @@ dict_object = {
     'stone': 'p',
     'stone-big': 'P',
     'coin': 's',
+    'stair-right': "+",
+    'stair-left': "-",
 
     'spike': '^',
     'spike-big': 'A',
@@ -544,14 +546,15 @@ dict_object = {
     'ladder-y': 'H',
     'trampoline': '_',
 
-    'ladder-x-right': '+',
-    'ladder-x-left': '-',
-
-    'elevator-y': 'x',
-    'elevator-x': 'y',
+    'elevator-y': 'y',
+    'elevator-x': 'x',
     
     'climate-rain': '~',
 
+    # npc
+    'enemy': 'e',
+
+    # Only levels things
     'level-change': '0',
     'end-game': 'F'
 }
@@ -614,6 +617,15 @@ def read_Map( Map, level=str ) -> bool:
         text = ignore_text_filter( line, prefix_object )
         if not text == None:
             Map.list_map.append( list(text) )
+    '''
+    text = "Aca empieza el text\n"
+    for x in Map.list_map:
+        line = ""
+        for y in x:
+            line += y
+        text += line + "\n"
+    print(text)
+    '''
 
 
 def return_map( Map ):

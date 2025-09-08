@@ -324,9 +324,8 @@ class object_grid( pygame.sprite.Sprite ):
         # Tipo de objeto
         self.current_map = current_map
         self.type_object = (
-            current_map.list_map
-            [ (self.rect.y) //data_CF.pixel_space ]
-            [ (self.rect.x) //data_CF.pixel_space ]
+         current_map.list_map
+         [ (self.rect.y) //data_CF.pixel_space ] [ (self.rect.x) //data_CF.pixel_space ]
         )
         self.xy_spawn = [ (self.rect.y) //data_CF.pixel_space,  (self.rect.x) //data_CF.pixel_space ]
         
@@ -353,6 +352,9 @@ class object_grid( pygame.sprite.Sprite ):
             # Establecer imagen dependiendo el tipo de caracter.
             if self.type_object == 'j':
                 image = 'icon'
+            elif self.type_object == 'e':
+                image = 'icon'
+                color = [127, 0, 0]
             elif self.type_object == '|':
                 image = 'limit'
             elif self.type_object == 'p' or self.type_object == 'P':
@@ -472,11 +474,13 @@ def run(
         )
         player_spawn_xy = [0,0]
         xy = [0, 0]
+        text_map = ""
         for line in current_map.list_map:
             xy[0] = 0
             position = [ xy[0], xy[1]*data_CF.pixel_space]
             xy[1] += 1
             
+            line_for_text = ""
             for character in line:
                 position[0] = xy[0]*data_CF.pixel_space
 
@@ -486,6 +490,7 @@ def run(
                 "p" = Floor
                 ""
                 '''
+                line_for_text += character
                 for key in dict_object.keys():
                     preset = dict_object[key]
                     if character == preset:
@@ -496,6 +501,10 @@ def run(
                         if preset == 'j':
                             player_spawn_xy[0] = position[0]
                             player_spawn_xy[1] = position[1]
+            
+            text_map += line_for_text + "\n"
+        print(text_map)
+
         return player_spawn_xy
 
 
