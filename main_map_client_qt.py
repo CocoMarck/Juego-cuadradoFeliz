@@ -35,7 +35,7 @@ class Window_Main(QWidget):
         super().__init__(*args, **kwargs)
         
         self.setWindowTitle('Cuadarado Feliz')
-        self.setWindowIcon( QIcon( all_images['icon'] ) )
+        self.setWindowIcon( QIcon( str(all_images['icon']) ) )
         self.resize( nums_win_dialog[0], nums_win_dialog[1] )
         
         # Contenedor principal
