@@ -198,6 +198,10 @@ class Start_Map( ):
                     Enemy(
                      transparency_collide=transparency_collide,
                      transparency_sprite=transparency_sprite,
+                     dict_sprite={
+                      'side-x' : get_image( 'player_move', size=[pixel_space_to_scale*2,pixel_space_to_scale*2] ),
+                      'side-y' : get_image( 'player_not-move', size=[pixel_space_to_scale*2,pixel_space_to_scale*2] )
+                     },
                      position=[ (xy[0]-1)*pixel_space_to_scale, (xy[1]-1)*pixel_space_to_scale ],
                      solid_objects=solid_objects, damage_objects=damage_objects,
                      level_objects=level_objects, score_objects=score_objects,
@@ -237,7 +241,7 @@ class Start_Map( ):
                 
                 # Objetos dañinos
                 elif character == dict_object['spike']:
-                    spike = Spike( 
+                    spike = Spike(
                      position=position, transparency_collide=transparency_collide, 
                      transparency_sprite=transparency_sprite, damage_objects=damage_objects, 
                      anim_sprites=anim_sprites, solid_objects=solid_objects, update_objects=update_objects, 
@@ -292,6 +296,9 @@ class Start_Map( ):
                         damage_objects=damage_objects, anim_sprites=anim_sprites, 
                         layer_all_sprites=layer_all_sprites
                     )
+
+                elif character == dict_object['gun']:
+                    pass
         
                 print_line += character
         

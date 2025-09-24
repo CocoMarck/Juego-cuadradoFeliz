@@ -202,6 +202,9 @@ class Character( StandardSprite ):
         
         self.sprite_layer.add_to_sprite_group( update_objects )
         self.sprite_layer.add_to_layer_group( layer_all_sprites, layer=2 )
+
+        # Identificador
+        self.identifer = "character"
     
     def get_speed(self, multipler=1):
         '''
@@ -241,8 +244,18 @@ class Character( StandardSprite ):
         for obj in self.__damage_objects:
             # Determinar si se colisiono con un objeto dañino y obtener el numero de daño.
             if self.rect.colliderect(obj.rect):
-                self.damage_effect = True                
-                damage_number = obj.damage
+                have_damage = True
+                if hasattr(obj, "identifer"):
+                    if obj.identifer == self.identifer:
+                        have_damage = False
+                if hasattr(obj, "dead"):
+                    if obj.dead:
+                        have_damage = False
+
+                if have_damage:
+                    self.damage_effect = True
+                    damage_number = obj.damage
+
         
         if self.damage_effect == True and self.dead == False:
             #self.gravity_current = 0 # Cancelar gravedad
@@ -554,6 +567,7 @@ class Character( StandardSprite ):
         # HP | Determinar si el jugador esta vivo o muerto
         if self.hp <= 0:
             self.dead = True
+            self.with_gun = False
             self.not_move = True
             self.jump_count = self.jump_max_height
             self.gravity_current = 0

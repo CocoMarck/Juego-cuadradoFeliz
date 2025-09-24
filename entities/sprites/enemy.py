@@ -10,6 +10,7 @@ from controllers.cf_info import (
 )
 from core.pygame.cf_util import get_image
 from .character import Character, air_count_based_on_resolution
+import random
 
 
 
@@ -35,7 +36,7 @@ class Enemy(Character):
          moving_objects=moving_objects, ladder_objects=ladder_objects, particle_objects=particle_objects,
          anim_sprites=anim_sprites, update_objects=update_objects, layer_all_sprites=layer_all_sprites
         )
-        self.transparency=0
+        #self.transparency=0
 
         self.init_wait = 10
         self.init_count = 0
@@ -53,6 +54,16 @@ class Enemy(Character):
         
         #self.sprite_layer.layer[0].center_difference_xy = [0, -(self.rect.height//2)]
         respawn_objects.add(self)
+
+        # Daño
+        self.identifer = "enemy"
+        self.damage = 0
+        damage_objects.add(self)
+
+        # Timer | Pararse a mirar a la nada
+        self.random_stop_times = [data_CF.fps*2, data_CF.fps*4, data_CF.fps*8]
+        self.random_stop_time = random.choice( self.random_stop_times )
+        self.random_stop_count = 0
     
     def change_direction(self):
         if self.direction_xy[0] == True:
@@ -84,6 +95,16 @@ class Enemy(Character):
 
         # Movimiento de ai
         if self.ai:
+            # Paradas random automaticas
+            if self.fall == False:
+                self.random_stop_count += 1
+            if self.random_stop_count == self.random_stop_time:
+                self.random_stop_time = random.choice( self.random_stop_times )
+                self.random_stop_count = 0
+                self.not_move = True
+                self.count_not_move = 0
+
+            # Lo demas
             if self.init_count < self.init_wait:
                 self.init_count += 1
             if self.init_count >= self.init_wait:
@@ -105,13 +126,15 @@ class Enemy(Character):
                 
                 if self.bool_direction == True:
                     if self.count_change_direction == 0:
+                        #print('Cambiando')
                         self.change_direction()
-                        print('Cambiando')
+
                     self.count_change_direction += 1
                     if self.count_change_direction >= self.time_change_direction:
+                        #print('listo')
                         self.bool_direction = False
                         self.count_change_direction = 0
-                        print('listo')
+
                 
                 if self.rect.x == self.variation_xy[0]:
                     self.bool_direction = True

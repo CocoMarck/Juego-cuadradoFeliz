@@ -554,6 +554,9 @@ dict_object = {
     # npc
     'enemy': 'e',
 
+    # Armas
+    'gun': 'g',
+
     # Only levels things
     'level-change': '0',
     'end-game': 'F'
