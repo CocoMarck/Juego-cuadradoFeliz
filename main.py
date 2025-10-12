@@ -208,7 +208,8 @@ class Start_Map( ):
                      jumping_objects=jumping_objects, moving_objects=moving_objects,
                      ladder_objects=ladder_objects, particle_objects=particle_objects,
                      anim_sprites=anim_sprites, update_objects=update_objects,
-                     layer_all_sprites=layer_all_sprites, respawn_objects=respawn_objects
+                     gun_objects=gun_objects, respawn_objects=respawn_objects,
+                     layer_all_sprites=layer_all_sprites
                     )
 
 
@@ -298,7 +299,14 @@ class Start_Map( ):
                     )
 
                 elif character == dict_object['gun']:
-                    pass
+                    Gun(
+                     size=pixel_space_to_scale,
+                     position=position,
+                     transparency_collide=transparency_collide,
+                     transparency_sprite=transparency_sprite,
+                     layer_all_sprites=layer_all_sprites, update_objects=update_objects,
+                     gun_objects=gun_objects
+                    )
         
                 print_line += character
         
@@ -354,7 +362,7 @@ class Start_Map( ):
                      ),
                      transparency_collide=transparency_collide, transparency_sprite=transparency_sprite_rain,
                      damage=damage, climate_objects=climate_objects, damage_objects=damage_objects,
-                     player_objects=player_objects, solid_objects=solid_objects, 
+                     player_objects=player_objects, solid_objects=solid_objects,
                      layer_all_sprites=layer_all_sprites
                     )
             print( 
@@ -366,12 +374,16 @@ current_map = Map
 read_Map( Map=current_map, level=data_CF.current_level )
 render_map = Start_Map(current_map)
 player = Player(
+ dict_sprite={
+  'side-x' : get_image( 'player_move', size=[pixel_space_to_scale*2,pixel_space_to_scale*2] ),
+  'side-y' : get_image( 'player_not-move', size=[pixel_space_to_scale*2,pixel_space_to_scale*2] )
+ },
  position=render_map.player_spawn, transparency_collide=transparency_collide, 
  transparency_sprite=transparency_sprite, player_objects=player_objects,
  solid_objects=solid_objects, damage_objects=damage_objects, level_objects=level_objects, 
  score_objects=score_objects, jumping_objects=jumping_objects, moving_objects=moving_objects,
  ladder_objects=ladder_objects, particle_objects=particle_objects, anim_sprites=anim_sprites,
- update_objects=update_objects, layer_all_sprites=layer_all_sprites
+ update_objects=update_objects, gun_objects=gun_objects, layer_all_sprites=layer_all_sprites
 )
 player_spawn_hp = player.hp
 player_anim_dead = None
@@ -523,8 +535,8 @@ if data_CF.show_clouds == True:
 # Funcion del mapa
 score = 0
 
-for plat in solid_objects:
-    plat.limit_collision()
+#for plat in solid_objects:
+#    plat.limit_collision()
 
 # Funcion juego completado
 gamecomplete = False
@@ -812,13 +824,21 @@ while exec_game:
                 read_Map( Map=current_map, level=data_CF.current_level )
                 render_map = Start_Map(current_map)
                 player = Player(
+                 dict_sprite={
+                  'side-x' : get_image(
+                   'player_move', size=[pixel_space_to_scale*2,pixel_space_to_scale*2]
+                  ),
+                  'side-y' : get_image(
+                   'player_not-move', size=[pixel_space_to_scale*2,pixel_space_to_scale*2]
+                  )
+                 },
                  position=render_map.player_spawn, transparency_collide=transparency_collide, 
                  transparency_sprite=transparency_sprite, player_objects=player_objects,
                  solid_objects=solid_objects, damage_objects=damage_objects, level_objects=level_objects,
                  score_objects=score_objects, jumping_objects=jumping_objects, moving_objects=moving_objects,
                  ladder_objects=ladder_objects, update_objects=update_objects, 
                  particle_objects=particle_objects, anim_sprites=anim_sprites,
-                 layer_all_sprites=layer_all_sprites
+                 gun_objects=gun_objects,layer_all_sprites=layer_all_sprites
                 )
                 player.score = score
                 player_spawn_hp = player.hp
@@ -891,7 +911,8 @@ while exec_game:
                 ( sprite.rect.x -scroll_int[0], sprite.rect.y -scroll_int[1] )
             )
             sprite.volume=float(data_CF.volume)
-            if True == True:
+            shadow_effect = False
+            if shadow_effect:
                 if sprite.surf.get_alpha() > 0:
                     # [255, 169]
                     shadow = create_mask_gradient( 

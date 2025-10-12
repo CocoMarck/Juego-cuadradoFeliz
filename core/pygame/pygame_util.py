@@ -578,3 +578,34 @@ def calculate_multiplier( number_start=1, number_fin=24 ):
         raise ValueError('number_start no puede ser cero')
 
     return number_fin / number_start
+
+
+
+
+
+def rotate(rotate_number=0):
+    '''
+    Función que determina el valor de rotación.
+
+    Si esta función se pone en un bucle, el valor de rotación podra cambiar constantemente.
+    Ya que iria de 0 al limite positivo 360 o al limite negativo -360, y al llegar al limite ya sea el positivo o el negativo, su valor de rotación regresara a cero. (Tambien podemos llamarlos limites laterales)
+
+    rotate_number = int, angulo de rotación
+
+    Devuelve: rotate_number, angulo de rotación
+    rotate_number, puede cambiar al entrar en esta función
+    '''
+    # Determinar si el angulo de rotación no es igual a cero
+    if rotate_number > 0 or rotate_number < 0:
+        # Eestablecer limite valor minimo y maximo de angulo de rotación a: 360 y -360
+        if rotate_number > 360:
+            rotate_number = 360
+        elif rotate_number < -360:
+            rotate_number = -360
+
+        # Determinar si el valor es igual al limite minimo o al maximo, establecer el angulo en cero.
+        if rotate_number == 360 or rotate_number == -360:
+            rotate_number = 0
+
+    # Devolver el angulo de rotación
+    return rotate_number

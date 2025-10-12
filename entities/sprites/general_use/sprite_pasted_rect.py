@@ -26,7 +26,10 @@ class SpritePastedRect(StandardSprite):
         # Diferencia de centrado.
         self.center_difference_xy = difference_xy
     
-    def update(self):
+    def paste_a_rectangle(self):
+        '''
+        Función: Dependencia necesaria
+        '''
         # Si cambia de tamaño surf, volver a obtener rect.
         self.sync_size()
         
@@ -36,3 +39,7 @@ class SpritePastedRect(StandardSprite):
         # Agregar diferencia.
         self.rect.x += self.center_difference_xy[0]
         self.rect.y += self.center_difference_xy[1]
+
+    def update(self):
+        # Funcion por defecto para mover sprite
+        self.paste_a_rectangle()

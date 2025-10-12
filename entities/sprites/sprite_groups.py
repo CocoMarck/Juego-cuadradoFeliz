@@ -23,3 +23,5 @@ score_objects = pygame.sprite.Group()
 particle_objects = pygame.sprite.Group()
 
 lighting_objects = pygame.sprite.Group()
+
+gun_objects = pygame.sprite.Group()

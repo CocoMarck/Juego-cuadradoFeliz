@@ -1,4 +1,5 @@
 import pygame
+from core.pygame.pygame_util import rotate as good_rotate
 
 # Objetos para uso general
 class StandardSprite(pygame.sprite.Sprite):
@@ -15,6 +16,8 @@ class StandardSprite(pygame.sprite.Sprite):
         transparency; int
         position; [int,int]
         valume; float
+
+        identifer = "standard-sprite"; str
     
     Atributos:
         surf_base = pygame.Surface
@@ -47,7 +50,13 @@ class StandardSprite(pygame.sprite.Sprite):
     ):
         super().__init__()
 
+        # Surface base
         self.surf_base = surf
+
+        self.flip_x = False
+        self.flip_y = False
+
+        # Surface actual
         self.surf = surf
         self.transparency = transparency
         self.surf.set_alpha( self.transparency )
@@ -66,6 +75,15 @@ class StandardSprite(pygame.sprite.Sprite):
         # Volumen
         self.__initial_volume = volume
         self.volume = volume
+
+        # Identificador de sprite
+        self.identifer = "standard-sprite"
+
+    def set_surf(self):
+        '''
+        Establecer superficie, con el surface base.
+        '''
+        self.surf = pygame.transform.flip( self.surf_base, self.flip_x, self.flip_y )
     
     def sync_size(self):
         '''
@@ -107,11 +125,17 @@ class StandardSprite(pygame.sprite.Sprite):
     def rotate(self):
         '''
         Rotar el surf base. Y establecer lo rotado en el surf. Rotar sprite
+        Forzar limites positivos y negativos de angulos a 360 y -360
         '''
+        self.angle = good_rotate( self.angle )
+
         if self.angle != 0:
-            self.surf = pygame.transform.rotate( self.surf_base, self.angle )
+            self.set_surf()
+            self.surf = pygame.transform.rotate( self.surf, self.angle )
         else:
-            self.surf = self.surf_base
+            self.set_surf()
+
+
         self.sync_size()
         self.set_transparency()
         

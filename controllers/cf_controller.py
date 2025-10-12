@@ -232,7 +232,8 @@ def get_level_list():
     # Subdirectorios de mapas.
     sub_dir_maps = [
         os.path.join(dir_maps, 'part1'),
-        os.path.join(dir_maps, 'part2')
+        os.path.join(dir_maps, 'part2'),
+        os.path.join(dir_maps, 'part3')
     ]
 
     dir_custom = os.path.join(dir_maps, 'custom')
@@ -570,7 +571,7 @@ dict_climate = {
     'sunny': [240,202,134],
     'alien': [68,38,136],
     'black': [47,47,47],
-    'acid': [117,255,219],
+    'acid': [255,150,150],
 }
 def read_Map( Map, level=str ) -> bool:
     '''Leer el archivo map y establecer sus parametros'''

@@ -20,7 +20,7 @@ class ClimateRain( MultiLayerSprite ):
      layer_all_sprites=None
     ):    
         # Variables necesarias
-        self.damage = 1
+        self.damage = 2
         color_sprite = [0,0,127]
         surf_color = generic_colors('sky_blue')
         if damage == True: 

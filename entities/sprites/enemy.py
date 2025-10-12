@@ -24,7 +24,7 @@ class Enemy(Character):
      sprite_difference_xy=[0,-(pixel_space_to_scale//2)],
      solid_objects=None, damage_objects=None, level_objects=None, score_objects=None, jumping_objects=None,
      moving_objects=None, ladder_objects=None, particle_objects=None, anim_sprites=None,
-     update_objects=None, layer_all_sprites=None, respawn_objects=None
+     update_objects=None, gun_objects=None, layer_all_sprites=None, respawn_objects=None
     ):
         
         super().__init__( 
@@ -34,7 +34,7 @@ class Enemy(Character):
          sprite_difference_xy=sprite_difference_xy, solid_objects=solid_objects, damage_objects=damage_objects, 
          level_objects=level_objects, score_objects=score_objects, jumping_objects=jumping_objects,
          moving_objects=moving_objects, ladder_objects=ladder_objects, particle_objects=particle_objects,
-         anim_sprites=anim_sprites, update_objects=update_objects, layer_all_sprites=layer_all_sprites
+         anim_sprites=anim_sprites, update_objects=update_objects, gun_objects=gun_objects, layer_all_sprites=layer_all_sprites
         )
         #self.transparency=0
 
@@ -43,14 +43,31 @@ class Enemy(Character):
         self.variation_xy = [None,None]
         self.variation_count = 0
         self.variation_time = air_count_based_on_resolution*2.5 #10
+
+        self.time_to_jump = air_count_based_on_resolution*0.75 # 3
         
-        self.time_change_direction = 8
+        # Dirección a moverse, no moverse
+        self.direction_xy = [ False, False ]
+        self.not_move = False
+
+        # Tiempo esparar y cambiar de dirección
+        self.time_change_direction = 10
         self.count_change_direction = 0
-        self.direction_xy = [True, False]
         self.bool_direction = False
-        self.ai = True
-        self.time_not_move = data_CF.fps*0.5
+
+        # Tiempos para no movimierse
+        self.times_not_move = [data_CF.fps*2, data_CF.fps*1, data_CF.fps*0.5, data_CF.fps*0.25]
         self.count_not_move = 0
+
+        # Tiempos para caminar aleatoriamente
+        self.times_for_walk = [data_CF.fps*20, data_CF.fps*10, data_CF.fps*5]
+        self.count_for_walk = 0
+
+        self.times_walking = [data_CF.fps*10, data_CF.fps*5, data_CF.fps*2]
+        self.count_walking = 0
+
+        # Activar inteligencia artificial
+        self.ai = True
         
         #self.sprite_layer.layer[0].center_difference_xy = [0, -(self.rect.height//2)]
         respawn_objects.add(self)
@@ -62,8 +79,16 @@ class Enemy(Character):
 
         # Timer | Pararse a mirar a la nada
         self.random_stop_times = [data_CF.fps*2, data_CF.fps*4, data_CF.fps*8]
-        self.random_stop_time = random.choice( self.random_stop_times )
+        self.random_stop_time = self.random_stop_times[0]
         self.random_stop_count = 0
+
+        # Iniciar variables
+        self.init_ai()
+
+    def init_ai(self):
+        self.direction_xy = [ random.choice( [False, True] ), False ]
+        self.not_move = random.choice( [False, True] )
+        self.random_stop_time = random.choice( self.random_stop_times )
     
     def change_direction(self):
         if self.direction_xy[0] == True:
@@ -84,14 +109,30 @@ class Enemy(Character):
         self.up = self.direction_xy[1] == False
     
     def move(self):
+        # Al morir inicializar todo
+        if self.dead:
+            self.init_ai()
+
         # No mover al resivir daño
         if self.damage_effect:
             self.not_move = True
-            self.count_not_move = 0
         if self.not_move:
-            if self.count_not_move >= self.time_not_move:
-                self.not_move = False
             self.count_not_move += 1
+            if self.count_not_move >= random.choice( self.times_not_move ):
+                self.not_move = False
+        else:
+            self.count_not_move = 0
+
+        # Caminar
+        self.count_for_walk += 1
+        if self.count_for_walk >= random.choice( self.times_for_walk ):
+            self.count_walking += 1
+            if self.count_walking >= random.choice( self.times_walking ):
+                self.walk = False
+                self.count_for_walk = 0
+                self.count_walking = 0
+            else:
+                self.walk = True
 
         # Movimiento de ai
         if self.ai:
@@ -102,22 +143,21 @@ class Enemy(Character):
                 self.random_stop_time = random.choice( self.random_stop_times )
                 self.random_stop_count = 0
                 self.not_move = True
-                self.count_not_move = 0
 
             # Lo demas
             if self.init_count < self.init_wait:
                 self.init_count += 1
             if self.init_count >= self.init_wait:
                 self.set_direction( )
-                self.walk = False
                 
                 # Nomas detectar caida.
-                if self.air_count > air_count_based_on_resolution*0.625:
+                if self.air_count > self.time_to_jump:
+                    # Nomas detectar caida, forzar correr y salto.
                     self.set_and_jump(1)
                     
                     #self.right = False
                     #self.left = True
-                    #self.walk = True
+                    self.walk = False
                 else:
                     self.jump = False
                     #self.right = True

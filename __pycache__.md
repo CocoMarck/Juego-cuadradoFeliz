@@ -1,0 +1,3 @@
+```bash
+git rm -r ./backups/2025-07-12/data/__pycache__ ./backups/2025-07-12/interface/__pycache__ ./backups/2025-07-12/logic/__pycache__ ./backups/2025-07-12/logic/pygame/__pycache__ ./backups/2025-07-12/__pycache__ ./controllers/__pycache__ ./core/config/__pycache__ ./core/__pycache__ ./core/pygame/__pycache__ ./data/__pycache__ ./entities/cf_config/__pycache__ ./entities/cf_world/__pycache__ ./entities/__pycache__ ./entities/sprites/general_use/__pycache__ ./entities/sprites/__pycache__ ./models/cuadrado_feliz/__pycache__ ./models/__pycache__ ./utils/__pycache__ ./views/interface/__pycache__
+```

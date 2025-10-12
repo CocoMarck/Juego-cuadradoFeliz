@@ -109,6 +109,11 @@ class Particle(pygame.sprite.Sprite):
         for obj in self.__damage_objects:
             if self.rect.colliderect(obj.rect):
                 damage_effect=True
+
+            if hasattr(obj, "dead"):
+                if obj.dead:
+                    damage_effect = False
+
         if damage_effect == True:
             self.moving_xy[0] += self.rect.width * random.choice([1,-1])
             self.moving_xy[1] += self.rect.height * random.choice([1,-1])
@@ -141,8 +146,10 @@ class Particle(pygame.sprite.Sprite):
         
         # Sonido
         if isinstance(self.sounds_str, list):
-            if damage_effect == True: get_sound(sound=self.sounds_str[1]).play()
-            if isinstance(collided_side, str): get_sound(sound=self.sounds_str[0]).play()
+            if damage_effect == True:
+                get_sound(sound=self.sounds_str[1], volume=self.volume).play()
+            if isinstance(collided_side, str):
+                get_sound(sound=self.sounds_str[0], volume=self.volume).play()
 
 
         # Tiempo de vida

@@ -42,6 +42,12 @@ all_sounds = {
         pygame.mixer.Sound( dir_audio.joinpath('effects/items/score-1.ogg' ) ),
         pygame.mixer.Sound( dir_audio.joinpath('effects/items/score-2.ogg' ) ),
         pygame.mixer.Sound( dir_audio.joinpath('effects/items/score-3.ogg' ) )
+    ],
+
+    'shot': [
+        pygame.mixer.Sound( dir_audio.joinpath( 'effects/shooting/shot-1.ogg' ) ),
+        pygame.mixer.Sound( dir_audio.joinpath( 'effects/shooting/shot-2.ogg' ) ),
+        pygame.mixer.Sound( dir_audio.joinpath( 'effects/shooting/shot-3.ogg' ) )
     ]
 }
 # Sonido | Establecer Volumen
@@ -170,6 +176,12 @@ all_images = {
     
     'player_move':
     ( dir_sprites.joinpath('player/player_move.png') ) ,
+
+    'gun':
+    ( dir_sprites.joinpath('weapons/gun.png') ),
+
+    'placeholder':
+    ( dir_sprites.joinpath('placeholder.png') )
 }
 
 
@@ -859,6 +871,9 @@ def surface_bloom( size=[32,32], alpha_range=[255, 0], color=[0,0,0], middle_col
 
 
 def speed2d_with_angle( speed, angle ):
+    '''
+    Establecer balaso dependiendo en angulo
+    '''
     speed_xy = [ speed *math.cos(math.radians(angle)),  -speed *math.sin(math.radians(angle)) ]
     # math.radians(), Convierte angulos a radianes
     # math.cos, funcion coseno.

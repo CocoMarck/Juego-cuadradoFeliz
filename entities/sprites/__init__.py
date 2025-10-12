@@ -28,3 +28,4 @@ from .spike                 import Spike
 from .stair                 import Stair
 from .sun                   import Sun
 from .trampoline            import Trampoline
+from .gun                   import Gun

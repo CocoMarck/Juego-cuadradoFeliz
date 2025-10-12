@@ -49,7 +49,7 @@ class Character( StandardSprite ):
      }, position=[0,0], limit_xy=[0,0], color_sprite=[153,252,152], sprite_difference_xy=[0,0],
      solid_objects=None, damage_objects=None, level_objects=None, score_objects=None, jumping_objects=None,
      moving_objects=None, ladder_objects=None, particle_objects=None, anim_sprites=None,
-     update_objects=None, layer_all_sprites=None
+     update_objects=None, gun_objects=None, layer_all_sprites=None
     ):
         # Grupos
         self.__damage_objects=damage_objects
@@ -61,6 +61,7 @@ class Character( StandardSprite ):
         self.__ladder_objects=ladder_objects
         self.__particle_objects=particle_objects
         self.__anim_sprites=anim_sprites
+        self.__gun_objects=gun_objects
         
         self.__update_objects = update_objects
         self.__layer_all_sprites = layer_all_sprites
@@ -73,7 +74,7 @@ class Character( StandardSprite ):
         super().__init__(
             surf, transparency=transparency_collide, position=position
         )
-        print(self.position)
+        #print(self.position)
         self.rect.x += size*0.25
         
         # Transparencia
@@ -97,14 +98,6 @@ class Character( StandardSprite ):
             self.anim_xy[1] = True
             
         # Sprite GUN
-        self.gun_surf = pygame.Surface( [size, size], pygame.SRCALPHA)
-        palote = pygame.Surface( [size, size//2 ], pygame.SRCALPHA )
-        palote.fill( (127, 127, 127) )
-        self.gun_surf.blit( palote, [0, size//2 - size//4 ] )
-
-        puntito = pygame.Surface( [size//4, size//4], pygame.SRCALPHA )
-        puntito.fill( [255,0,0] )
-        self.gun_surf.blit( puntito, [ size -size//4, size//2 - size//8 ] )
         self.with_gun = False
         
         self.can_shot = True
@@ -114,7 +107,7 @@ class Character( StandardSprite ):
         # Capas | Sprites | Apariencia de player
         self.sprite_layer = SpriteLayerPastedRect(
             rect_pasted=self.rect, transparency=transparency_sprite, difference_xy=[0,0], 
-            layer=[ self.dict_sprite['side-x'][0], self.gun_surf ]
+            layer=[ self.dict_sprite['side-x'][0], get_image( 'gun', size=[size, size] ) ]
         )
         self.sprite_layer.layer[0].center_difference_xy = sprite_difference_xy
         self.sprite_layer.layer[1].center_difference_xy = [0,0]
@@ -205,6 +198,9 @@ class Character( StandardSprite ):
 
         # Identificador
         self.identifer = "character"
+
+        # Limite de particulas de sangre
+        self.__limit_of_blood_particles = 10
     
     def get_speed(self, multipler=1):
         '''
@@ -258,15 +254,28 @@ class Character( StandardSprite ):
 
         
         if self.damage_effect == True and self.dead == False:
+            # Recibiendo daño
             #self.gravity_current = 0 # Cancelar gravedad
             #self.air_count = 0 # Cancelar gravedad
             self.jumping=False # Cancelar salto
-            # Efecto de daño basado en el numero de daño recibido
+
+            # Multiplicador de movimiento por daño
+            # Cantidad de particulas de daño
             multipler = 1
+            particles = self.__limit_of_blood_particles
+
             if isinstance(damage_number, int):
                 if damage_number > 0:
                     multipler = damage_number*0.05
+                    particles = int(damage_number*0.1)
 
+            if particles > self.__limit_of_blood_particles:
+                particles = self.__limit_of_blood_particles
+            elif particles <= 0:
+                particles = 1
+
+
+            # Efecto de daño basado en el numero de daño recibido
             xy_move = self.rect.height * multipler
             if random.choice( [False, True] ):
                 self.moving_xy[1] -= xy_move*0.2
@@ -276,6 +285,19 @@ class Character( StandardSprite ):
                 self.moving_xy[0] += xy_move
             else:
                 self.moving_xy[0] -= xy_move
+
+            # Particulas de daño
+            for x in range( 0, particles ):
+                Particle(
+                 size=[self.rect.height//4, self.rect.height//4],
+                 position=self.rect.center,
+                 transparency_collide=255, transparency_sprite=255,
+                 color_collide=self.color_sprite, time_kill=data_CF.fps, sound=None,
+                 particle_objects=self.__particle_objects, solid_objects=self.__solid_objects,
+                 damage_objects=self.__damage_objects, jumping_objects=self.__jumping_objects,
+                 anim_sprites=self.__anim_sprites, layer_all_sprites=self.__layer_all_sprites
+                )
+
         if isinstance(damage_number, int):
             # Reducir HP
             if self.dead == False:
@@ -356,6 +378,10 @@ class Character( StandardSprite ):
                 if pygame.sprite.spritecollide(self, self.__solid_objects, False):
                     self.hp = -1
                     self.not_move = True
+
+        # Detectar armas
+        if pygame.sprite.spritecollide(self, self.__gun_objects, False):
+            self.with_gun = True
 
 
     def anim_all(self, fall=False, speed_multipler=1):
@@ -449,7 +475,7 @@ class Character( StandardSprite ):
         
         # Score Monedas
         if self.collision_score == True:
-            ( random.choice(sounds_score) ).play()
+            get_sound('score', volume=self.volume).play()
             
     def move(self):
         '''
@@ -484,7 +510,7 @@ class Character( StandardSprite ):
                  particle_objects=self.__particle_objects, solid_objects=self.__solid_objects,
                  damage_objects=self.__damage_objects, jumping_objects=self.__jumping_objects, 
                  anim_sprites=self.__anim_sprites, layer_all_sprites=self.__layer_all_sprites,
-                 particle_size=[self.rect.height//4, self.rect.height//4], damage=20
+                 particle_size=[self.rect.height//4, self.rect.height//4]#, damage=50
                 )
                 #bullet.angle = self.sprite_layer.layer[1].angle
                 #bullet.rotate()
@@ -505,7 +531,7 @@ class Character( StandardSprite ):
                 
 
                 self.can_shot = False
-                random.choice(sounds_shot).play()
+                get_sound( 'shot', volume=self.volume ).play()
 
             # Limitar generacion de balasos
             if self.can_shot == False:
@@ -544,8 +570,10 @@ class Character( StandardSprite ):
         # Cambiar dirección del arma
         if self.left:  
             self.sprite_layer.layer[1].angle = -180
+            self.sprite_layer.layer[1].flip_y = True
         if self.right: 
             self.sprite_layer.layer[1].angle = 0
+            self.sprite_layer.layer[1].flip_y = False
             
         # Arma Gun | Rotar Sprite gun
         self.sprite_layer.layer[1].rotate()
@@ -602,7 +630,7 @@ class Character( StandardSprite ):
                  damage_objects=self.__damage_objects, jumping_objects=self.__jumping_objects,
                  anim_sprites=self.__anim_sprites, layer_all_sprites=self.__layer_all_sprites
                 )
-                ( random.choice(sounds_dead) ).play()
+                get_sound('dead', volume=self.volume).play()
         else:
             self.anim_dead_count = 0
         

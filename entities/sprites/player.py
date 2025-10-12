@@ -16,7 +16,7 @@ class Player(Character):
      sprite_difference_xy=[0,-(pixel_space_to_scale//2)], player_objects:object=None, 
      solid_objects=None, damage_objects=None, level_objects=None, score_objects=None, jumping_objects=None,
      moving_objects=None, ladder_objects=None, particle_objects=None, anim_sprites=None,
-     update_objects=None, layer_all_sprites=None
+     update_objects=None, gun_objects=None, layer_all_sprites=None
     ):
         
         super().__init__( 
@@ -25,7 +25,8 @@ class Player(Character):
          sprite_difference_xy=sprite_difference_xy, solid_objects=solid_objects, damage_objects=damage_objects, 
          level_objects=level_objects, score_objects=score_objects, jumping_objects=jumping_objects,
          moving_objects=moving_objects, ladder_objects=ladder_objects, particle_objects=particle_objects,
-         anim_sprites=anim_sprites, update_objects=update_objects, layer_all_sprites=layer_all_sprites
+         anim_sprites=anim_sprites, update_objects=update_objects,
+         gun_objects=gun_objects, layer_all_sprites=layer_all_sprites,
         )
         
         self.change_level = True

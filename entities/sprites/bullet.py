@@ -8,7 +8,7 @@ class Bullet( StandardSprite ):
     def __init__( 
         self, size, position, image, speed_xy, time,
         particle_objects, solid_objects, damage_objects, jumping_objects, anim_sprites, layer_all_sprites, 
-        particle_size=[0,0], damage=20
+        particle_size=[0,0], damage=25
     ):
         # Grupos
         self.__particle_objects = particle_objects

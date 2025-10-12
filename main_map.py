@@ -343,7 +343,7 @@ class object_grid( pygame.sprite.Sprite ):
         # Establecer imagen basado en el tipo de objeto
         if not (self.type_object == '.' or self.type_object == '#'):
             # Parametros necesarios
-            image = 'stone'
+            image = 'placeholder'
             color = None
             multipler_size_xy = [1,1]
             position_reduction_xy = [0,0]
@@ -381,6 +381,9 @@ class object_grid( pygame.sprite.Sprite ):
                 
             elif self.type_object == '~':
                 image = 'rain'
+
+            elif self.type_object == 'g':
+                image = 'gun'
 
             elif self.type_object == '0' or self.type_object == 'F':
                 image = 'level_change' 
