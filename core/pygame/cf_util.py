@@ -787,6 +787,25 @@ def surface_gradient( size=[32,32], alpha_range=[255,0], color=[0,0,0], dimensio
 
 
 
+def get_mask_for_surface( surf, mask ):
+    '''
+    Obtener mascara para surface
+    '''
+    # Objetos y datos necesarios
+    mask_from_surf = pygame.mask.from_surface(surf)
+    size = surf.get_size()
+    width, height = size
+
+    # Aplicar mascara
+    adapted_mask = mask_from_surf.to_surface( unsetcolor=(0, 0, 0, 0) )
+    adapted_mask.set_colorkey( (0, 0, 0) )
+    mask.blit( adapted_mask, (0,0), special_flags=pygame.BLEND_RGBA_MULT )
+
+    return mask
+
+
+
+
 def create_mask_gradient(sprite, alpha_range=[255, 0], color=[0,0,0], dimension=0, positive=True ):
     """
     Crear un gradiante, que sera una maskara chida, con degradado excitante. Es una superficie individual
@@ -799,22 +818,8 @@ def create_mask_gradient(sprite, alpha_range=[255, 0], color=[0,0,0], dimension=
     
     return pygame.Surface()
     """
-    # Obtener datos necesarios, inciar objetos necesarios
-    mask = pygame.mask.from_surface(sprite)  
-    width, height = sprite.get_size()
-    size = [width, height]
-    
-    # Degradado
-    surf_grad = surface_gradient( size, alpha_range, color, dimension, positive )
-
-
-    # Para que siga la forma del sprite.
-    # Aplicar la máscara para que la sombra siga la forma del sprite
-    shadow_mask = mask.to_surface(setcolor=(color[0], color[1], color[2], 255), unsetcolor=(0, 0, 0, 0))  
-    shadow_mask.set_colorkey((0, 0, 0))  
-    surf_grad.blit(shadow_mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)  
-
-
+    shadow_grad = surface_gradient( sprite.get_size(), alpha_range, color, dimension, positive )
+    surf_grad = get_mask_for_surface( surf=sprite, mask=shadow_grad )
 
     return surf_grad  # Retorna solo la sombra, sin tocar el sprite
     
@@ -883,3 +888,12 @@ def speed2d_with_angle( speed, angle ):
     # Coseno de cero es uno y seno de cero es cero. Por eso en el angulo cero; xy=[4,0]
     
     return speed_xy
+
+
+
+
+def invert_rgb_color( rgb ):
+    '''
+    Invertir color rgb.
+    '''
+    return [255 -rgb[0], 255 -rgb[1], 255 -rgb[2] ]

@@ -1,13 +1,14 @@
 import pygame
 from core.pygame.pygame_util import rotate as good_rotate
+from .base_sprite import BaseSprite
 
 # Objetos para uso general
-class StandardSprite(pygame.sprite.Sprite):
+class StandardSprite(BaseSprite):
     '''
     Sprite estandar para el juego CuadradoFeliz
     
     Objeto heredado de pygame.sprite.Sprite
-    Con respecto a pygame.sprite.Srprite
+    Con respecto a pygame.sprite.Sprite
         - Este objeto tiene varios atributos adicioneles.     
         - Este objeto tiene varias funciones adicionales. 
 
@@ -143,6 +144,7 @@ class StandardSprite(pygame.sprite.Sprite):
         '''
         Sincronisar todo lo que se pueda
         '''
+        self.set_surf()
         self.sync_size()
         self.set_transparency()
         self.rotate()

@@ -12,10 +12,14 @@ from controllers.cf_info import (
 from core.pygame.cf_util import get_image
 from .cf_sounds import *
 
+from .general_use.standard_sprite import StandardSprite
+from .general_use.sprite_pasted_rect import SpritePastedRect
+from .general_use.base_sprite import BaseSprite
 
 
 
-class PointedStar(pygame.sprite.Sprite):
+
+class PointedStar( BaseSprite ):
     def __init__(
         self, size=pixel_space_to_scale, position=[0,0], transparency_collide=255, transparency_sprite=255,
         moving=False, instakill=False, damage_objects=None, anim_sprites=None, layer_all_sprites=None
@@ -55,15 +59,12 @@ class PointedStar(pygame.sprite.Sprite):
         else:
             color = [0, 0, 127]
 
-        self.sprite = Anim_sprite(
-            sprite_sheet=get_image(
-                'star-pointed', size=[self.__size*7, self.__size], return_method='image', color=color,
+        self.sprite = SpritePastedRect(
+            surf=get_image(
+                'star-pointed', size=[self.__size, self.__size], return_method='image', color=color,
                 transparency=self.transparency_sprite
-            )
-        )
-        self.sprite.rect.topleft = (
-            self.rect.x-(self.__size//4),
-            self.rect.y-(self.__size//4)
+            ),
+            rect_pasted = self.rect
         )
         layer_all_sprites.add(self.sprite, layer=1)
         
@@ -99,7 +100,8 @@ class PointedStar(pygame.sprite.Sprite):
     def square_damage(self, size=4, position=(0,0), color=generic_colors('green')):
         # Cuadrado de daño
         # Daño
-        square = pygame.sprite.Sprite()
+        square = BaseSprite()
+        square.identifer = "PointedStar"
         square.surf = pygame.Surface( (size, size), pygame.SRCALPHA )
         square.surf.fill( color )
         square.rect = square.surf.get_rect( topleft=position)
@@ -113,7 +115,9 @@ class PointedStar(pygame.sprite.Sprite):
     
     def anim(self):
         # Animación del sprite
-        self.sprite.anim()
+        self.sprite.angle += 22.5
+        self.sprite.rotate()
+        self.sprite.paste_a_rectangle()
         
         # Movimiento estandar del collider
         if self.__move == 0:

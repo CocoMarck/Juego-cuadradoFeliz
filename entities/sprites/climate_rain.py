@@ -8,6 +8,7 @@ from controllers.cf_info import (
     pixel_space_to_scale
 )
 from .general_use.multi_layer_sprite import MultiLayerSprite
+from .destructible_sprite import DestructibleSprite
 
 
 
@@ -20,12 +21,13 @@ class ClimateRain( MultiLayerSprite ):
      layer_all_sprites=None
     ):    
         # Variables necesarias
-        self.damage = 2
         color_sprite = [0,0,127]
         surf_color = generic_colors('sky_blue')
+        self.acid_rain = damage
         if damage == True: 
             surf_color = generic_colors('red')
             color_sprite = [0,255,0]
+        self.size = [size, size]
             
         self.__image = get_image( 'rain', size=[size,size], color=color_sprite )
         self.size_difference = size*0.375
@@ -38,8 +40,11 @@ class ClimateRain( MultiLayerSprite ):
          layer_transparency=transparency_sprite, 
          layer_difference_xy=[self.size_difference,-self.size_difference]
         )
+
+        self.damage = 2
         
         # grupos
+        self.__climate_objects = climate_objects
         self.__layer_all_sprites=layer_all_sprites
         self.__player_objects = player_objects
         self.__solid_objects = solid_objects
@@ -64,7 +69,6 @@ class ClimateRain( MultiLayerSprite ):
         self.fps = data_CF.fps//4
         self.fps_count = 0
         self.sprite_collide = None
-        self.size = size
         self.time_respawn = 0 # Esta variable se usa en el loop del juego
         
         # Agregar a grupo de sprites
@@ -73,12 +77,26 @@ class ClimateRain( MultiLayerSprite ):
         if damage == True:
             damage_objects.add(self)
         layer_all_sprites.add(self.sprite, layer=3)
+
+        #
+        self.identifer = "rain"
+
+
+    def respawn(self):
+        current_position = self.rect.topleft
+        better_position = [ current_position[0], current_position[1]-self.size[1] ]
+        particle = DestructibleSprite(
+         size=self.size, sprite=self.__image[1],
+         time=self.fps, position=better_position, collider_color=(0,255,0),
+         collider_transparency=self.transparency,
+         sprite_transparency=self.sprite_layer.transparency_layer,
+         update_objects=self.__climate_objects, layer_all_sprites=self.__layer_all_sprites
+        )
+        self.rect.topleft = self.position
         
-    def update(self):            
+    def update(self):
         # Mover al jugador si el collider esta en false
-        self.collide = False
         if (
-            self.collide == False and 
             self.move == True and
             self.not_move == False
         ):
@@ -103,30 +121,13 @@ class ClimateRain( MultiLayerSprite ):
         # Eventos | Si toca objetos solidos
         for solid_object in self.__solid_objects:
             if self.rect.colliderect(solid_object.rect):
-                self.collide = True
-                self.time_respawn = 1
+                self.respawn()
 
-        # Eventos | Si colisiona con el player        
-        for player in self.__player_objects:
-            if self.rect.colliderect(player.rect):
-                self.collide = True
-                if self.damage == False: self.time_respawn = 1
+        if self.acid_rain == False:
+            # Eventos | Si colisiona con el player
+            for player in self.__player_objects:
+                if self.rect.colliderect(player.rect):
+                    self.respawn()
         
         # Sección para mover sprite correctamente
         self.sprite.update()
-        
-        # Sección para dibujar un sprite al colisionar con piso
-        if self.collide == True:
-            if self.sprite_collide == None:
-                self.sprite_collide = pygame.sprite.Sprite()
-                self.sprite_collide.surf = self.__image[1]
-                self.sprite_collide.rect = self.sprite_collide.surf.get_rect()
-                self.sprite_collide.rect.topleft = self.sprite.rect.topleft
-                self.__layer_all_sprites.add(self.sprite_collide, layer=3)
-        else:
-            if not self.sprite_collide == None:
-                self.fps_count += 1
-                if self.fps_count == self.fps:
-                    self.sprite_collide.kill()
-                    self.sprite_collide = None
-                    self.fps_count = 0

@@ -18,7 +18,7 @@ from .particle import Particle
 
 class AnimDeadCharacter(pygame.sprite.Sprite):
     def __init__(
-        self, position=[0,0], fps=data_CF.fps, 
+        self, position=[0,0], fps=data_CF.fps*3,
         transparency_collide=255, transparency_sprite=255, color_sprite=(153,252,152),
         particle_objects:object=None, solid_objects=None, damage_objects=None, jumping_objects=None, 
         anim_sprites:object=None, layer_all_sprites:object=None
@@ -34,7 +34,7 @@ class AnimDeadCharacter(pygame.sprite.Sprite):
         self.surf = pygame.Surface( (self.size, self.size), pygame.SRCALPHA )
         self.rect = self.surf.get_rect( topleft=position )
     
-        self.fps = data_CF.fps*3
+        self.fps = fps
         self.__count = 0
         self.anim_fin = False
         anim_sprites.add( self )

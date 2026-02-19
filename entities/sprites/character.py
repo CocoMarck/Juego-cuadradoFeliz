@@ -49,7 +49,7 @@ class Character( StandardSprite ):
      }, position=[0,0], limit_xy=[0,0], color_sprite=[153,252,152], sprite_difference_xy=[0,0],
      solid_objects=None, damage_objects=None, level_objects=None, score_objects=None, jumping_objects=None,
      moving_objects=None, ladder_objects=None, particle_objects=None, anim_sprites=None,
-     update_objects=None, gun_objects=None, layer_all_sprites=None
+     update_objects=None, gun_objects=None, player_objects=None, layer_all_sprites=None
     ):
         # Grupos
         self.__damage_objects=damage_objects
@@ -65,6 +65,7 @@ class Character( StandardSprite ):
         
         self.__update_objects = update_objects
         self.__layer_all_sprites = layer_all_sprites
+        self.__player_objects = player_objects
         
         # Parametros para Sprite Standar
         surf = pygame.Surface( [size*0.5,size] )
@@ -105,9 +106,10 @@ class Character( StandardSprite ):
         self.time_to_shot = data_CF.fps*0.25
         
         # Capas | Sprites | Apariencia de player
+        self.gun_size = [size, size]
         self.sprite_layer = SpriteLayerPastedRect(
             rect_pasted=self.rect, transparency=transparency_sprite, difference_xy=[0,0], 
-            layer=[ self.dict_sprite['side-x'][0], get_image( 'gun', size=[size, size] ) ]
+            layer=[ self.dict_sprite['side-x'][0], get_image( 'gun', size=self.gun_size ) ]
         )
         self.sprite_layer.layer[0].center_difference_xy = sprite_difference_xy
         self.sprite_layer.layer[1].center_difference_xy = [0,0]
@@ -188,19 +190,25 @@ class Character( StandardSprite ):
         # Puntos
         self.score = 0
         self.collision_score = False
-        
-        # Agregar a grupos de sprites
-        update_objects.add(self)
-        layer_all_sprites.add(self, layer=3)
-        
-        self.sprite_layer.add_to_sprite_group( update_objects )
-        self.sprite_layer.add_to_layer_group( layer_all_sprites, layer=2 )
 
         # Identificador
         self.identifer = "character"
 
+        # Tamaño de particulas
+        self.particle_size = [self.rect.height//4, self.rect.height//4]
+
         # Limite de particulas de sangre
         self.__limit_of_blood_particles = 10
+        self.time_of_death = data_CF.fps*3
+        self.time_for_particles = data_CF.fps
+
+        # Agregar a grupos de sprites
+        update_objects.add(self)
+        player_objects.add(self)
+
+        layer_all_sprites.add(self, layer=3)
+        self.sprite_layer.add_to_sprite_group( update_objects )
+        self.sprite_layer.add_to_layer_group( layer_all_sprites, layer=2 )
     
     def get_speed(self, multipler=1):
         '''
@@ -239,18 +247,18 @@ class Character( StandardSprite ):
 
         for obj in self.__damage_objects:
             # Determinar si se colisiono con un objeto dañino y obtener el numero de daño.
-            if self.rect.colliderect(obj.rect):
-                have_damage = True
-                if hasattr(obj, "identifer"):
-                    if obj.identifer == self.identifer:
-                        have_damage = False
-                if hasattr(obj, "dead"):
-                    if obj.dead:
-                        have_damage = False
+            if (
+             self.rect.colliderect(obj.rect) and
+             (self.identifer != obj.identifer) and
+             (obj.damage_activated == True)
+            ):
+                self.damage_effect = True
+                damage_number = obj.damage
 
-                if have_damage:
-                    self.damage_effect = True
-                    damage_number = obj.damage
+                if obj.identifer == "bullet":
+                    obj.kill()
+                if obj.identifer == "rain":
+                    obj.respawn()
 
         
         if self.damage_effect == True and self.dead == False:
@@ -288,15 +296,16 @@ class Character( StandardSprite ):
 
             # Particulas de daño
             for x in range( 0, particles ):
-                Particle(
-                 size=[self.rect.height//4, self.rect.height//4],
+                particle = Particle(
+                 size=self.particle_size,
                  position=self.rect.center,
                  transparency_collide=255, transparency_sprite=255,
-                 color_collide=self.color_sprite, time_kill=data_CF.fps, sound=None,
+                 color_collide=self.color_sprite, time_kill=self.time_of_death, sound=None,
                  particle_objects=self.__particle_objects, solid_objects=self.__solid_objects,
                  damage_objects=self.__damage_objects, jumping_objects=self.__jumping_objects,
                  anim_sprites=self.__anim_sprites, layer_all_sprites=self.__layer_all_sprites
                 )
+                particle.identifer = "blood"
 
         if isinstance(damage_number, int):
             # Reducir HP
@@ -461,10 +470,10 @@ class Character( StandardSprite ):
         ):
             get_sound('steps', volume=self.volume).play()
             Particle( 
-                size=[self.rect.height//4, self.rect.height//4], 
+                size=self.particle_size,
                 position=[self.rect.x, self.rect.y-1+self.rect.height-pixel_space_to_scale//4], 
                 transparency_collide=255, transparency_sprite=255, 
-                color_collide=generic_colors('grey'), time_kill=data_CF.fps, sound=None,
+                color_collide=generic_colors('grey'), time_kill=self.time_for_particles, sound=None,
                 particle_objects=self.__particle_objects, solid_objects=self.__solid_objects,
                 damage_objects=self.__damage_objects, jumping_objects=self.__jumping_objects,
                 anim_sprites=self.__anim_sprites, layer_all_sprites=self.__layer_all_sprites
@@ -591,22 +600,60 @@ class Character( StandardSprite ):
         # Moverse
         if self.dead == False:
             self.move()
-        
+
         # HP | Determinar si el jugador esta vivo o muerto
-        if self.hp <= 0:
-            self.dead = True
-            self.with_gun = False
+        self.dead = self.hp <= 0
+        self.damage_activated = not self.dead
+        self.sprite_layer.layer[0].not_see = self.dead
+        self.sprite_layer.layer[1].not_see = self.dead
+
+        # Animacion de kill
+        if self.dead:
+            # Movimiento
             self.not_move = True
             self.jump_count = self.jump_max_height
             self.gravity_current = 0
-            self.sprite_layer.layer[0].not_see=True
-            self.sprite_layer.layer[1].not_see=True
+
+            # Animación de muerte
+            # Si el contador de animaaciones de kill esta en cero.
+            if self.anim_dead_count <= 0:
+                self.anim_dead_count += 1
+                self.anim_dead = AnimDeadCharacter(
+                 position=[ self.rect.x -self.rect.width//2, self.rect.y ],
+                 fps=self.time_of_death,
+                 transparency_collide=self.transparency,
+                 transparency_sprite=self.sprite_layer.transparency_layer, color_sprite=self.color_sprite,
+                 particle_objects=self.__particle_objects, solid_objects=self.__solid_objects,
+                 damage_objects=self.__damage_objects, jumping_objects=self.__jumping_objects,
+                 anim_sprites=self.__anim_sprites, layer_all_sprites=self.__layer_all_sprites
+                )
+                if self.with_gun == True:
+                    gun_particle = Particle(
+                     size=self.gun_size, image=get_image('gun', size=self.gun_size),
+                     position=self.rect.center,
+                     transparency_collide=self.transparency,
+                     transparency_sprite=self.sprite_layer.transparency_layer,
+                     time_kill=self.time_of_death, sound=True,
+                     particle_objects=self.__particle_objects, solid_objects=self.__solid_objects,
+                     damage_objects=self.__damage_objects, jumping_objects=self.__jumping_objects,
+                     anim_sprites=self.__anim_sprites, layer_all_sprites=self.__layer_all_sprites
+                    )
+                    gun_particle.identifer = "gun"
+                    gun_particle.sprite_layer.flip_x = self.sprite_layer.layer[1].flip_x
+                    gun_particle.sprite_layer.flip_y = self.sprite_layer.layer[1].flip_y
+                    gun_particle.sprite_layer.angle = self.sprite_layer.layer[1].angle
+                    gun_particle.sprite_layer.rotate()
+
+                    self.with_gun = False
+                get_sound('dead', volume=self.volume).play()
         else:
-            self.sprite_layer.layer[0].not_see=False
-            self.sprite_layer.layer[1].not_see=False
-            self.dead = False
-            if self.hp > self.get_max_hp(multipler=1): self.hp = self.get_max_hp(multipler=1)
-        
+            # Vida
+            if self.hp > self.get_max_hp(multipler=1):
+                self.hp = self.get_max_hp(multipler=1)
+
+            # Animación de muerte
+            self.anim_dead_count = 0
+
         # Dejar de moverse
         if self.not_move == True or self.damage_effect == True:
             self.left = False
@@ -616,24 +663,8 @@ class Character( StandardSprite ):
             self.jump = False
             self.walk = False
             self.action = False
-        
-        # Animacion de kill
-        if self.dead:
-            # Si el contador de animaaciones de kill esta en cero.
-            if self.anim_dead_count <= 0:
-                self.anim_dead_count += 1
-                self.anim_dead = AnimDeadCharacter(
-                 position=[ self.rect.x -self.rect.width//2, self.rect.y ], 
-                 transparency_collide=self.transparency, 
-                 transparency_sprite=self.sprite_layer.transparency_layer, color_sprite=self.color_sprite,
-                 particle_objects=self.__particle_objects, solid_objects=self.__solid_objects, 
-                 damage_objects=self.__damage_objects, jumping_objects=self.__jumping_objects,
-                 anim_sprites=self.__anim_sprites, layer_all_sprites=self.__layer_all_sprites
-                )
-                get_sound('dead', volume=self.volume).play()
-        else:
-            self.anim_dead_count = 0
-        
+
+        # Sprite controlador | Animación de muerte
         if not (self.anim_dead == None):
             if self.anim_dead.anim_fin:
                 self.anim_fin = True

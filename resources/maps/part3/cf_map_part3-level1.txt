@@ -70,6 +70,6 @@ pppppppppppppp...........ppppp.p.p.p.p.p.p.p...........................p
 .j......p.p.p.p.p.p.p.p..............p.p.p.............................p
 +.......pp.p.p.ppp.p.p...............pp.pp.........................ppppp
 pp......ppppppppppppp................p.p.p..............................
-$$part3:part3-level1
+$$part3:part3-level2
 $$acid
 $$cuidado con la lluvia acida

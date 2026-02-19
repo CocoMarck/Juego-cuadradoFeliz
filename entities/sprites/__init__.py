@@ -29,3 +29,4 @@ from .stair                 import Stair
 from .sun                   import Sun
 from .trampoline            import Trampoline
 from .gun                   import Gun
+from .destructible_sprite   import DestructibleSprite

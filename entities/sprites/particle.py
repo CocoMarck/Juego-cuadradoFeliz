@@ -10,11 +10,13 @@ from controllers.cf_info import (
 )
 from core.pygame.cf_util import get_sound, collide_and_move
 from .cf_sounds import *
+from .general_use.standard_sprite import StandardSprite
+from .general_use.multi_layer_sprite import MultiLayerSprite
 
 air_count_based_on_resolution = 5
 
 
-class Particle(pygame.sprite.Sprite):
+class Particle(MultiLayerSprite):
     def __init__(
         self, size=[pixel_space_to_scale//2, pixel_space_to_scale//2], position=[0,0],
         color_collide=generic_colors('green'), color_sprite=None,
@@ -23,7 +25,8 @@ class Particle(pygame.sprite.Sprite):
         particle_objects:object=None, solid_objects=None, damage_objects=None, jumping_objects=None, 
         anim_sprites:object=None, layer_all_sprites:object=None
     ):
-        super().__init__()
+
+        #self, surf, transparency=255, position=[0,0], volume=float(1.0)
         
         self.__particle_objects = particle_objects
         self.__solid_objects = solid_objects
@@ -34,33 +37,29 @@ class Particle(pygame.sprite.Sprite):
         self.sounds_str = None
         if sound == 'player':
             self.sounds_str = ['steps', 'hits']
-            
-        
-        # Transparencia de collider y imagen
-        self.transparency_collide = transparency_collide
-        self.transparency_sprite = transparency_sprite
         
         # Collider
-        self.surf = pygame.Surface( size, pygame.SRCALPHA )
-        self.surf.fill( color_collide )
-        self.surf.set_alpha( self.transparency_collide )
-        self.rect = self.surf.get_rect( topleft=position )
+        surf = pygame.Surface( size, pygame.SRCALPHA )
+        surf.fill( color_collide )
+        
+        # Imagen
+        self.image = type(image) == pygame.Surface
+
+        # Inicializar
+        super().__init__(
+            surf, transparency=transparency_collide, position=position,
+            layer=[], layer_transparency=transparency_sprite, layer_difference_xy=[0,0]
+        )
+
+
+        # Grupos
         layer_all_sprites.add(self, layer=2)
         anim_sprites.add(self)
         particle_objects.add(self)
-        
-        # Imagen
-        if type(image) == pygame.Surface:
-            rect = image.get_rect()
-            if rect.x != self.rect.x or rect.y != self.rect.y:
-                image = pygame.transform.scale(image, size)
-                
-            self.image = pygame.sprite.Sprite()
-            self.image.surf = image
-            self.image.surf.set_alpha( self.transparency_sprite )
-            self.image.rect = self.image.surf.get_rect( topleft=position )
-            layer_all_sprites.add(self.image, leyer=1)
-        else: self.image = None
+        if self.image:
+            self.sprite_layer.surf_layer.append( image )
+            self.sprite_layer.set_layer()
+            self.sprite_layer.add_to_layer_group( layer_all_sprites, layer=1 )
         
         # Movimiento
         self.moving_xy = [0,0]
@@ -75,7 +74,12 @@ class Particle(pygame.sprite.Sprite):
         self.speed = random.randint( size[0]//4, size[0]//2 )
 
         self.jumping = random.choice( [False, True] )
-        self.jump_power = random.choice( [size[0]*0.125, size[0]*0.25, size[0]*0.4] )
+        self.jump_power = random.choice( [size[0]*0.25, size[0]*0.3, size[0]*0.4] )
+
+        # Colisionar con particulas
+        self.collide_with_particles = True
+        self.collide_particles_only_by_identifer = True
+        self.identifer = "particle"
         
         # Tiempo para eliminar la particula
         self.time_kill = time_kill
@@ -107,25 +111,39 @@ class Particle(pygame.sprite.Sprite):
         # Colision objetos dañinos
         damage_effect=False
         for obj in self.__damage_objects:
-            if self.rect.colliderect(obj.rect):
+            if (
+             self.rect.colliderect(obj.rect) and
+             obj.damage_activated and
+             obj.identifer != "enemy"
+            ):
                 damage_effect=True
-
-            if hasattr(obj, "dead"):
-                if obj.dead:
-                    damage_effect = False
 
         if damage_effect == True:
             self.moving_xy[0] += self.rect.width * random.choice([1,-1])
             self.moving_xy[1] += self.rect.height * random.choice([1,-1])
-        
+
         # Mover y colisionar Solidos
         collide_objects = []
         for obj in self.__solid_objects: collide_objects.append(obj)
-        for obj in self.__particle_objects: 
-            if not obj == self: 
-                collide_objects.append(obj)
+
+        # Particulas, solo las que comparten identifer.
+        if self.collide_with_particles:
+            for obj in self.__particle_objects:
+                if not obj == self:
+                    add = False
+                    if self.collide_particles_only_by_identifer:
+                        if self.identifer == obj.identifer:
+                            add = True
+                    else:
+                        add = True
+
+                    if add:
+                        collide_objects.append(obj)
+
+        # Objetos saltarines
         for obj in self.__jumping_objects: collide_objects.append(obj)
-        collided_side = collide_and_move( 
+
+        collided_side = collide_and_move(
             obj=self, obj_movement=self.moving_xy, solid_objects=collide_objects
         )
         self.air_count += 1
@@ -139,9 +157,7 @@ class Particle(pygame.sprite.Sprite):
         
         
         # Posicionear imagen
-        if not self.image == None:
-            self.image.rect.x = self.rect.x
-            self.image.rect.y = self.rect.y
+        self.sprite_layer.update_layer()
         
         
         # Sonido
@@ -156,5 +172,5 @@ class Particle(pygame.sprite.Sprite):
         if self.time_kill > 0:
             self.time_kill_count += 1
             if self.time_kill_count == self.time_kill:
-                if not self.image == None: self.image.kill()
+                self.sprite_layer.rm_layer()
                 self.kill()

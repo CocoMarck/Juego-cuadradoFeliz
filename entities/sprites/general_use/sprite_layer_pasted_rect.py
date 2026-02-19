@@ -15,15 +15,59 @@ class SpriteLayerPastedRect( ):
     def __init__(
         self, rect_pasted, transparency=255, layer=[], difference_xy=[0,0]
     ):  
-        # Agregar layers
+        # Atributos necesarios
         self.transparency_layer = transparency
+        self.difference_xy = difference_xy
         self.rect_pasted = rect_pasted
+
+        # Atributos de las capas | Agregar capas
+        self.surf_layer = layer
         self.layer = []
-        for surf in layer:
-            sprite = SpritePastedRect( surf=surf, rect_pasted=self.rect_pasted, difference_xy=difference_xy ) 
+        self.set_layer()
+
+        # Rotar
+        self.angle = 0
+        self.flip_x = False
+        self.flip_y = False
+
+
+    def set_layer(self):
+        '''
+        Establecer capas
+        '''
+        self.layer = []
+        for surf in self.surf_layer:
+            sprite = SpritePastedRect(
+             surf=surf, rect_pasted=self.rect_pasted, difference_xy=self.difference_xy
+            )
             sprite.transparency = self.transparency_layer
             sprite.set_transparency()
             self.layer.append( sprite )
+
+    def set_attributes_to_layer(self):
+        '''
+        Establecer atibutos a todas las capas
+        '''
+        for sprite in self.layer:
+            sprite.flip_x = self.flip_x
+            sprite.flip_y = self.flip_y
+            sprite.angle = self.angle
+
+    def set_surf(self):
+        '''
+        Establecer superficie a todas las capas
+        '''
+        self.set_attributes_to_layer()
+        for sprite in self.layer:
+            sprite.set_surf()
+
+    def rotate(self):
+        '''
+        Rotar todas las capas
+        '''
+        self.set_attributes_to_layer()
+        for sprite in self.layer:
+            sprite.rotate()
     
     def add_to_sprite_group(self, group):
         '''

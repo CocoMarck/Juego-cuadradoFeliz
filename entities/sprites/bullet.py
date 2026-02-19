@@ -21,7 +21,6 @@ class Bullet( StandardSprite ):
         # Superficie de collider
         surf = pygame.Surface( size, pygame.SRCALPHA ) 
         surf.fill( [255, 255, 0] )
-        self.damage = damage
     
         # Establecer parametros para SpriteStandar
         super().__init__( 
@@ -31,6 +30,8 @@ class Bullet( StandardSprite ):
         self.moving_xy = speed_xy
         self.time = time
         self.particle_size = particle_size
+        self.identifer = "bullet"
+        self.damage = damage
         
         # Agregar 
         layer_all_sprites.add( self, layer=3 )

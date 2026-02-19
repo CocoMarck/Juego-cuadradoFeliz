@@ -6,7 +6,8 @@ from controllers import language_controller as Lang
 from core.pygame.pygame_util import *
 from core.pygame.cf_util import (
     get_image, player_key, all_music, GradiantColor, surface_bloom, get_coordinate_multipler, 
-    scroll_display_collision, create_mask_gradient, surf_limit_width
+    scroll_display_collision, create_mask_gradient, surf_limit_width, invert_rgb_color,
+    get_mask_for_surface
 )
 from controllers.cf_info import *
 from controllers.cf_controller import *
@@ -209,7 +210,7 @@ class Start_Map( ):
                      ladder_objects=ladder_objects, particle_objects=particle_objects,
                      anim_sprites=anim_sprites, update_objects=update_objects,
                      gun_objects=gun_objects, respawn_objects=respawn_objects,
-                     layer_all_sprites=layer_all_sprites
+                     player_objects=player_objects, layer_all_sprites=layer_all_sprites
                     )
 
 
@@ -400,6 +401,7 @@ def get_climate( Map ):
         return 'default'
 
 #time_dayloop=data_CF.fps*0 # Tienpo de duración del dia y de la noche.
+#time_dayloop=data_CF.fps*0.5 # Tienpo de duración del dia y de la noche.
 time_dayloop=data_CF.fps*10 # Tienpo de duración del dia y de la noche.
 def Loop_allday( Map ):
     climate = get_climate( Map )
@@ -448,15 +450,21 @@ class Play_background_music():
         if self.list_music == []:
             for key in all_music.keys():
                 if not key.startswith('climate_'):
-                    self.list_music.append( all_music[key])
+                    self.list_music.append( all_music[key] )
 
     def play(self):
+        # Detectar si existe musica de fondo
+        for key in all_music.keys():
+            if self.climate != key:
+                self.climate_sound = False
+
         #print(self.count_played)
         if self.music == True:
             if self.climate_sound == True:
                 self.play_music = random.choice( [True, True, False, False, False] )
             else:
                 self.play_music = True
+
         if self.count_played == 0:
             # Seleccionar una musica aleatoria | Seleccionar modo clima o modo musica
             if self.music == True and self.play_music == True:
@@ -469,17 +477,16 @@ class Play_background_music():
                 #    self.list_music = all_music['music']
                 self.limit = 0
                     
-            else:
+            if self.climate_sound:
                 # Solo reproducir el clima
-                for key in all_music.keys():
-                    if self.climate == key:
-                        self.current_music = all_music[self.climate]
+                self.current_music = all_music[self.climate]
                 self.limit = 4
+
         elif self.count_played == self.limit:
             # Llego al limite, reproducir otra musica aletoria.
             self.count_played = -1
         
-        # Cagar y reproducir cancion
+        # Cargar y reproducir cancion
         if isinstance(self.current_music, str):
             pygame.mixer.music.load( self.current_music )
             pygame.mixer.music.set_volume( data_CF.volume )
@@ -488,6 +495,7 @@ class Play_background_music():
             # Contador de veces reporducidas (Solo contara cuando el limite de contado sea mayor que cero)
             if self.limit > 0:
                 self.count_played += 1
+
 play_background_music = Play_background_music( 
     music=data_CF.music, climate=f'climate_{get_climate( current_map )}' 
 )
@@ -606,7 +614,7 @@ scroll_float = start_scroll(
 # Sol solecito
 # Total en tardar el loop del sun: data_CF.fps*240
 HappySun = Sun( 
- size=[pixel_space_to_scale,pixel_space_to_scale], time=time_dayloop, 
+ size=[pixel_space_to_scale,pixel_space_to_scale], time=time_dayloop*2,
  display=[ scale_surface_size[0]+pixel_space_to_scale, scale_surface_size[1] ], divider=24,
  anim_sprites=anim_sprites, lighting_objects=lighting_objects, nocamera_back_sprites=nocamera_back_sprites
 )
@@ -668,8 +676,6 @@ while exec_game:
                 if isinstance(render_map.message_start, str):
                     # Evitar mensaje
                     render_map.message_start = None
-                    player.not_move = False
-                    player.jump = False
                     
                 if credits_count == credits_fps*2:
                     # Cerrar juegito si estamos en el mensaje para saltar los credito
@@ -777,14 +783,9 @@ while exec_game:
         '''
         climate.update()
 
-        if (climate.rect.y > limit_xy[1]) or climate.time_respawn >= 1:
-            # Regrasar la gota de lluvia al spawn
-            climate.rect.x = climate.spawn_xy[0]
-            climate.rect.y = climate.spawn_xy[1]
-            climate.time_respawn = 0
-        elif (climate.collide == True):
-            # Sumar al time_respawn para que respawne el clima
-            climate.time_respawn += 1
+        # Respawn si sale da pantalla.
+        if (climate.rect.y > limit_xy[1]):
+            climate.rect.topleft = climate.position
     
     
     # Función | Player | Limite del mapa
@@ -907,22 +908,55 @@ while exec_game:
         # Si el esprite esta en pantalla, mostrarlo.
         if display_collision == None:
             display.blit(
-                sprite.surf, 
+                sprite.surf,
                 ( sprite.rect.x -scroll_int[0], sprite.rect.y -scroll_int[1] )
             )
-            sprite.volume=float(data_CF.volume)
-            shadow_effect = False
-            if shadow_effect:
-                if sprite.surf.get_alpha() > 0:
+
+            # Sprite visible o no
+            sprite_alpha = sprite.surf.get_alpha()
+            visible = sprite_alpha > 0
+
+            # Estos boleanos deberan de estar en la config. En el DB.
+            contrast_color = True
+            shadow_effect = True
+
+            if contrast_color or shadow_effect:
+                # Color del dia invertido
+                invert_day_color = invert_rgb_color( loop_allday.current_color )
+                invert_min_color = []
+                normal_max_color = []
+                max_color = int( max(loop_allday.current_color)*0.5 )
+                min_color = int( min(invert_day_color) )
+                for x in range(0, 3):
+                    normal_max_color.append( max_color )
+                    invert_min_color.append( min_color )
+
+            if visible:
+                # Color de contraste para sprite
+                if contrast_color:
+                    contrast_mask = pygame.Surface( sprite.surf.get_size(), pygame.SRCALPHA)
+                    contrast_mask.fill( normal_max_color )
+                    contrast_mask.set_alpha( int(sprite_alpha*0.125) )
+                    contrast_mask = get_mask_for_surface( sprite.surf, mask=contrast_mask )
+                    display.blit(
+                    contrast_mask, ( sprite.rect.x -scroll_int[0], sprite.rect.y -scroll_int[1] )
+                    )
+
+                # Sombra
+                if shadow_effect:
                     # [255, 169]
-                    shadow = create_mask_gradient( 
-                        sprite.surf, alpha_range=[127, 0], color=generic_colors('black'),
-                        dimension=0, positive=True
+                    # Invertir color
+                    shadow = create_mask_gradient(
+                    sprite.surf, alpha_range=[ int(sprite_alpha*0.25), 0],
+                    color=invert_min_color, dimension=0, positive=False
                     )
                     display.blit(
-                        shadow, 
+                        shadow,
                         ( sprite.rect.x -scroll_int[0], sprite.rect.y -scroll_int[1] )
                     )
+
+            # Volumen
+            sprite.volume=float(data_CF.volume)
         else:
             sprite.volume=float(0)
     
@@ -968,7 +1002,7 @@ while exec_game:
     # Fondo negro | Ocultar todo
     if credits_count >= credits_fps:
         pygame.draw.rect(
-            display, generic_colors('black'), 
+            display, generic_colors('black'),
             (
                 0, 0, scale_surface_size[0], scale_surface_size[1]
             )
@@ -1058,7 +1092,7 @@ while exec_game:
         
         rect_text = text_continue.get_rect()
         pygame.draw.rect(
-            display, generic_colors('black'), 
+            display, generic_colors('black'),
             (
                 position[0], position[1],
                 rect_text.width, rect_text.height
@@ -1071,6 +1105,9 @@ while exec_game:
                 position[1]
             )
         )
+    else:
+        # Poder moverse
+        player.not_move = False
            
     
     

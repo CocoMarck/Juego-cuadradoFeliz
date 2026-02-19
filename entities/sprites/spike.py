@@ -20,23 +20,26 @@ class Spike( MultiLayerSprite ):
         update_objects=None, layer_all_sprites:object=None
     ):  
         # Establecer color y daño
-        self.__color = (0, 0, 71)
+        color = (0, 0, 71)
+        damage = 20
         if instakill == True:
-            self.__color = (71, 0, 0)
-            self.damage = 0
-        else:
-            self.damage = 20
+            color = (71, 0, 0)
+            damage = 0
         
         # Inicializar SpriteMultiLayer
         super().__init__( 
             surf=pygame.Surface( (size/4, size/2), pygame.SRCALPHA ), transparency=transparency_collide,
             position=position, layer=[ 
                 get_image(
-                    'spike', colored_method='normal',  color=self.__color, size=[size,size]
+                    'spike', colored_method='normal',  color=color, size=[size,size]
                 )
             ],
             layer_transparency=transparency_sprite, layer_difference_xy=[0,size*0.25]
         )
+
+        self.__color = color
+        self.damage = damage
+
         
         # Añadir a los grupos de sprites
         # Daño

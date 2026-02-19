@@ -26,7 +26,7 @@ class Player(Character):
          level_objects=level_objects, score_objects=score_objects, jumping_objects=jumping_objects,
          moving_objects=moving_objects, ladder_objects=ladder_objects, particle_objects=particle_objects,
          anim_sprites=anim_sprites, update_objects=update_objects,
-         gun_objects=gun_objects, layer_all_sprites=layer_all_sprites,
+         gun_objects=gun_objects, player_objects=player_objects, layer_all_sprites=layer_all_sprites,
         )
         
         self.change_level = True
@@ -42,9 +42,6 @@ class Player(Character):
         self.pressed_down       = player_key['down']
         self.pressed_walk       = player_key['walk']
         self.pressed_action     = player_key['action']
-        
-        # Grupo de sprites
-        player_objects.add(self)
     
     
     def move(self):

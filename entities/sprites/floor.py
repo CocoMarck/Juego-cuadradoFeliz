@@ -5,6 +5,7 @@ import pygame
 from pygame.locals import *
 
 # CF
+from controllers.cf_controller import dict_climate
 from controllers.cf_info import (
     data_CF, scale_surface_size, pixel_space_to_scale
 )
@@ -25,6 +26,7 @@ class Floor( MultiLayerSprite ):
     ):
         
         # Establecer color
+        '''
         random_more_color = random.choice( [8, 16, 32] )
 
         if climate == 'alien':
@@ -43,7 +45,16 @@ class Floor( MultiLayerSprite ):
                 0
             ]#'Verde amarillento'
         else:
-            color = generic_colors('grey')
+        '''
+        if climate in dict_climate.keys():
+            invert_color = invert_rgb_color( dict_climate[climate] )
+            multipler = random.choice( [0, 0.05, 0.2, 0.4] )
+            color = []
+            for x in invert_color:
+                color.append( int(x*multipler) )
+        else:
+            color = None
+        #color = None
         
         # Iniziar uso de SpriteMultiLayer
         super().__init__( 
