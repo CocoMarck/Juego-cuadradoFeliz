@@ -12,4 +12,7 @@ class CuadradoFelizConfig:
         show_collide : bool
         show_sprite : bool
 
+        contrast: bool
+        shadows: bool
+
         current_level : str

@@ -489,6 +489,9 @@ def read_CF( CF ) -> bool:
     CF.climate_sound = get_climate_sound()
     CF.show_clouds = get_show_clouds()
 
+    CF.contrast = True
+    CF.shadows = True
+
     CF.show_collide = get_show_collide()
     CF.show_sprite = get_show_sprite()
     

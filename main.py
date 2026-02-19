@@ -623,6 +623,9 @@ HappySun = Sun(
 light_dict = {}
 
 def create_light():
+    '''
+    Función para crear iluminación en objetos luminosos
+    '''
     for key in light_dict.keys():
         light_dict[key].kill()
     light_dict.clear()
@@ -917,10 +920,7 @@ while exec_game:
             visible = sprite_alpha > 0
 
             # Estos boleanos deberan de estar en la config. En el DB.
-            contrast_color = True
-            shadow_effect = True
-
-            if contrast_color or shadow_effect:
+            if data_CF.contrast or data_CF.shadows:
                 # Color del dia invertido
                 invert_day_color = invert_rgb_color( loop_allday.current_color )
                 invert_min_color = []
@@ -933,7 +933,7 @@ while exec_game:
 
             if visible:
                 # Color de contraste para sprite
-                if contrast_color:
+                if data_CF.contrast:
                     contrast_mask = pygame.Surface( sprite.surf.get_size(), pygame.SRCALPHA)
                     contrast_mask.fill( normal_max_color )
                     contrast_mask.set_alpha( int(sprite_alpha*0.125) )
@@ -943,7 +943,7 @@ while exec_game:
                     )
 
                 # Sombra
-                if shadow_effect:
+                if data_CF.shadows:
                     # [255, 169]
                     # Invertir color
                     shadow = create_mask_gradient(
