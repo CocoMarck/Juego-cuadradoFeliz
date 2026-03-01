@@ -349,9 +349,9 @@ class Character( StandardSprite ):
         # Colision | Trampoline
         for obj in self.__jumping_objects:
             if self.rect.colliderect(obj.rect):
-                #if self.moving_xy[1] > 0:
-                #    self.rect.bottom = obj.rect.top - obj.rect.height
-                #    self.gravity_current = 0
+                pos_y = obj.rect.y - self.rect.y
+                if pos_y > 0:
+                    self.moving_xy[1] -= pos_y # Forzar ponerse encima del trampolin.
                 self.air_count=0
                 self.jumping=True
                 self.set_and_jump(multipler=2)

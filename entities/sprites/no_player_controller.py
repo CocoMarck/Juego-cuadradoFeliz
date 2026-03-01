@@ -152,7 +152,9 @@ class NoPlayerController(Character):
                 # Nomas detectar caida.
                 if self.air_count > self.time_to_jump:
                     # Nomas detectar caida, forzar correr y salto.
-                    self.set_and_jump(1)
+                    if self.jumping == False:
+                        # Saltar solo si aun no se a saltado.
+                        self.set_and_jump(1)
 
                     #self.right = False
                     #self.left = True
