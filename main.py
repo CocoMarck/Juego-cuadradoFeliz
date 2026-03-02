@@ -23,7 +23,7 @@ import pygame, sys, os, random
 from pygame.locals import *
 
 # Resolución de pantalla de juego
-window = pygame.display.set_mode( data_CF.disp )
+window = pygame.display.set_mode( data_CF.disp, pygame.RESIZABLE )
 display = pygame.Surface( scale_surface_size )
 
 # Fotogramas del juego
@@ -439,48 +439,53 @@ class Play_background_music():
         self.music = music
         self.climate_sound = climate_sound
         self.play_music = False
-        self.list_music = []
-        self.update_list_music()
         self.count_played = 0
         self.current_music = None
         self.limit = 0
 
 
-    def update_list_music(self):
-        if self.list_music == []:
-            for key in all_music.keys():
-                if not key.startswith('climate_'):
-                    self.list_music.append( all_music[key] )
+    def get_list_music(self):
+        list_music = []
+        for key in all_music.keys():
+            if (
+                (not key.startswith('climate_')) and
+                (self.current_music != key)
+            ):
+                list_music.append( all_music[key] )
+        return list_music
+
+    def the_climate_has_sound(self):
+        for key in all_music.keys():
+            if self.climate == key:
+                return True
+        return False
 
     def play(self):
         # Detectar si existe musica de fondo
-        for key in all_music.keys():
-            if self.climate != key:
-                self.climate_sound = False
+        good_climate_sound = self.the_climate_has_sound()
+        if good_climate_sound == False:
+            self.climate = "climate_default"
+            good_climate_sound = self.the_climate_has_sound()
 
         #print(self.count_played)
         if self.music == True:
-            if self.climate_sound == True:
+            if self.climate_sound:
                 self.play_music = random.choice( [True, True, False, False, False] )
             else:
                 self.play_music = True
 
         if self.count_played == 0:
             # Seleccionar una musica aleatoria | Seleccionar modo clima o modo musica
-            if self.music == True and self.play_music == True:
+            if self.music and self.play_music:
                 # Reproducir musica y clima
-                self.update_list_music()
-                if isinstance(self.list_music, list):
-                    self.current_music = random.choice( self.list_music )
-                    self.list_music.remove(self.current_music)
-                #else:
-                #    self.list_music = all_music['music']
+                self.current_music = random.choice( self.get_list_music() )
                 self.limit = 0
                     
-            if self.climate_sound:
-                # Solo reproducir el clima
-                self.current_music = all_music[self.climate]
-                self.limit = 4
+            else:
+                if self.climate_sound and good_climate_sound:
+                    # Solo reproducir el clima
+                    self.current_music = all_music[self.climate]
+                    self.limit = 4
 
         elif self.count_played == self.limit:
             # Llego al limite, reproducir otra musica aletoria.
@@ -1184,9 +1189,11 @@ while exec_game:
                     message_part, position
                 )
     
+    # Escalado de ventana dinamico
+    current_screen_size = pygame.display.get_surface().get_size()
 
     # Sección adicionar todos los sprites a una superficie y agregarlo a la pantalla
-    surf = pygame.transform.scale(display, [data_CF.disp[0]*1, data_CF.disp[1]*1] )
+    surf = pygame.transform.scale(display, current_screen_size )
     window.blit(surf, (0,0) )
     
     # Fin

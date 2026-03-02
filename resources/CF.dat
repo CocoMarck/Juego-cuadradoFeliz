@@ -1,12 +1,12 @@
-disp=1440x810
-volume=0.1
+disp=960x540
+volume=0.2
 fps=30
 
 music=True
-climate_sound=False
+climate_sound=True
 
 show_clouds=True
 show_collide=False
 show_sprite=True
 
-current_level=/home/jean_abraham/Proyectos/Programacion/python/gitclones/CuadradoFelizUno/main/resources/maps/part3/cf_map_part3-level2.txt
+current_level=/home/jean_abraham/Proyectos/Programacion/python/gitclones/CuadradoFelizUno/main/resources/maps/part3/cf_map_part3-level1.txt

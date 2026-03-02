@@ -300,10 +300,7 @@ def get_climate_sound():
     '''
     data = get_data()
     climate_sound = data['climate_sound']
-    if climate_sound == "True":
-        return True
-    else:
-        return False
+    return climate_sound == "True"
 
 
 def set_climate_sound(climate_sound=True):
