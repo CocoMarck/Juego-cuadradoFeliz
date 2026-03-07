@@ -432,12 +432,17 @@ def get_background_sounds():
     for key in all_music.keys():
         if not key.startswith("climate"):
             background_sounds.append(
-                BackgroundSound( source=all_music[key], music=True, volume=1.0, repetitions=1 )
+                BackgroundSound(
+                    source=all_music[key], music=True, volume=data_CF.volume, repetitions=1
+                )
             )
-    name_climate_sound = f"climate_{current_map.climate}"
+    if current_map.climate == "" or current_map.climate == None:
+        name_climate_sound = f"climate_default"
+    else:
+        name_climate_sound = f"climate_{current_map.climate}"
     background_sounds.append(
         BackgroundSound(
-            source=all_music[f"climate_{current_map.climate}"],
+            source=all_music[name_climate_sound],
             music=False, volume=data_CF.volume, repetitions=4
         )
     )
@@ -807,6 +812,7 @@ while exec_game:
                     HappySun.restart()
                     
                 # Clima | Sonido de fondo
+                play_background_sounds.set_sounds( get_background_sounds() )
                 
                 # Posicionar camara y establecer limites de camara.
                 limit_xy = render_map.limit_xy #get_limit_xy()

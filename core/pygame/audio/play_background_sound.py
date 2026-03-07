@@ -23,6 +23,16 @@ class PlayBackgroundSounds():
 
         self.music_possibility = music_possibility
 
+    def set_sounds(self, sounds: [BackgroundSound]):
+        # Reemplazar lista de sonidos
+        self._sounds = sounds
+
+        # Resetear estado interno
+        self._selected_sound = None
+        self._count = 0
+        self._musics_played.clear()
+        self._simple_sounds_played.clear()
+
     def get_music_sounds(self):
         musics = []
         for sound in self._sounds:
