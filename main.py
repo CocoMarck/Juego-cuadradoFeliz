@@ -436,10 +436,10 @@ def get_background_sounds():
                     source=all_music[key], music=True, volume=data_CF.volume, repetitions=1
                 )
             )
-    if current_map.climate == "" or current_map.climate == None:
-        name_climate_sound = f"climate_default"
-    else:
+    if current_map.climate in all_music.keys():
         name_climate_sound = f"climate_{current_map.climate}"
+    else:
+        name_climate_sound = f"climate_default"
     background_sounds.append(
         BackgroundSound(
             source=all_music[name_climate_sound],
