@@ -32,9 +32,6 @@ clock = pygame.time.Clock()
 # Titulo del juego
 pygame.display.set_caption(game_title)
 
-# Audio | Musica de fondo
-# Estan en el modulo CF_function
-
 # Fuentes de texto
 size_font_big = int(pixel_space_to_scale*4)
 size_font_normal = pixel_space_to_scale
@@ -427,84 +424,31 @@ background_surf.fill( loop_allday.current_color )
 
 
 # Funcion Musica
-# Crear un evento personalizado para el final de la pista
-end_of_track_event = pygame.USEREVENT + 1
-pygame.mixer.music.set_endevent(end_of_track_event)
+from core.pygame.audio.play_background_sound import PlayBackgroundSounds
+from core.pygame.audio.background_sound import BackgroundSound
 
-
-# Nota: Tienen que ser directorios de archivo, no objetos Sound
-class Play_background_music():
-    def __init__(self, climate_sound=data_CF.climate_sound, music=data_CF.music,  climate='default' ):
-        self.climate = climate
-        self.music = music
-        self.climate_sound = climate_sound
-        self.play_music = False
-        self.count_played = 0
-        self.current_music = None
-        self.limit = 0
-
-
-    def get_list_music(self):
-        list_music = []
-        for key in all_music.keys():
-            if (
-                (not key.startswith('climate_')) and
-                (self.current_music != key)
-            ):
-                list_music.append( all_music[key] )
-        return list_music
-
-    def the_climate_has_sound(self):
-        for key in all_music.keys():
-            if self.climate == key:
-                return True
-        return False
-
-    def play(self):
-        # Detectar si existe musica de fondo
-        good_climate_sound = self.the_climate_has_sound()
-        if good_climate_sound == False:
-            self.climate = "climate_default"
-            good_climate_sound = self.the_climate_has_sound()
-
-        #print(self.count_played)
-        if self.music == True:
-            if self.climate_sound:
-                self.play_music = random.choice( [True, True, False, False, False] )
-            else:
-                self.play_music = True
-
-        if self.count_played == 0:
-            # Seleccionar una musica aleatoria | Seleccionar modo clima o modo musica
-            if self.music and self.play_music:
-                # Reproducir musica y clima
-                self.current_music = random.choice( self.get_list_music() )
-                self.limit = 0
-                    
-            else:
-                if self.climate_sound and good_climate_sound:
-                    # Solo reproducir el clima
-                    self.current_music = all_music[self.climate]
-                    self.limit = 4
-
-        elif self.count_played == self.limit:
-            # Llego al limite, reproducir otra musica aletoria.
-            self.count_played = -1
-        
-        # Cargar y reproducir cancion
-        if isinstance(self.current_music, str):
-            pygame.mixer.music.load( self.current_music )
-            pygame.mixer.music.set_volume( data_CF.volume )
-            pygame.mixer.music.play()
-
-            # Contador de veces reporducidas (Solo contara cuando el limite de contado sea mayor que cero)
-            if self.limit > 0:
-                self.count_played += 1
-
-play_background_music = Play_background_music( 
-    music=data_CF.music, climate=f'climate_{get_climate( current_map )}' 
+def get_background_sounds():
+    background_sounds = []
+    for key in all_music.keys():
+        if not key.startswith("climate"):
+            background_sounds.append(
+                BackgroundSound( source=all_music[key], music=True, volume=1.0, repetitions=1 )
+            )
+    name_climate_sound = f"climate_{current_map.climate}"
+    background_sounds.append(
+        BackgroundSound(
+            source=all_music[f"climate_{current_map.climate}"],
+            music=False, volume=data_CF.volume, repetitions=4
+        )
+    )
+    return background_sounds
+play_background_sounds = PlayBackgroundSounds(
+    sounds=get_background_sounds(),
+    mixer=pygame.mixer.music,
+    play_music_sound=data_CF.music, play_simple_sound=data_CF.climate_sound,
+    music_possibility=0.5
 )
-play_background_music.play()
+
 
 
 # Función nubes de fondo
@@ -675,9 +619,11 @@ enemy.limit_xy = limit_xy
 # Bucle del juego
 exec_game = True
 while exec_game:
+    # Musica
+    play_background_sounds.select_background_sound( mode="random" )
+
+    # Eventos
     for event in pygame.event.get():
-        if event.type == end_of_track_event:
-            play_background_music.play()
         if event.type == pygame.KEYDOWN:
             if event.key == player.pressed_jump:
                 # Si se preciona la tecla para saltar.
@@ -861,10 +807,6 @@ while exec_game:
                     HappySun.restart()
                     
                 # Clima | Sonido de fondo
-                play_background_music.climate=f'climate_{get_climate( current_map )}'
-                if play_background_music.play_music == False:
-                    # Forzar el cambiado de music si no se esta reproduciondo el sonido del clima como musica.
-                    play_background_music.play()
                 
                 # Posicionar camara y establecer limites de camara.
                 limit_xy = render_map.limit_xy #get_limit_xy()
