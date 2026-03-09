@@ -248,14 +248,14 @@ class Character( StandardSprite ):
         for obj in self.__damage_objects:
             # Determinar si se colisiono con un objeto dañino y obtener el numero de daño.
             if (
-             self.rect.colliderect(obj.rect) and
-             (self.identifer != obj.identifer) and
-             (obj.damage_activated == True)
+                self.rect.colliderect(obj.rect) and
+                (self.identifer != obj.identifer) and
+                (obj.damage_activated == True)
             ):
                 self.damage_effect = True
                 damage_number = obj.damage
 
-                if obj.identifer == "bullet":
+                if type(obj) == Bullet:
                     obj.kill()
                 if obj.identifer == "rain":
                     obj.respawn()
@@ -521,6 +521,7 @@ class Character( StandardSprite ):
                  anim_sprites=self.__anim_sprites, layer_all_sprites=self.__layer_all_sprites,
                  particle_size=[self.rect.height//4, self.rect.height//4]#, damage=50
                 )
+                bullet.identifer = self.identifer
                 #bullet.angle = self.sprite_layer.layer[1].angle
                 #bullet.rotate()
                 '''

@@ -185,3 +185,7 @@ class NoPlayerController(Character):
             if self.variation_count >= self.variation_time:
                 self.variation_xy = [self.rect.x,self.rect.y]
                 self.variation_count = 0
+
+        # Armas
+        if self.with_gun:
+            self.action = random.random() < 0.1
