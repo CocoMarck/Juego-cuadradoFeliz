@@ -1,0 +1,2 @@
+# Render Adapter
+`RenderAdapter` Pedira `scene_objects`, y `window_layers`. El objects puede ser un dict, pero creo que jala con un simple `list[ GameObject ]`. Ya el `RenderAdapter` se encarga agregar sprites a layers de window. Y me gustaria poder actualizar y borrar todo lode `RenderUpdate`, para así evitar crash. Porque pienso hacer varias `Scenes`, y pos un `RenderAdapter` jala chido en un solo Scene, pero en varios, se tiene que actualizar.

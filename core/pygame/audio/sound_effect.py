@@ -9,10 +9,10 @@ class SoundEffect( Sound ):
         self.set_volume( self._INIT_VOLUME )
         self.rect = rect
 
-    def get_multiply_init_volume(self, multiplier=1.0, channel="left"):
+    def get_multiply_init_volume(self, multiplier=1.0):
         return self._INIT_VOLUME * multiplier
 
-    def set_multiply_init_volume(self, multiplier=1.0, channel="left"):
-        new_volume = self.get_multiply_init_volume(multiplier, channel)
+    def set_multiply_init_volume(self, multiplier=1.0):
+        new_volume = self.get_multiply_init_volume(multiplier)
         if new_volume != self.get_volume():
             self.set_volume( new_volume )

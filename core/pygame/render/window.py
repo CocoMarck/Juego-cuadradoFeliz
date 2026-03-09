@@ -22,12 +22,14 @@ class Window:
 
         self.clock = pygame.time.Clock()
 
-    def run(self, datetime=True):
+    def run(self, datetime=True, show_fps=False):
         while self.scene.loop:
             dt = 1
             if datetime:
                 dt = self.clock.tick(self.fps) / SECOND_TO_MILLISECONDS
             fps = self.clock.get_fps()
+            if show_fps:
+                print(fps)
 
             self.scene.handle_events(pygame.event.get())
 

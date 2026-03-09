@@ -1,28 +1,17 @@
+# Librerias estándar
+import random
+
+# Librerias externas
+import pygame
+
+# Mopdulos internos
 from core.pygame.render.scene import Scene
 from core.pygame.render.window import Window
 from core.pygame.audio.sound_effect import SoundEffect
-from config.paths import MUSICS
-import pygame
-
-
-
-
-def porcentage_of_coord_on_axis( size, negative_start_counted, positive_start_counted, coord ):
-    '''
-    # Porcentaje de coordenada respecto a valor de eje
-
-    x: Distancia total.
-    y: Coordenada actual.
-
-    if x > y:
-        (x -y) / x
-    if y > x:
-        ( (x -y) / x ) * -1
-    '''
-    multiplier = (size -(coord - positive_start_counted)) / size
-    if coord < 0:
-        multiplier = (-size - (coord +negative_start_counted) ) / -size
-    return multiplier
+from core.pygame.math_helpers import (
+    get_resolution_porcentage_difference, porcentage_of_coord_on_axis
+)
+from config.paths import MUSICS, SPRITES
 
 
 
@@ -78,32 +67,26 @@ class SoundEffectsScene(Scene):
         elif multiplier < 0:
             multiplier = 0
         if self.x_positive:
-            self.sound_effect.rect.x += self.tile_size*4 * dt
+            self.sound_effect.rect.x += self.tile_size*5 * dt
         else:
-            self.sound_effect.rect.x -= self.tile_size*4 * dt
+            self.sound_effect.rect.x -= self.tile_size*5 * dt
         if self.count >= 6:
             self.sound_effect.rect.x = self.render_resolution[0]*0.5
             self.count = 0
-            if self.x_positive:
-                self.x_positive = False
-                #print( 'negativo' )
-            else:
-                self.x_positive = True
-                #print( 'positivo' )
+            self.x_positive = not self.x_positive
         self.count += dt
 
         self.sound_effect.set_multiply_init_volume( multiplier )
-        print(multiplier)
 
 # Init
 scene = SoundEffectsScene(
-    render_resolution=[16*16, 9*16], groups={}, name="game"
+    render_resolution=[16*32, 9*32], groups={}, name="game"
 )
 window = Window(
-    window_size=[960,540], fps=20, scene=scene, title="Efectos de sonido"
+    window_size=[960,540], fps=100, scene=scene, title="Efectos de sonido"
 )
 window.init_pygame()
 scene.init_objects()
 
 if __name__ == "__main__":
-    window.run(datetime=True)
+    window.run(datetime=True, show_fps=False)
