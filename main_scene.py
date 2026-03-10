@@ -117,20 +117,12 @@ m_xy = (
 )
 print(m_xy)
 render_adapter.insert_sprites()
-render_adapter.resize_sprites()
-sticky_sprite.stick(
-    #(
-    #    ( sticky_sprite.game_object.rect.x* (m_xy[0]-1) ),
-    #    ( sticky_sprite.game_object.rect.y* (m_xy[1]-1) )
-    #)
-    multiplier=m_xy
-)
-#sticky_sprite.rect.x += (
-#    window.window_size[0]*porcentage_difference[0] -sticky_sprite.game_object.rect.x
-#)
-#sticky_sprite.rect.y += (
-#    window.window_size[1]*porcentage_difference[1] -sticky_sprite.game_object.rect.y
-#)
+def update_sticky():
+    render_adapter.resize_sprites()
+    sticky_sprite.stick(
+        multiplier=m_xy
+    )
+window.update_layers = update_sticky
 
 
 

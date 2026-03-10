@@ -15,6 +15,7 @@ class Window:
         # Init pygame
         self.window = None
         self.clock = None
+        self.update_layers = None
 
     def init_pygame(self):
         pygame.init()
@@ -42,6 +43,8 @@ class Window:
                 pygame.transform.scale(self.scene.render_surface, self.window_size), (0,0)
             )
 
+            if self.update_layers != None:
+                self.update_layers()
             for sprite in self.layers.sprites():
                 self.window.blit( sprite.surf, sprite.rect )
 
