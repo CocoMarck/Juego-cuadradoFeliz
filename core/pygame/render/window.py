@@ -10,6 +10,7 @@ class Window:
         self.fps = fps
 
         self.scene = scene
+        self.layers = pygame.sprite.LayeredUpdates()
 
         # Init pygame
         self.window = None
@@ -40,7 +41,10 @@ class Window:
             self.window.blit(
                 pygame.transform.scale(self.scene.render_surface, self.window_size), (0,0)
             )
-            pygame.display.update()
 
+            for sprite in self.layers.sprites():
+                self.window.blit( sprite.surf, sprite.rect )
+
+            pygame.display.update()
 
         pygame.quit()

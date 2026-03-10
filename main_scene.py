@@ -12,7 +12,10 @@ from core.pygame.math_helpers import (
     get_resolution_porcentage_difference, porcentage_of_coord_on_axis
 )
 from config.paths import MUSICS, SPRITES
-
+from core.pygame.render.render_adapter import RenderAdapter
+from entities.pygame.game_object import GameObject
+from entities.pygame.sticky_sprite import StickySprite
+from core.pygame.graphics_utils import surface_with_background
 
 
 # SoundEffects Window
@@ -27,18 +30,18 @@ class SoundEffectsScene(Scene):
 
     def init_objects(self):
         '''
-        Usando grops y layers.
+        Usando groups y layers.
         '''
-        sprite = pygame.sprite.Sprite()
-        sprite.surf = pygame.Surface( (self.tile_size, self.tile_size) )
-        sprite.rect = sprite.surf.get_rect(
+        self.sprite = pygame.sprite.Sprite()
+        self.sprite.surf = pygame.Surface( (self.tile_size, self.tile_size) )
+        self.sprite.rect = self.sprite.surf.get_rect(
             topleft=(
                 self.render_resolution[0]*0.5,self.render_resolution[1]*0.5
             )
         )
-        self.layers.add( sprite, layer=0 )
+        self.layers.add( self.sprite, layer=0 )
         self.sound_effect = SoundEffect(
-            MUSICS[4], volume=1, rect=sprite.rect#pygame.Rect(0, 1, 2, 3)
+            MUSICS[5], volume=1, rect=self.sprite.rect#pygame.Rect(0, 1, 2, 3)
         )
         self.sound_effect.play(loops=-1)
         self.x_positive = False
@@ -87,6 +90,49 @@ window = Window(
 )
 window.init_pygame()
 scene.init_objects()
+
+
+grid_size = window.window_size[0]//16
+size_porcentage_difference = get_resolution_porcentage_difference(
+    (128,128), (grid_size, grid_size)
+)
+sticky_sprite = StickySprite(
+    surf=surface_with_background( (128,128), color="purple"), game_object=scene.sprite, center=True, alpha=127
+)
+render_adapter = RenderAdapter(
+    layers=window.layers,
+    size_xy=window.window_size, scaled_size_xy=scene.render_resolution,
+    sprites=[
+        [
+        sticky_sprite, size_porcentage_difference, 0
+        ]
+    ]
+)
+porcentage_difference = get_resolution_porcentage_difference(
+    window.window_size, scene.render_resolution
+)
+m_xy = (
+    window.window_size[0] / scene.render_resolution[0],
+    window.window_size[1] / scene.render_resolution[1]
+)
+print(m_xy)
+render_adapter.insert_sprites()
+render_adapter.resize_sprites()
+sticky_sprite.stick(
+    #(
+    #    ( sticky_sprite.game_object.rect.x* (m_xy[0]-1) ),
+    #    ( sticky_sprite.game_object.rect.y* (m_xy[1]-1) )
+    #)
+    multiplier=m_xy
+)
+#sticky_sprite.rect.x += (
+#    window.window_size[0]*porcentage_difference[0] -sticky_sprite.game_object.rect.x
+#)
+#sticky_sprite.rect.y += (
+#    window.window_size[1]*porcentage_difference[1] -sticky_sprite.game_object.rect.y
+#)
+
+
 
 if __name__ == "__main__":
     window.run(datetime=True, show_fps=False)
