@@ -65,19 +65,19 @@ class SoundEffectsScene(Scene):
             coord=self.sound_effect.rect.y
         )
         multiplier = min( multiplier_x, multiplier_y )
-        if multiplier > 1:
-            multiplier = 1
-        elif multiplier < 0:
-            multiplier = 0
-        if self.x_positive:
-            self.sound_effect.rect.x += self.tile_size*5 * dt
-        else:
-            self.sound_effect.rect.x -= self.tile_size*5 * dt
-        if self.count >= 6:
-            self.sound_effect.rect.x = self.render_resolution[0]*0.5
-            self.count = 0
-            self.x_positive = not self.x_positive
-        self.count += dt
+        #if multiplier > 1:
+        #    multiplier = 1
+        #elif multiplier < 0:
+        #    multiplier = 0
+        #if self.x_positive:
+        #    self.sound_effect.rect.x += self.tile_size*5 * dt
+        #else:
+        #    self.sound_effect.rect.x -= self.tile_size*5 * dt
+        #if self.count >= 6:
+        #    self.sound_effect.rect.x = self.render_resolution[0]*0.5
+        #    self.count = 0
+        #    self.x_positive = not self.x_positive
+        #self.count += dt
 
         self.sound_effect.set_multiply_init_volume( multiplier )
 
@@ -86,13 +86,13 @@ scene = SoundEffectsScene(
     render_resolution=[16*32, 9*32], groups={}, name="game"
 )
 window = Window(
-    window_resolution=[960,540], fps=100, scene=scene, title="Efectos de sonido"
+    window_resolution=[960, 540], fps=100, scene=scene, resize=True, title="Efectos de sonido"
 )
 window.init_pygame()
 scene.init_objects()
 
 
-grid_size = window.window_resolution[0]//8
+grid_size = window.window_resolution[0]//16
 size_porcentage_difference = resolution_scale_ratio(
     (128,128), (grid_size, grid_size)
 )
@@ -112,9 +112,23 @@ coord_porcentage_difference = resolution_scale_ratio(
 print( coord_porcentage_difference )
 render_adapter.update_sprites()
 def update_sticky():
+    dividend_coord = "min"
+    if window.window_resolution[0] > scene.render_resolution[0]:
+        dividend_coord = "max"
+    grid_size = window.window_resolution[0]//8
+    dividend_size = "min"
+    if sticky_sprite.get_spawn_size()[0] < grid_size:
+        dividend_size = "max"
+    render_adapter.update_sprite_size_multiplier_xy(
+        0, resolution_scale_ratio(
+            sticky_sprite.get_spawn_size(), (grid_size, grid_size), dividend=dividend_size
+        )
+    )
     render_adapter.resize_sprites()
     sticky_sprite.stick(
-        multiplier=coord_porcentage_difference
+        multiplier=resolution_scale_ratio(
+            window.window_resolution, scene.render_resolution, dividend=dividend_coord
+        )
     )
 window.update_layers = update_sticky
 

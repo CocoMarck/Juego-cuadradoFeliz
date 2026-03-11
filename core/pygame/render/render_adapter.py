@@ -20,7 +20,7 @@ class RenderAdapter():
 
     def insert_sprite(self, sprite, size_multiplier_xy, layer):
         key = len(self._sprites.keys())
-        self._sprites[key] = (sprite, size_multiplier_xy, layer)
+        self._sprites[key] = [sprite, size_multiplier_xy, layer]
         return True
 
     def remove_sprite(self, key):
@@ -28,6 +28,9 @@ class RenderAdapter():
             del self._sprites[key]
             return True
         return False
+
+    def update_sprite_size_multiplier_xy(self, key, size_multiplier_xy):
+        self._sprites[key][1] = size_multiplier_xy
 
     def clear_sprites(self):
         self._sprites.clear()

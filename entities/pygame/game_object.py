@@ -50,6 +50,9 @@ class GameObject(pygame.sprite.Sprite):
         self.surf.set_alpha( alpha )
         self.rect = surf.get_rect( topleft=self._SPAWN_POSITION )
 
+    def get_spawn_size(self):
+        return self._SPAWN_SIZE
+
     def flip_surf(self):
         self.surf = pygame.transform.flip( self.surf, self.flip_x, self.flip_y )
 
