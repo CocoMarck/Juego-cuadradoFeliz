@@ -9,7 +9,7 @@ from core.pygame.render.scene import Scene
 from core.pygame.render.window import Window
 from core.pygame.audio.sound_effect import SoundEffect
 from core.pygame.math_helpers import (
-    resolution_scale_ratio, axis_coord_porcentage
+    resolution_scale_ratio, axis_coord_porcentage, calculate_aspect_ratio
 )
 from config.paths import MUSICS, SPRITES
 from core.pygame.render.render_adapter import RenderAdapter
@@ -65,19 +65,19 @@ class SoundEffectsScene(Scene):
             coord=self.sound_effect.rect.y
         )
         multiplier = min( multiplier_x, multiplier_y )
-        #if multiplier > 1:
-        #    multiplier = 1
-        #elif multiplier < 0:
-        #    multiplier = 0
-        #if self.x_positive:
-        #    self.sound_effect.rect.x += self.tile_size*5 * dt
-        #else:
-        #    self.sound_effect.rect.x -= self.tile_size*5 * dt
-        #if self.count >= 6:
-        #    self.sound_effect.rect.x = self.render_resolution[0]*0.5
-        #    self.count = 0
-        #    self.x_positive = not self.x_positive
-        #self.count += dt
+        if multiplier > 1:
+            multiplier = 1
+        elif multiplier < 0:
+            multiplier = 0
+        if self.x_positive:
+            self.sound_effect.rect.x += self.tile_size*5 * dt
+        else:
+            self.sound_effect.rect.x -= self.tile_size*5 * dt
+        if self.count >= 4:
+            #self.sound_effect.rect.x = self.render_resolution[0]*0.5
+            self.count = 0
+            self.x_positive = not self.x_positive
+        self.count += dt
 
         self.sound_effect.set_multiply_init_volume( multiplier )
 
@@ -110,6 +110,7 @@ coord_porcentage_difference = resolution_scale_ratio(
     window.window_resolution, scene.render_resolution, dividend="max"
 )
 print( coord_porcentage_difference )
+print( calculate_aspect_ratio( window.window_resolution ) )
 render_adapter.update_sprites()
 def update_sticky():
     dividend_coord = "min"

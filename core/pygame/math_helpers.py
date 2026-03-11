@@ -32,3 +32,37 @@ def axis_coord_porcentage( size, negative_start_counted, positive_start_counted,
     if coord < 0:
         multiplier = (-size - (coord +negative_start_counted) ) / -size
     return multiplier
+
+
+
+
+def calculate_aspect_ratio( resolution_xy:tuple ):
+    width, height = resolution_xy
+    x_integer_divisors = []
+    y_integer_divisors = []
+    for divisor in range(1, width):
+        value = float(width / divisor)
+        if value.is_integer():
+            x_integer_divisors.append( value )
+
+    for divisor in range(1, height):
+        value = float(height / divisor)
+        if value.is_integer():
+            y_integer_divisors.append( value )
+
+    # Obtener coincidencia entre divisores en xy.
+    good_divisors = []
+    for x in x_integer_divisors:
+        if x in y_integer_divisors:
+            good_divisors.append( x )
+
+    # Obtener el divisor mas grande coincidente.
+    if len(good_divisors) > 0:
+        divisor_for_aspect_ratio = max(good_divisors)
+
+        aspect_ratio_x = width / divisor_for_aspect_ratio
+        aspect_ratio_y = height / divisor_for_aspect_ratio
+
+        return (aspect_ratio_x, aspect_ratio_y)
+    else:
+        return (width, height)
