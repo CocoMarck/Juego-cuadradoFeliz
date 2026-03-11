@@ -9,7 +9,7 @@ from core.pygame.render.scene import Scene
 from core.pygame.render.window import Window
 from core.pygame.audio.sound_effect import SoundEffect
 from core.pygame.math_helpers import (
-    get_resolution_porcentage_difference, porcentage_of_coord_on_axis
+    resolution_scale_ratio, axis_coord_porcentage
 )
 from config.paths import MUSICS, SPRITES
 from core.pygame.render.render_adapter import RenderAdapter
@@ -52,13 +52,13 @@ class SoundEffectsScene(Scene):
         Actualizar eventos, normalmente solo usando groups.
         Normalmente es, los `"update"`, reciben `sprite.update()`.
         '''
-        multiplier_x = porcentage_of_coord_on_axis(
+        multiplier_x = axis_coord_porcentage(
             size=self.render_resolution[0],
             positive_start_counted=self.render_resolution[0],
             negative_start_counted=0,
             coord=self.sound_effect.rect.x
         )
-        multiplier_y = porcentage_of_coord_on_axis(
+        multiplier_y = axis_coord_porcentage(
             size=self.render_resolution[1],
             positive_start_counted=self.render_resolution[1],
             negative_start_counted=0,
@@ -86,14 +86,14 @@ scene = SoundEffectsScene(
     render_resolution=[16*32, 9*32], groups={}, name="game"
 )
 window = Window(
-    window_size=[960,540], fps=100, scene=scene, title="Efectos de sonido"
+    window_resolution=[960,540], fps=100, scene=scene, title="Efectos de sonido"
 )
 window.init_pygame()
 scene.init_objects()
 
 
-grid_size = window.window_size[0]//16
-size_porcentage_difference = get_resolution_porcentage_difference(
+grid_size = window.window_resolution[0]//8
+size_porcentage_difference = resolution_scale_ratio(
     (128,128), (grid_size, grid_size)
 )
 sticky_sprite = StickySprite(
@@ -101,26 +101,20 @@ sticky_sprite = StickySprite(
 )
 render_adapter = RenderAdapter(
     layers=window.layers,
-    size_xy=window.window_size, scaled_size_xy=scene.render_resolution,
-    sprites=[
-        [
-        sticky_sprite, size_porcentage_difference, 0
-        ]
-    ]
+    size_xy=window.window_resolution, scaled_size_xy=scene.render_resolution,
 )
-porcentage_difference = get_resolution_porcentage_difference(
-    window.window_size, scene.render_resolution
+render_adapter.insert_sprite(
+    sticky_sprite, size_porcentage_difference, 0
 )
-m_xy = (
-    window.window_size[0] / scene.render_resolution[0],
-    window.window_size[1] / scene.render_resolution[1]
+coord_porcentage_difference = resolution_scale_ratio(
+    window.window_resolution, scene.render_resolution, dividend="max"
 )
-print(m_xy)
-render_adapter.insert_sprites()
+print( coord_porcentage_difference )
+render_adapter.update_sprites()
 def update_sticky():
     render_adapter.resize_sprites()
     sticky_sprite.stick(
-        multiplier=m_xy
+        multiplier=coord_porcentage_difference
     )
 window.update_layers = update_sticky
 
