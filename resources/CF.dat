@@ -1,8 +1,8 @@
 disp=1440x810
-volume=0.2
+volume=0.05
 fps=30
 
-music=False
+music=True
 climate_sound=True
 
 show_clouds=True
