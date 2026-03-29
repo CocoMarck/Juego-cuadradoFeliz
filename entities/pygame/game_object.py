@@ -16,21 +16,17 @@ class GameObject(pygame.sprite.Sprite):
     def __init__(
         self, name='object', group="generic", 
         surf: pygame.Surface = None, alpha=255, flip_x=False, flip_y=False, position=(0,0),
-        volume=float(1), angle=int(0), state='idle'
+        angle=int(0), state='idle'
     ):
         # Evitar hacer wrappers al surface o al rect, nada de eso.
         super().__init__()
 
         # Constantes
         self._SPAWN_POSITION = position
-        self._SPAWN_VOLUME = volume
         self._SPAWN_ANGLE = angle
         self._SPAWN_ALPHA = alpha
         self._SURF_BASE = surf.copy()
         self._SPAWN_SIZE = surf.get_rect().size
-
-        # Variables | Para sonido
-        self._volume = volume
 
         # Variables | Relacionado con movimiento
         self.angle = angle
@@ -109,22 +105,6 @@ class GameObject(pygame.sprite.Sprite):
             self.build_surf()
             self.surf = pygame.transform.rotate( self.surf, self.angle )
             self.resize_rect()
-
-    # Sonido
-    def get_volume(self):
-        return self._volume
-
-    def set_volume(self, volume: float):
-        if volume > 1:
-            volume = float(1)
-        elif volume < 0:
-            volume = float(0)
-
-        if isinstance(volume, float):
-            self._volume = volume
-
-    def set_spawn_volume(self):
-        self.update_volume( self._SPAWN_VOLUME )
 
 
     def update(self, dt=1):

@@ -4,27 +4,11 @@ import random
 # Librerias externas
 import pygame
 
-# Sound
-from core.pygame.audio.sound_effect import SoundEffect
-from core.pygame.audio.sound_effect_group import SoundEffectGroup
-
 # Paths
 from config.paths import MUSICS, SPRITES
 
 # Window, render, loop
-from core.pygame.render.render_adapter import RenderAdapter
-from core.pygame.render.scene import Scene
 from core.pygame.render.window import Window
-
-# Resolución, escala, correcciones.
-from core.pygame.math_helpers import (
-    resolution_scale_ratio, axis_coord_porcentage, calculate_aspect_ratio
-)
-
-# Sprites
-from entities.pygame.game_object import GameObject
-from entities.pygame.sticky_sprite import StickySprite
-from core.pygame.graphics_utils import surface_with_background
 
 # Game
 from core.game.cuadrado_feliz_scene import CuadradoFelizScene

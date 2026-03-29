@@ -7,12 +7,12 @@ class ObjectWithPhysics(GameObject):
     La furza de gravedad, es por px's por segundo.
     Es decir, cada 1 segundos, el player se movera `x pixles`.
     '''
-    def __init__(self, *args, vertical_force: int=None, vertical_force_limit: int=None, **kwargs):
+    def __init__(self, *args, vertical_force_hint: int=None, vertical_force_limit_hint: int=None, **kwargs):
         super().__init__( *args, **kwargs )
 
         # Constantes
-        self._SPAWN_VERTICAL_FORCE = vertical_force or max(self.rect.size)*60
-        self._SPAWN_VERTICAL_FORCE_LIMIT = vertical_force_limit or max(self.rect.size)*120
+        self._SPAWN_VERTICAL_FORCE = max(self.rect.size)*vertical_force_hint if vertical_force_hint else max(self.rect.size)*60
+        self._SPAWN_VERTICAL_FORCE_LIMIT = max(self.rect.size)*vertical_force_limit_hint if vertical_force_limit_hint else max(self.rect.size)*120
 
         # Gravedad
         self.vertical_force_limit = self._SPAWN_VERTICAL_FORCE_LIMIT
@@ -77,11 +77,12 @@ class ObjectWithPhysics(GameObject):
         self.air_dt_count += dt
 
         self.collision_side = self.collide_and_move( dt=dt, solid_objects=solid_objects )
-        if self.collision_side['bottom']:
-            self.moving_xy[1] = 0
-            self.air_dt_count = 0
-        if self.collision_side['top']:
-            self.moving_xy[1] = 0
+        if not (self.collision_side['left'] or self.collision_side['right']):
+            if self.collision_side['bottom']:
+                self.moving_xy[1] = 0
+                self.air_dt_count = 0
+            if self.collision_side['top']:
+                self.moving_xy[1] = 0
 
         self.update_state()
 

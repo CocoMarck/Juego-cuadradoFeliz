@@ -51,10 +51,11 @@ def collide_and_move(rect: pygame.Rect, moving_xy: list, solid_objects: pygame.s
     # Despues de XY
     ## Si colisiono en x
     if collided_at_x:
-        ### Forzar posicionar arriba
-        if rect.y < solid.rect.y -( rect.height*0.5 ):
-            rect.bottom = solid.rect.top
-            collision_side['bottom'] = True
+        pass
+        ### Forzar posicionar arriba <- Jala mal
+        #if rect.y < solid.rect.y -( rect.height*0.5 ):
+            #rect.bottom = solid.rect.top
+            #collision_side['bottom'] = True
 
 
     return collision_side

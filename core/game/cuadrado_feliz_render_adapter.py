@@ -24,19 +24,26 @@ class CuadradoFelizRenderAdapter(RenderAdapter):
         )
 
         # Tamaño de cuadritos y escala de images
-        self.tile_size = self.window.window_resolution[0]//8
-        self.size_porcentage_difference = resolution_scale_ratio(
+        self.tile_size = self.window.window_resolution[0]//12
+        size_porcentage_difference = resolution_scale_ratio(
             (128,128), (self.tile_size, self.tile_size)
         )
-        self.music_box = self.scene.groups['music_boxes'].sprites()[0]
+        music_box = self.scene.groups['music_boxes'].sprites()[0]
 
         # Agragar imagenes pegajosas, con diferencia de tamano, y actualizar posición inicial.
-        self.sticky_sprite = StickySprite(
-            surf=surface_with_background( (128,128), color="purple"), game_object=self.music_box, center=True, alpha=127
+        sticky_sprite = StickySprite(
+            surf=surface_with_background( (128,128), color="purple"), game_object=music_box, center=True, alpha=127
         )
         self.insert_sprite(
-            self.sticky_sprite, self.size_porcentage_difference, 0
+            sticky_sprite, size_porcentage_difference, 0
         )
+        for solid in self.scene.groups['solids']:
+            sprite = StickySprite(
+                surf=surface_with_background( (128,128), color="white"),
+                game_object=solid, center=True, alpha=127
+            )
+            self.insert_sprite( sprite, size_porcentage_difference, 0 )
+
         self.update_sprites()
 
         # Establecer actualizador de capas.
@@ -47,6 +54,7 @@ class CuadradoFelizRenderAdapter(RenderAdapter):
         self.scaled_size_xy = self.scene.render_resolution
         self.update_all_size_multiplier_xy()
         self.resize_sprites()
-        self.sticky_sprite.stick(
-            multiplier=self.get_resolution_scale_ratio( "max" )
-        )
+        for sprite, _, _ in self._sprites.values():
+            sprite.stick(
+                multiplier=self.get_resolution_scale_ratio( "max" )
+            )

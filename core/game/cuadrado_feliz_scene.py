@@ -19,6 +19,10 @@ from core.pygame.math_helpers import (
     resolution_scale_ratio, axis_coord_porcentage, calculate_aspect_ratio
 )
 
+# Sprites
+from entities.pygame.game_object import GameObject
+from entities.cuadrado_feliz.object_with_happy_physics import ObjectWithHappyPhysics
+
 # SoundEffects Window
 class CuadradoFelizScene(Scene):
     '''
@@ -30,6 +34,7 @@ class CuadradoFelizScene(Scene):
             groups={
                 "characters": pygame.sprite.Group(),
                 "music_boxes": pygame.sprite.Group(),
+                "physics": pygame.sprite.Group(),
                 "solids": pygame.sprite.Group()
             },
             **kwargs
@@ -42,17 +47,39 @@ class CuadradoFelizScene(Scene):
         '''
         Usando groups y layers.
         '''
-        sprite = pygame.sprite.Sprite()
-        sprite.surf = pygame.Surface( (self.tile_size, self.tile_size) )
-        sprite.rect = sprite.surf.get_rect(
-            topleft=(
+        sprite = ObjectWithHappyPhysics(
+            surf=pygame.Surface( (self.tile_size, self.tile_size) ),
+            position=(
                 self.render_resolution[0]*0.5,self.render_resolution[1]*0.5
-            )
+            ), name="music_box", group="music_boxes"
         )
-        self.x_positive = False
+        self.x_positive = True
         self.count = 0
         self.layers.add( sprite, layer=0 )
         self.groups["music_boxes"].add( sprite )
+
+        for tile in range(0, 32):
+            solid = GameObject(
+                surf=pygame.Surface( (self.tile_size, self.tile_size) ),
+                position=( tile*self.tile_size, self.render_resolution[1]-self.tile_size  )
+            )
+            self.groups["solids"].add(solid)
+            self.layers.add( solid, layer=0 )
+        for tile in range(0, 8):
+            solid = GameObject(
+                surf=pygame.Surface( (self.tile_size, self.tile_size) ),
+                position=( 0, tile*self.tile_size )
+            )
+            self.groups["solids"].add(solid)
+            self.layers.add( solid, layer=0 )
+
+        for tile in range(0, 8):
+            solid = GameObject(
+                surf=pygame.Surface( (self.tile_size, self.tile_size) ),
+                position=( self.render_resolution[0]*2-self.tile_size, tile*self.tile_size )
+            )
+            self.groups["solids"].add(solid)
+            self.layers.add( solid, layer=0 )
 
         fx_sound = SoundEffect(
             MUSICS[5], volume=0.05, rect=sprite.rect#pygame.Rect(0, 1, 2, 3)
@@ -70,13 +97,14 @@ class CuadradoFelizScene(Scene):
         # Movement para music boxes.
         for sprite in self.groups["music_boxes"]:
             if self.x_positive:
-                sprite.rect.x += self.tile_size*5 * dt
+                sprite.moving_xy[0] = self.tile_size*5
             else:
-                sprite.rect.x -= self.tile_size*5 * dt
+                sprite.moving_xy[0] = -self.tile_size*5
             if self.count >= 4:
                 #sound.rect.x = self.render_resolution[0]*0.5
                 self.count = 0
                 self.x_positive = not self.x_positive
+            sprite.update(dt, self.groups["solids"])
 
         # Evento efectos de sonido.
         for sound in self.sound_effects.sounds():
