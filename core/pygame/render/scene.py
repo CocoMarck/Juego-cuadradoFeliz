@@ -33,7 +33,7 @@ class Scene():
             if event.type == pygame.QUIT:
                 self.loop = False
 
-    def update(self, dt=1, key_get_pressed=None):
+    def update(self, dt=1, fps=1, key_get_pressed=None):
         '''
         Actualizar eventos, normalmente solo usando groups.
         Normalmente es, los `"update"`, reciben `sprite.update()`.

@@ -22,6 +22,7 @@ from core.pygame.math_helpers import (
 # Sprites
 from entities.pygame.game_object import GameObject
 from entities.cuadrado_feliz.object_with_happy_physics import ObjectWithHappyPhysics
+from entities.cuadrado_feliz.player import Player
 
 # SoundEffects Window
 class CuadradoFelizScene(Scene):
@@ -34,7 +35,6 @@ class CuadradoFelizScene(Scene):
             groups={
                 "characters": pygame.sprite.Group(),
                 "music_boxes": pygame.sprite.Group(),
-                "physics": pygame.sprite.Group(),
                 "solids": pygame.sprite.Group()
             },
             **kwargs
@@ -53,12 +53,13 @@ class CuadradoFelizScene(Scene):
                 self.render_resolution[0]*0.5,self.render_resolution[1]*0.5
             ), name="music_box", group="music_boxes"
         )
+        #sprite.vertical_force = 0
         self.x_positive = True
         self.count = 0
         self.layers.add( sprite, layer=0 )
         self.groups["music_boxes"].add( sprite )
 
-        for tile in range(0, 32):
+        for tile in range(0, 64):
             solid = GameObject(
                 surf=pygame.Surface( (self.tile_size, self.tile_size) ),
                 position=( tile*self.tile_size, self.render_resolution[1]-self.tile_size  )
@@ -76,7 +77,7 @@ class CuadradoFelizScene(Scene):
         for tile in range(0, 8):
             solid = GameObject(
                 surf=pygame.Surface( (self.tile_size, self.tile_size) ),
-                position=( self.render_resolution[0]*2-self.tile_size, tile*self.tile_size )
+                position=( self.render_resolution[0]*3-self.tile_size, tile*self.tile_size )
             )
             self.groups["solids"].add(solid)
             self.layers.add( solid, layer=0 )
@@ -87,8 +88,16 @@ class CuadradoFelizScene(Scene):
         fx_sound.play(loops=-1)
         self.sound_effects.add( fx_sound )
 
+        # Player
+        self.player = Player(
+            surf=pygame.Surface( (self.tile_size, self.tile_size) ),
+            position=( self.render_resolution[0]*0.2, self.render_resolution[1]*0.2 )
+        )
+        self.groups["characters"].add(self.player)
+        self.layers.add( self.player, layer=0 )
 
-    def update(self, dt=1, key_get_pressed=None):
+
+    def update(self, dt=1, fps=1, key_get_pressed=None):
         '''
         Actualizar eventos, normalmente solo usando groups.
         Normalmente es, los `"update"`, reciben `sprite.update()`.
@@ -127,3 +136,9 @@ class CuadradoFelizScene(Scene):
                 multiplier = 0
 
             sound.set_multiply_init_volume( multiplier )
+
+        # Characters
+        self.player.handle_input( key_get_pressed )
+        for character in self.groups['characters']:
+            character.move()
+            character.update( dt, self.groups['solids'] )

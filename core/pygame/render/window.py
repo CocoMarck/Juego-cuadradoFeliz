@@ -46,15 +46,16 @@ class Window:
     def run(self, datetime=True, show_fps=False):
         while self.scene.loop:
             dt = 1
+            clock_tick_value = self.clock.tick(self.fps)
             if datetime:
-                dt = self.clock.tick(self.fps) / SECOND_TO_MILLISECONDS
+                dt = clock_tick_value / SECOND_TO_MILLISECONDS
             fps = self.clock.get_fps()
             if show_fps:
                 print(fps)
 
             self.scene.handle_events(pygame.event.get())
 
-            self.scene.update(dt, pygame.key.get_pressed())
+            self.scene.update( dt=dt, fps=fps, key_get_pressed=pygame.key.get_pressed() )
 
             self.scene.render()
 

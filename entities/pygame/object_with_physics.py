@@ -77,12 +77,13 @@ class ObjectWithPhysics(GameObject):
         self.air_dt_count += dt
 
         self.collision_side = self.collide_and_move( dt=dt, solid_objects=solid_objects )
-        if not (self.collision_side['left'] or self.collision_side['right']):
-            if self.collision_side['bottom']:
-                self.moving_xy[1] = 0
-                self.air_dt_count = 0
-            if self.collision_side['top']:
-                self.moving_xy[1] = 0
+
+        #if not (self.collision_side['left'] or self.collision_side['right']):
+        if self.collision_side['bottom']:
+            self.moving_xy[1] = 0
+            self.air_dt_count = 0
+        if self.collision_side['top']:
+            self.moving_xy[1] = 0
 
         self.update_state()
 
