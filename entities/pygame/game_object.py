@@ -65,7 +65,8 @@ class GameObject(pygame.sprite.Sprite):
         Escalar surf respecto a rect
         '''
         if self.surf.get_size() != self.rect.size:
-            self.surf = pygame.transform.scale( self._SURF_BASE, self.rect.size )
+            #self.surf = pygame.transform.scale( self._SURF_BASE, self.rect.size )
+            self.surf = pygame.transform.scale( self.surf.copy(), self.rect.size )
 
     def resize_rect(self):
         '''

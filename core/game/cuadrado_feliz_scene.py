@@ -35,7 +35,8 @@ class CuadradoFelizScene(Scene):
             groups={
                 "characters": pygame.sprite.Group(),
                 "music_boxes": pygame.sprite.Group(),
-                "solids": pygame.sprite.Group()
+                "solids": pygame.sprite.Group(),
+                "anims": pygame.sprite.Group()
             },
             **kwargs
         )
@@ -151,6 +152,10 @@ class CuadradoFelizScene(Scene):
         for character in self.groups['characters']:
             character.move()
             character.update( dt, self.groups['solids'] )
+
+        # Anims
+        for sprite in self.groups['anims']:
+            sprite.update(dt)
 
     def calculate_scroll(
         self, xy=[0,0], view_xy=[0,0], limit_xy=[0,0], difference_xy=[0,0]

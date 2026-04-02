@@ -1,5 +1,5 @@
 from .sticky_sprite import StickySprite
-from controllers.pygame.animation_controller import AnimationController
+from controllers.pygame.entities.animation_controller import AnimationController
 import pygame
 
 class AnimatedStickySprite(StickySprite):
