@@ -54,7 +54,12 @@ class CuadradoFelizRenderAdapter(RenderAdapter):
         self.scaled_size_xy = self.scene.render_resolution
         self.update_all_size_multiplier_xy()
         self.resize_sprites()
+        scale_max_ratio = self.get_resolution_scale_ratio( "max" )
         for sprite, _, _ in self._sprites.values():
             sprite.stick(
-                multiplier=self.get_resolution_scale_ratio( "max" )
+                multiplier=scale_max_ratio
             )
+        self.window.scroll_int = [
+            int(self.scene.scroll_float[0]*scale_max_ratio[0]),
+            int(self.scene.scroll_float[1]*scale_max_ratio[1])
+        ]

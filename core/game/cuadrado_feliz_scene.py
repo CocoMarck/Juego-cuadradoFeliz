@@ -43,6 +43,9 @@ class CuadradoFelizScene(Scene):
         self.tile_size = self.render_resolution[0]//16
         self.sound_effects = SoundEffectGroup()
 
+        # Scroll
+        self.scroll_float = [0.0,0.0]
+
     def init_objects(self):
         '''
         Usando groups y layers.
@@ -103,6 +106,12 @@ class CuadradoFelizScene(Scene):
         Normalmente es, los `"update"`, reciben `sprite.update()`.
         '''
         self.count += dt
+
+        # Scroll
+        self.scroll_float = self.calculate_scroll(
+            xy=self.player.rect, view_xy=self.render_resolution, difference_xy=[0,0]
+        )
+
         # Movement para music boxes.
         for sprite in self.groups["music_boxes"]:
             if self.x_positive:
@@ -121,13 +130,13 @@ class CuadradoFelizScene(Scene):
                 size=self.render_resolution[0],
                 positive_start_counted=self.render_resolution[0],
                 negative_start_counted=0,
-                coord=sound.rect.x
+                coord=sound.rect.x-self.scroll_float[0]
             )
             multiplier_y = axis_coord_porcentage(
                 size=self.render_resolution[1],
                 positive_start_counted=self.render_resolution[1],
                 negative_start_counted=0,
-                coord=sound.rect.y
+                coord=sound.rect.y-self.scroll_float[1]
             )
             multiplier = min( multiplier_x, multiplier_y )
             if multiplier > 1:
@@ -142,3 +151,23 @@ class CuadradoFelizScene(Scene):
         for character in self.groups['characters']:
             character.move()
             character.update( dt, self.groups['solids'] )
+
+    def calculate_scroll(
+        self, xy=[0,0], view_xy=[0,0], limit_xy=[0,0], difference_xy=[0,0]
+    ) ->[float, float]:
+
+        return [ (xy[0] -view_xy[0]/2), (xy[1] -view_xy[1]/2) ]
+
+    def render(self):
+        '''
+        Renderizado, utilizando layers.
+        '''
+
+        scroll_int = [ int(self.scroll_float[0]), int(self.scroll_float[1]) ]
+        self.render_surface.fill( 'green' )
+        for sprite in self.layers.sprites():
+            self.render_surface.blit(
+                sprite.surf, (
+                    sprite.rect.x -scroll_int[0], sprite.rect.y -scroll_int[1]
+                )
+            )

@@ -20,6 +20,9 @@ class Window:
         self.clock = None
         self.update_layers = None # Funcion para actualizar leyers.
 
+        #
+        self.scroll_int = [0,0]
+
     def init_pygame(self):
         pygame.init()
         pygame.display.set_caption( self.title )
@@ -66,8 +69,13 @@ class Window:
 
             if self.update_layers != None:
                 self.update_layers()
+
             for sprite in self.layers.sprites():
-                self.window.blit( sprite.surf, sprite.rect )
+                self.window.blit(
+                    sprite.surf, (
+                        sprite.rect.x -self.scroll_int[0], sprite.rect.y -self.scroll_int[1]
+                    )
+                )
 
             pygame.display.update()
 
