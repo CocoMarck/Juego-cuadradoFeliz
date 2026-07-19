@@ -94,7 +94,7 @@ class CuadradoFelizScene(Scene):
 
         # Player
         self.player = Player(
-            surf=pygame.Surface( (self.tile_size, self.tile_size) ),
+            surf=pygame.Surface( (self.tile_size*0.5, self.tile_size) ),
             position=( self.render_resolution[0]*0.2, self.render_resolution[1]*0.2 )
         )
         self.groups["characters"].add(self.player)

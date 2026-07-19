@@ -1,4 +1,4 @@
-# Juego-cuadradoFeliz
+# Cuadrado Feliz
 Una prueba de uso de libreria pygame. Un videojuego de plataformas, con obstaculos locos.
 
 # Dependencias
@@ -9,7 +9,7 @@ sudo apt install python3-pygame python3-screeninfo python3-gi python3-pyqt6
 
 ### Windows | pip
 ```bash
-pip install pyqt6 screeninfo pygame
+pip install -r ./requirements.txt
 ```
 > No funciona de forma nativa gtk en windows. Al menos no solo con pip. `(2025)`
 
