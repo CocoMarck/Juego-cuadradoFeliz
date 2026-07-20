@@ -10,6 +10,7 @@ from core.pygame.pygame_util import *
 
 import math
 import pygame, os, random
+from pathlib import Path
 
 
 
@@ -62,9 +63,9 @@ for key in all_sounds.keys():
         
 # Sonido | Musica
 all_music = {}
-dir_music = os.path.join(dir_audio, 'music/') # Sin os no jala el este for
-for music in list_files( files=f'*{sound_type}', path=dir_music ):
-    name = music.replace(dir_music, '').replace(sound_type, '')
+dir_music = Path(dir_audio, 'music') # Sin os no jala el este for
+for music in list(dir_music.glob(f"*{sound_type}")):
+    name = music.stem.replace(sound_type, '')
     all_music.update( {name: music} )
 #for key in all_music.keys():
 #    print(key)
